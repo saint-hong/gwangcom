@@ -21,7 +21,7 @@ import { QuoteEmbed } from "./QuoteEmbed";
  *          | 액션 바
  * 팔로잉 탭 · 프로필 Wave 탭에서는 맨 위에 "≈ ○○님이 Wave함" 한 줄 (X 의 재게시 줄).
  * 인용 글·댓글은 제목 대신 본문을 그대로 보여 준다 (X 방식). 댓글 카드는 서재 북마크 탭에서 쓴다.
- * 혼합 글: Shake it 배지 + 재료 줄 [재료 · 상대 글 × 내 글 …… 계보]. fresh = 방금 섞어 올린 글 강조 (F8)
+ * 혼합 글: 재료 줄 [Shake it 배지 · 상대 글 · 내 글 …… 계보] (2026-11-12 사용자 지정: 배지를 "재료" 자리로). fresh = 방금 섞어 올린 글 강조 (F8)
  */
 export function ImaginationCard({
   data,
@@ -61,13 +61,6 @@ export function ImaginationCard({
           <ItemMenu item={data} onDeleted={onDeleted} className={styles.moreBtn} />
         </header>
 
-        {data.kind === "blend" ? (
-          <span className={styles.shakeBadge}>
-            <ShakeIcon className={styles.shakeBadgeIcon} aria-hidden="true" />
-            Shake it
-          </span>
-        ) : null}
-
         {data.kind === "comment" && data.reply_to ? (
           <p className={styles.replyTo}>{data.reply_to.nickname}님에게 보내는 댓글</p>
         ) : null}
@@ -92,8 +85,11 @@ export function ImaginationCard({
         ) : null}
 
         {data.kind === "blend" ? (
-          <div className={styles.sources}>
-            <span className={styles.sourcesLabel}>재료</span>
+          <div className={styles.sources} aria-label="Shake it 재료 상상">
+            <span className={styles.shakeBadge}>
+              <ShakeIcon className={styles.shakeBadgeIcon} aria-hidden="true" />
+              Shake it
+            </span>
             {(data.sources ?? []).map((s, i) =>
               s.deleted || s.id === null ? (
                 <span key={i} className={clsx(styles.source, styles.sourceGone)}>

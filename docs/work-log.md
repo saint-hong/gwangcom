@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-11-12 — Shake it 표시 정리 (5-D 전 수정, 사용자 지정)
+
+- 피드 카드: 제목 위 Shake it 배지 → 재료 줄의 "재료" 글자 자리로 (`ImaginationCard.tsx` · `.module.css`). 오른쪽 계보 아이콘은 그대로. 배지 · 재료 상상 · 계보가 한 줄 문맥으로 이어진다
+- 상세: 혼합 글이면 시간 줄의 "AI 도움" 숨김 (Shake it 과 뜻이 겹침). 원본 · 인용은 그대로. 데이터(`ai_assisted=true`)는 바꾸지 않음
+- 문서: design-system.md 카드 순서 · 시간 줄 · v11 반영목록 7장
+- 검증: `npm run build` 통과. 화면 확인은 사용자 몫
+
+---
+
+## 2026-11-12 — 상상 상세 계보 링크 (5-D 전 수정, 사용자 요청)
+
+- 이름: "계보 그래프 보기" → **"계보"**
+- 위치: 시간 줄 아래 한 줄 → **시간 줄 안**. 순서 = 시간 · Shake it 배지(원본이면 "원본") · 계보 · AI 도움. 섞인 적 있는 원본은 "계보 · 이 상상에서 태어난 상상 N개" 유지
+- 파일: `frontend/src/pages/imagination/ImaginationPage.tsx` · `.module.css` (아이콘 14px, 시간 줄 글자 크기에 맞춤)
+- 문서: design-system.md 상세 계보 링크 줄 · v11 반영목록 7장
+- 검증: `npm run build` 통과. 화면 확인은 사용자 몫
+
+---
+
 ## 2026-11-12 — GitHub 저장소 · README 정리
 
 - GitHub 저장소 `saint-hong/gwangcom` 의 `main` 에 Imagine-v1 첫 push (레포 루트 = Imagine-v1, 상위 기획 문서는 git 밖)

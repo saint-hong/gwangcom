@@ -175,16 +175,14 @@
 .lineageLink {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: var(--space-3);
+  gap: 3px;
   color: var(--color-accent-text);
-  font-size: var(--font-size-sm);
   font-weight: 700;
 }
 
 .lineageLink svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 .lineageLink:hover {

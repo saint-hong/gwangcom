@@ -24,7 +24,8 @@ const KIND_LABEL = { original: "원본", blend: "Shake it", quote: "인용", com
  *   [←] 상상
  *   작성자 줄: 아바타 · 닉네임 · 운영자 배지 …… [팔로우] ⋯   (오른쪽 컬럼 "이 상상의 Dreamer" 와 같은 상태)
  *   제목 → 본문 → 왜 원하나요 → 이미지 → (인용 글) 원본 카드
- *   시간 줄: 오후 2:10 · 2026년 11월 10일 · 원본 / Shake it (· AI 도움)  — 분야 뱃지는 ⋯ > 뱃지 보기
+ *   시간 줄: 오후 2:10 · 2026년 11월 10일 · 원본 / Shake it (· 계보)(· AI 도움: 혼합 글은 Shake it 과 뜻이 겹쳐 숨김, 2026-11-12)  — 분야 뱃지는 ⋯ > 뱃지 보기
+ *     계보 링크는 혼합 글이거나 이 글에서 태어난 상상이 있을 때 (2026-11-12 사용자 지정: 이름 "계보", 시간 줄 안으로)
  *   액션 바 (위아래 선, 글 아래 한 번) → 댓글 입력창 → 댓글 목록
  * 댓글 주소(/i/댓글id)로 들어오면 원글의 그 댓글 위치(/i/원글#c댓글)로 옮긴다.
  */
@@ -149,7 +150,17 @@ export function ImaginationPage() {
           ) : (
             <span>{KIND_LABEL[item.kind]}</span>
           )}
-          {item.ai_assisted ? (
+          {item.kind === "blend" || item.counts.shakes > 0 ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <Link to={`/i/${item.id}/lineage`} className={styles.lineageLink}>
+                <Network aria-hidden="true" />
+                계보
+                {item.counts.shakes > 0 ? <span className={styles.lineageCount}>· 이 상상에서 태어난 상상 {item.counts.shakes}개</span> : null}
+              </Link>
+            </>
+          ) : null}
+          {item.ai_assisted && item.kind !== "blend" ? (
             <>
               <span aria-hidden="true">·</span>
               <span className={styles.ai}>
@@ -158,14 +169,6 @@ export function ImaginationPage() {
             </>
           ) : null}
         </p>
-
-        {item.kind === "blend" || item.counts.shakes > 0 ? (
-          <Link to={`/i/${item.id}/lineage`} className={styles.lineageLink}>
-            <Network aria-hidden="true" />
-            계보 그래프 보기
-            {item.counts.shakes > 0 ? <span className={styles.lineageCount}>· 이 상상에서 태어난 상상 {item.counts.shakes}개</span> : null}
-          </Link>
-        ) : null}
 
         <div className={styles.actions}>
           <ActionBar item={item} onComment={() => comments.current?.focusComposer()} />
