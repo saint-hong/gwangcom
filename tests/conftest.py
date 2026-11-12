@@ -6,6 +6,7 @@
 - 업로드 이미지는 임시 폴더에 저장한다.
 """
 
+import json
 import os
 import tempfile
 
@@ -50,9 +51,29 @@ def db_clean(database_ready: bool):
     with get_engine().begin() as conn:
         conn.execute(text("DELETE FROM llm_calls"))
         conn.execute(text("DELETE FROM imaginations"))
+        conn.execute(text("DELETE FROM prompts"))
         conn.execute(text("DELETE FROM tags"))
         conn.execute(text("DELETE FROM policy_settings WHERE scope <> 'global'"))
         conn.execute(text("DELETE FROM users"))  # 팔로우·알림·반응도 함께 지워진다
+        # 6-B: 운영자가 바꾼 전체 기본값 · 등급을 시드 상태로 되돌린다
+        conn.execute(text("DELETE FROM policy_change_logs"))
+        conn.execute(text("DELETE FROM policy_settings WHERE scope = 'tier'"))
+        conn.execute(
+            text(
+                "DELETE FROM user_tiers WHERE name NOT IN ('기본', '활발한 Dreamer', '테스트 그룹')"
+            )
+        )
+        conn.execute(text("UPDATE user_tiers SET is_default = (name = '기본')"))
+        from app.domains.policy.service import SAFE_DEFAULTS
+
+        for key, value in SAFE_DEFAULTS.items():
+            conn.execute(
+                text(
+                    "UPDATE policy_settings SET value = CAST(:v AS jsonb) "
+                    "WHERE scope = 'global' AND key = :k"
+                ),
+                {"k": key, "v": json.dumps(value)},
+            )
     yield
 
 

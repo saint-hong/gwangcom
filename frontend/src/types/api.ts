@@ -23,11 +23,22 @@ export type Reason =
 
 export type ActionState = { allowed: boolean; reason: Reason | null; remaining: number | null };
 
-export type ActionKey = "thunder" | "wave" | "quote" | "comment" | "shake" | "bookmark" | "delete";
+export type ActionKey =
+  | "thunder"
+  | "wave"
+  | "quote"
+  | "comment"
+  | "shake"
+  | "bookmark"
+  | "delete"
+  | "edit_tags"; // 작성자 기술 태그 편집. remaining = 더 붙일 수 있는 태그 수 (5-D)
 
 export type Actions = Record<ActionKey, ActionState>;
 
 export type DomainRef = { slug: string; name: string };
+
+/** 기술 태그. name = 주소용(/tags/:name), label = 화면 표기. 욕망 태그는 분석용이라 오지 않는다 */
+export type TagRef = { name: string; label: string };
 
 export type Author = { id: number; nickname: string; avatar_url: string | null; is_operator: boolean };
 
@@ -68,6 +79,10 @@ export type Imagination = {
   created_at: string;
   actions: Actions;
   my: My;
+  /** 기술 태그 (원본 · 인용 · 혼합, 댓글은 빈 목록) */
+  tags: TagRef[];
+  /** 운영자가 숨긴 글 — 작성자 본인 · 운영자에게만 상세가 열린다 (Sprint 6-A) */
+  hidden: boolean;
   quoted: Quoted | null;
   /** 혼합 글(kind=blend)일 때: 재료 글 2개 [상대 글, 섞은 사람의 글]. 지워졌으면 deleted=true */
   sources?: Quoted[] | null;
@@ -77,6 +92,8 @@ export type Imagination = {
   reply_to: Author | null;
   /** 팔로잉 탭 · 프로필 Wave 탭: "○○님이 Wave함". 이 Wave 를 보고 Wave 하면 확산 경로(via)로 기록 */
   waved_by: Author | null;
+  /** 이번 주 질문에 답한 상상이면 그 질문 (6-C) */
+  prompt?: { id: number; title: string } | null;
 };
 
 export type ReactionResult = { my: My; counts: Counts };
@@ -85,6 +102,17 @@ export type ReactionResult = { my: My; counts: Counts };
 export type CommentThread = { id: number; comment: Imagination | null; replies: Imagination[] };
 
 export type Page<T> = { items: T[]; next_cursor: string | null };
+
+/** S8 주제 둘러보기 — 분야마다 많이 등장한 기술 태그 (원본 · 인용 기준) */
+export type TopicTag = TagRef & { count: number };
+export type Topics = {
+  /** 분야 상관없이 많이 나온 주제 (오른쪽 컬럼 "추천 주제") */
+  popular: TopicTag[];
+  domains: { slug: string; name: string; tags: TopicTag[] }[];
+};
+
+/** S9 태그별 상상 */
+export type TagFeed = Page<Imagination> & { tag: TagRef & { count: number } };
 
 /** Shake it 선택 창 (GET /api/shake/candidates) — 상대 글 + 내 상상(원본 · 인용 · 혼합) + 오늘 남은 횟수 */
 export type ShakeCandidates = Page<Imagination> & { target: Imagination; remaining: number; limit: number };
@@ -149,3 +177,114 @@ export type Lineage = {
   edges: { source: number; target: number; position: number }[];
   truncated: boolean;
 };
+
+/** 운영자 A4 게시물 관리 (Sprint 6-A) */
+export type ModerationLog = { action: "hide" | "unhide"; admin: string | null; reason: string | null; at: string };
+export type AdminItem = {
+  id: number;
+  kind: Kind;
+  status: "visible" | "hidden";
+  author: Author;
+  domain: DomainRef;
+  display_title: string;
+  body: string;
+  root_id: number | null;
+  counts: Counts;
+  created_at: string;
+  last_moderation: ModerationLog | null;
+};
+export type AdminItems = { items: AdminItem[]; total: number; page: number; size: number };
+
+/** 운영자 A5 · A6 정책 · 사용자 관리 (Sprint 6-B) */
+export type PolicyValue = number | boolean;
+export type PolicyKey = {
+  key: string;
+  label: string;
+  group: string;
+  kind: "int" | "bool";
+  unit: string;
+  min: number;
+  max: number;
+};
+export type Tier = { id: number; name: string; description: string | null; is_default: boolean; user_count: number };
+export type ChangeLog = {
+  id: number;
+  admin: string | null;
+  target_scope: "global" | "tier" | "user";
+  tier: string | null;
+  user: string | null;
+  key: string;
+  label: string;
+  old_value: PolicyValue | string | null;
+  new_value: PolicyValue | string | null;
+  expires_at: string | null;
+  at: string;
+};
+export type PolicyView = {
+  keys: PolicyKey[];
+  global_values: Record<string, PolicyValue>;
+  tier_values: Record<string, Record<string, PolicyValue>>;
+  tiers: Tier[];
+  logs: ChangeLog[];
+};
+export type AdminUser = {
+  id: number;
+  nickname: string;
+  email: string;
+  avatar_url: string | null;
+  role: "user" | "admin";
+  tier: string | null;
+  posts: number;
+  exceptions: number;
+  created_at: string;
+};
+export type AdminUsers = { items: AdminUser[]; total: number; page: number; size: number };
+export type LimitRow = {
+  key: string;
+  value: PolicyValue;
+  source: "user" | "tier" | "global" | "default";
+  exception: PolicyValue | null;
+  exception_expires_at: string | null;
+  exception_expired: boolean;
+};
+export type AdminUserDetail = {
+  user: AdminUser;
+  tier_id: number | null;
+  activity: {
+    posts: number;
+    blends: number;
+    comments: number;
+    thunders_received: number;
+    posts_today: number;
+    shakes_today: number;
+  };
+  keys: PolicyKey[];
+  limits: LimitRow[];
+  tiers: Tier[];
+  logs: ChangeLog[];
+};
+
+/** 이번 주 질문 (Sprint 6-C) */
+export type Prompt = {
+  id: number;
+  title: string;
+  body: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  open: boolean;
+  answer_count: number;
+};
+export type PromptStatus = "open" | "scheduled" | "ended" | "off";
+export type AdminPrompt = {
+  id: number;
+  title: string;
+  body: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  is_active: boolean;
+  status: PromptStatus;
+  answer_count: number;
+  created_by: string | null;
+  created_at: string;
+};
+export type AdminPrompts = { items: AdminPrompt[]; total: number; page: number; size: number };

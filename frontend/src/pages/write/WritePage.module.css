@@ -180,3 +180,9 @@
   padding: 64px var(--space-6);
   color: var(--color-text-secondary);
 }
+
+.inlineIcon {
+  width: 13px;
+  height: 13px;
+  vertical-align: -2px;
+}

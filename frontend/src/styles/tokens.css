@@ -55,7 +55,9 @@
 
   /* 계보 그래프: 사람이 쓴 상상(재료)을 골랐을 때 (2026-11-12 사용자 지정, 옅은 초록) */
   --color-material-active: #4ade80;
-  --color-material-soft: #f0fdf4;
+  /* 계보 그래프 선: 평소 얇은 검은 실선, 고른 노드에서 나가는 화살표는 옅은 파랑 */
+  --color-lineage-edge: #111827;
+  --color-lineage-edge-active: #60a5fa;
 
   /* 타이포 */
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
@@ -124,7 +126,8 @@
   --color-danger: #f87171;
 
   --color-material-active: #22c55e;
-  --color-material-soft: #12261a;
+  --color-lineage-edge: #e5e7eb;    /* 다크 모드에서는 검정이 안 보여 밝은 회색 */
+  --color-lineage-edge-active: #7dd3fc;
 
   --shadow-pop: 0 4px 20px rgba(0, 0, 0, 0.6);
 }

@@ -42,16 +42,3 @@
   color: #dc2626;
 }
 
-/* 뱃지 보기: 메뉴 안에서 목록으로 바뀐다 */
-.back {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-}
-
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px var(--space-4) 12px;
-  max-width: 240px;
-}

@@ -102,6 +102,46 @@
 - LLM 이 실패하면 벡터 순서로 저장(method=vector) → `similar-all` 이 다시 계산
 - 결과 보기: `uv run python -m app.interfaces.cli similar --id 177 [--rerank]`
 
+## 칸 추가 (Sprint 5-D, 마이그레이션 0009)
+
+| 테이블 | 내용 |
+|---|---|
+| imagination_tags.removed_at | 작성자가 지운 태그. 행을 지우지 않고 시각을 남긴다 (AI 태그를 사람이 거절한 기록 = 태깅 품질 데이터) |
+| policy_settings `limit.tag_count` | 작성자가 붙일 수 있는 기술 태그 수, 전체 기본 5 |
+
+- 화면 · 집계 · 비슷한 상상 태그 대체는 `removed_at IS NULL` 인 태그만 쓴다. **분석할 때도 지운 태그를 빼거나 따로 본다**
+- 다시 태깅(`tag-all`)해도 지운 태그는 되살아나지 않는다 (같은 행이 있으면 그대로 둠). 작성자 태그(source=user)도 유지
+- 욕망 태그(type=desire)는 화면에 보이지 않고 분석용으로만 쓴다 (2026-11-12)
+
+## 테이블 추가 (Sprint 6-A, 마이그레이션 0010)
+
+| 테이블 | 내용 |
+|---|---|
+| moderation_logs | 운영자 숨김 기록 (admin_id · imagination_id · action hide/unhide · reason 메모 · created_at). 지금 상태는 imaginations.status |
+
+- 숨긴 글(status=hidden)은 보이는 글만 읽는 모든 조회 · 집계에서 빠진다. **분석 SQL 도 status='visible' 로 거른다**
+- 숨기거나 되돌리면 다른 글의 집계 캐시(quote_count · child_count · comment_count)도 함께 바뀐다 (삭제와 같은 규칙)
+
+## 테이블 추가 (Sprint 6-B, 마이그레이션 0011)
+
+| 테이블 | 내용 |
+|---|---|
+| policy_change_logs | 한도 · 권한 · 등급 · 역할 변경 기록 (admin_id · target_scope global/tier/user · tier_id · user_id · key · old_value → new_value · expires_at). key 는 limit.* · perm.* 와 "user.tier" · "user.role" |
+| user_tiers (시드) | 기본 / 활발한 Dreamer / 테스트 그룹. 등급별 policy_settings 행이 없으면 전체 기본값을 따른다 |
+
+- 값을 지우면(등급 값 따르기 · 개인 예외 해제) new_value = null
+- 사용자의 tier_id 가 비면 기본 등급(is_default)으로 본다. 기본 등급은 하나만
+
+## 테이블 추가 (Sprint 6-C, 마이그레이션 0012)
+
+| 테이블 | 내용 |
+|---|---|
+| prompts | 이번 주 질문 (title · body · starts_at · ends_at(비면 끝 없음) · is_active · created_by · created_at · updated_at) |
+| imaginations.prompt_id | prompts 외래 키 (ON DELETE SET NULL). 질문에 답한 상상 = 질문형, 비면 자유 상상 |
+
+- **분석: 질문형(prompt_id 있음)과 자유 상상을 나눠 본다** (질문 편향 통제 — 운영자가 던진 질문이 반복 상상을 만들 수 있음)
+- 답한 상상이 있는 질문은 지우지 않는다(끄기만) → prompt_id 가 SET NULL 로 지워져 구분이 사라지는 일을 막음
+
 ## 띄우기 · 끄기
 ```bash
 docker compose up -d postgres memgraph   # 띄우기

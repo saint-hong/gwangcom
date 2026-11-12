@@ -60,7 +60,8 @@ class Imagination(Base):
     parent_id: Mapped[int | None] = mapped_column(ForeignKey("imaginations.id", ondelete="CASCADE"))
     root_id: Mapped[int | None] = mapped_column(ForeignKey("imaginations.id", ondelete="CASCADE"))
     ai_assisted: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
-    prompt_id: Mapped[int | None] = mapped_column(Integer)  # 이번 주 질문(Sprint 6)에서 FK 추가
+    # 이번 주 질문에 답한 상상 (Sprint 6-C). 질문을 지워도 "질문형이었음"은 남지 않으므로 지우기는 답이 없을 때만
+    prompt_id: Mapped[int | None] = mapped_column(ForeignKey("prompts.id", ondelete="SET NULL"))
     shake_allowed: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     status: Mapped[str] = mapped_column(String(10), default="visible", server_default="visible")
 

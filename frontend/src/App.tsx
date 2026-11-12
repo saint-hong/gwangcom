@@ -4,6 +4,14 @@ import { AppShell } from "./components/layout/AppShell";
 import { useAuth, type AuthMode } from "./hooks/useAuth";
 import { PlaceholderPage } from "./pages/common/PlaceholderPage";
 import { FollowListRoute, ProfileRoute } from "./pages/common/ProfileRoute";
+import { AdminImaginationsPage } from "./pages/admin/AdminImaginationsPage";
+import { AdminLayout } from "./pages/admin/AdminLayout";
+import { AdminPolicyPage } from "./pages/admin/AdminPolicyPage";
+import { AdminPromptsPage } from "./pages/admin/AdminPromptsPage";
+import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
+import { TagPage } from "./pages/topics/TagPage";
+import { TopicsPage } from "./pages/topics/TopicsPage";
 import { HomePage } from "./pages/home/HomePage";
 import { ImaginationPage } from "./pages/imagination/ImaginationPage";
 import { LibraryPage } from "./pages/library/LibraryPage";
@@ -34,8 +42,8 @@ export function App() {
         <Route path="i/:id" element={<ImaginationPage />} />
         <Route path="i/:id/lineage" element={<LineagePage />} />
         <Route path="trending" element={<TrendingPage />} />
-        <Route path="topics" element={<PlaceholderPage title="주제 둘러보기" sprint="Sprint 5" />} />
-        <Route path="tags/:name" element={<PlaceholderPage title="태그별 상상" sprint="Sprint 5" />} />
+        <Route path="topics" element={<TopicsPage />} />
+        <Route path="tags/:name" element={<TagPage />} />
         <Route path="notes" element={<PlaceholderPage title="Observe Note" sprint="Sprint 6" />} />
         <Route path="notes/:id" element={<PlaceholderPage title="Observe Note" sprint="Sprint 6" />} />
         <Route path="library" element={<LibraryPage />} />
@@ -43,7 +51,17 @@ export function App() {
         <Route path="me/activity" element={<PlaceholderPage title="내 활동" sprint="Sprint 8" />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="feedback" element={<PlaceholderPage title="피드백 및 문의하기" sprint="Sprint 9" />} />
-        <Route path="admin/*" element={<PlaceholderPage title="운영자 화면" sprint="Sprint 6" />} />
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<PlaceholderPage title="대시보드" sprint="Sprint 6-D" />} />
+          <Route path="notes/*" element={<PlaceholderPage title="Observe Note 작성" sprint="Sprint 6-E" />} />
+          <Route path="prompts" element={<AdminPromptsPage />} />
+          <Route path="imaginations" element={<AdminImaginationsPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:id" element={<AdminUserDetailPage />} />
+          <Route path="policy" element={<AdminPolicyPage />} />
+          <Route path="graph" element={<PlaceholderPage title="상상 네트워크 탐색기" sprint="Sprint 7" />} />
+          <Route path="*" element={<PlaceholderPage title="운영자 화면" sprint="Sprint 6" description="없는 운영자 화면이에요." />} />
+        </Route>
         <Route path=":handle" element={<ProfileRoute />} />
         <Route path=":handle/followers" element={<FollowListRoute tab="followers" />} />
         <Route path=":handle/following" element={<FollowListRoute tab="following" />} />

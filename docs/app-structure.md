@@ -1,6 +1,6 @@
 # 코드 구조
 
-> 갱신: 2026-11-10 (Sprint 4) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
+> 갱신: 2026-11-12 (Sprint 5) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
 
 ## 백엔드 `app/`
 
@@ -16,16 +16,16 @@ app/
 │   ├── imaginations/           # 상상 ✅ models(+조회 기록, 댓글도 kind=comment) · crud · service(쓰기·인용·피드·상세·삭제, present = actions·my·인용 원본) · actions · router · ai_jobs(글 올린 뒤 백그라운드 태깅·임베딩)
 │   ├── reactions/              # Thunder·Wave·북마크 ✅ models(+reaction_events) · service(켜기·끄기 · 서재) · router(/thunder·/wave·/bookmark · /api/me/library)
 │   ├── comments/               # 댓글·답글 ✅ service(1단계 모음 · 최신순 · 삭제 자리) · router — 저장은 imaginations(kind=comment)
-│   ├── tags/                   # 분야·태그 ✅ models(Domain · Tag · ImaginationTag) · router(/api/domains) · tagging.py(태깅 호출) · service(정규화 · 저장 · tag_all) — 태그 화면은 Sprint 5-D
+│   ├── tags/                   # 분야·태그 ✅ models(Domain · Tag · ImaginationTag(+removed_at)) · router(/api/domains · 태그 편집 · /api/topics · /api/tags/{name}/imaginations) · tagging.py(태깅 호출) · service(정규화 · 저장 · tag_all · 화면용 기술 태그) · browse(작성자 편집 · 주제 · 태그별 상상, 5-D)
 │   ├── shake/                  # Shake it ✅ blend.py(혼합 호출 + 출력 검사) · models(ImaginationParent · ShakeAttempt) · service(선택 창 · 섞어서 게시) · router(/api/shake) · lineage(계보 그래프 노드 · 화살표)
-│   ├── prompts/                # 이번 주 질문                   (Sprint 6)
+│   ├── prompts/                # 이번 주 질문 ✅ models(Prompt) · schemas · service(지금 질문 · 상태 · 답할 수 있는지 · 운영자 목록/만들기/고치기/지우기) · router(/api/prompts/* · /api/admin/prompts) — 6-C
 │   ├── notes/                  # Observe Note                      (Sprint 6)
 │   ├── notifications/          # 알림 ✅ models · service(notify · 목록 · 안 읽은 수 · 읽음) · router(/api/notifications)
 │   ├── policy/                 # 이용 한도 ✅ models(등급·설정) · service(최종 한도 계산) · router(/api/me/limits) — 관리 화면 Sprint 6
 │   ├── activity/               # 내 활동                        (Sprint 8)
 │   ├── graph/                  # Memgraph 동기화·탐색기           (Sprint 7)
 │   ├── similar/                # 임베딩·비슷한 상상 ✅ models(ImaginationEmbedding · SimilarSet · SimilarLink) · service(embed_all · find_similar = 1단계 벡터) · rerank(2단계 LLM 리랭킹 · 저장 · 화면용 similar_for) · schemas
-│   └── admin/                  # 운영자 통계·관리                 (Sprint 6)
+│   └── admin/                  # 운영자 ✅ models(ModerationLog) · schemas · service(게시물 목록 · 숨김/되돌림) · policy_admin(6-B 기본 정책 · 등급 · 사용자 목록/상세 · 개인 예외 · 변경 기록) · router(/api/admin/*, admin_user). 통계는 6-D
 │
 ├── infrastructure/             # 외부 시스템·기반
 │   ├── core/                   # config · database · logging · exceptions · model_registry(모든 모델 등록)
@@ -54,7 +54,7 @@ src/
 ├── lib/actions.ts              # actions 거절 이유 → 안내 문구 · 준비 중 기능 · 날짜 표기
 ├── hooks/
 │   ├── useAuth.tsx             # 로그인 상태 + 로그인·가입 모달 (AuthProvider)
-│   ├── usePaged.ts             # 커서 목록 공통 (홈 피드 · 서재 · 프로필 · 알림)
+│   ├── usePaged.ts             # 커서 목록 공통 (홈 피드 · 서재 · 프로필 · 알림 · 태그별 상상), 첫 페이지 응답 head (운영자 표는 페이지 번호라 쓰지 않음)
 │   ├── useUnread.tsx           # 안 읽은 알림 수 (60초마다)
 │   ├── useDreamerCard.tsx      # 상세 작성자 ↔ 오른쪽 "이 상상의 Dreamer" 같은 팔로우 상태
 │   ├── useFeed.ts              # 홈 피드 (usePaged)
@@ -72,7 +72,7 @@ src/
 ├── components/
 │   ├── layout/
 │   │   ├── AppShell            # 사이드바 275 · 본문 600 · 오른쪽 350 (반응형 4단계)
-│   │   ├── SideNav · navItems  # 로고 · 메뉴(로그인 전·후) · 더 보기(다크 모드) · [가입하기][로그인] ↔ [상상 쓰기]
+│   │   ├── SideNav · navItems  # 로고 · 메뉴(로그인 전·후) · 더 보기(다크 모드) · [가입하기][로그인] ↔ [상상하기]
 │   │   ├── AccountChip         # 로그인 후 맨 아래 계정 칩 + 계정 메뉴 (프로필 보기 · 설정 · 내 활동 · 운영자 · 로그아웃)
 │   │   ├── PageHeader          # 하위 화면 상단 바 [←] 제목
 │   │   ├── ImagineLogo         # 글자 로고(첫 글자 I = SVG) · 접힌 사이드바용 마크(보라 정사각형 + I)
@@ -87,7 +87,13 @@ src/
 │   ├── social/FollowButton     # [팔로우] ↔ [팔로잉] (hover 언팔로우)
 │   ├── card/ImaginationCard    # 피드 카드 (원본 · 인용 · 댓글 — 인용·댓글은 제목 없이 글만)
 │   ├── card/QuoteEmbed         # 인용 글 아래 원본 카드 (삭제되면 "삭제된 상상이에요")
-│   ├── card/ItemMenu           # ⋯ 메뉴 — 링크 복사 · (내 글·댓글) 삭제
+│   ├── card/ItemMenu           # ⋯ 메뉴 — 링크 복사 · (내 글·댓글) 삭제 (뱃지 보기는 2026-11-12 제거)
+│   ├── card/SourceChips        # 혼합 글 카드 재료 줄 알약 (한 줄 고정, 넘치면 …)
+│   ├── similar/SimilarBlock    # 상세 오른쪽 컬럼 "비슷한 상상" (이유 한 줄, 5-C)
+│   ├── prompt/                 # useCurrentPrompt · leftLabel · PromptBanner(좁은 화면 홈 배너) · Prompt.module.css (오른쪽 블록 · 글쓰기 카드 · 상세 한 줄 공통)
+│   ├── common/                 # Pagination(페이지 번호 + 개수) · SelectMenu(작은 메뉴 선택) · DropMenu.module.css
+│   ├── tags/TagList            # 분류 줄 [분야] 회색 + #주제 보라 (카드 최대 3) · tagPath · domainsOf
+│   ├── tags/ItemTags           # 상세 분류 줄 + 작성자 기술 태그 편집 상자
 │   ├── comments/               # CommentSection(목록·무한 스크롤) · CommentItem(X 줄 + 같은 액션 바) · CommentComposer(접힘 → 펼침)
 │   └── actions/
 │       ├── ActionBar           # Thunder · Wave · 댓글 · Shake it … 북마크 · 공유 — actions 로 흐리게, my 로 켜짐, 누르면 바로 반영(실패 시 되돌림)
@@ -98,14 +104,16 @@ src/
 │       └── ShakeIcon           # 비빔밥 그릇 + 숟가락 · 젓가락 + 별 (SVG)
 └── pages/
     ├── home/HomePage           # S1 로그인 전 분야 탭 / 후 [추천|팔로잉|최신] + 분야 칩 + 피드
-    ├── write/WritePage         # S3 상상 쓰기
-    ├── imagination/ImaginationPage  # S4 상상 상세 (X 구조) + 댓글 · 재료 상상 · [계보 그래프 보기] · (좁은 화면) 비슷한 상상
-    ├── lineage/LineagePage     # S15 계보 그래프 (층 배치 · 화살표 · 확대/축소/이동 · 미리보기)
+    ├── write/WritePage         # S3 상상하기 (+ 이번 주 질문 카드 ?prompt=)
+    ├── imagination/ImaginationPage  # S4 상상 상세 (X 구조) + 댓글 · 재료 상상 · 시간 줄 [Shake it] · 계보 · 분류 줄(태그 편집) · (좁은 화면) 비슷한 상상
+    ├── lineage/LineagePage     # S15 계보 (층 배치 · 화살표 · 확대/축소/이동 · 미리보기 · 크게 보기 팝업)
+    ├── topics/                 # S8 TopicsPage(분야별 주제) · S9 TagPage(태그별 상상)
     ├── library/LibraryPage     # S12 서재 [Thunder | Wave | Shake it | 북마크 | 최근 본 상상]
     ├── trending/TrendingPage   # S7 인기 상상 (순위 + 액션 바, 오른쪽 컬럼 있음)
     ├── profile/                # S11 ProfilePage(X, [상상|댓글|인용]) · EditProfileModal(커버·이미지·이름·소개) · FollowListPage(S17 팔로워·팔로잉)
     ├── notifications/          # S13 알림 [전체 | 댓글] (X)
     ├── settings/SettingsPage   # S14 비밀번호 변경
+    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css
     └── common/                 # PlaceholderPage(미구현 화면) · ProfileRoute(/@닉네임)
 ```
 

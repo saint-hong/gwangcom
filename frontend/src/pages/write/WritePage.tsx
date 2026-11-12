@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, MessageCircleQuestion, X } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
@@ -8,13 +8,17 @@ import { useToast } from "../../components/feedback/Toast";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Button } from "../../design-system";
 import { useAuth } from "../../hooks/useAuth";
-import type { Imagination, Limits } from "../../types/api";
+import type { Imagination, Limits, Prompt } from "../../types/api";
+import prompts from "../../components/prompt/Prompt.module.css";
+import { leftLabel } from "../../components/prompt/useCurrentPrompt";
 import styles from "./WritePage.module.css";
 
 /**
  * S3 상상하기 (기획안 v9 F2)
  * 분야(필수) → 제목(선택) → 상상 → 왜 원하나요 → 대표 이미지 → AI 도움 여부 · Shake it 허용
  * 글자 수는 내 이용 한도(/api/me/limits) 기준 "123 / 500". 최종 검사는 서버가 한다.
+ * 이번 주 질문에서 들어오면(?prompt=ID) 맨 위에 질문 카드 → prompt_id 를 붙여 올린다 (6-C, F13).
+ *   [×] 로 질문 없이 쓸 수 있다. 끝난 질문이면 카드를 흐리게 보여 주고 붙이지 않는다 (자유 상상).
  */
 export function WritePage() {
   const { user, openAuth } = useAuth();
@@ -34,6 +38,11 @@ export function WritePage() {
   const [shakeAllowed, setShakeAllowed] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [prompt, setPrompt] = useState<Prompt | null>(null);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("prompt");
+    if (id && /^\d+$/.test(id)) api<Prompt>(`/api/prompts/${id}`).then(setPrompt, () => setPrompt(null));
+  }, []);
 
   useEffect(() => {
     if (user === null) openAuth("login");
@@ -88,6 +97,7 @@ export function WritePage() {
     form.set("ai_assisted", String(aiAssisted));
     form.set("shake_allowed", String(shakeAllowed));
     if (image) form.set("image", image);
+    if (prompt?.open) form.set("prompt_id", String(prompt.id));
     try {
       const created = await api<Imagination>("/api/imaginations", { form });
       toast.show("상상을 올렸어요.");
@@ -111,6 +121,21 @@ export function WritePage() {
       />
 
       <div className={styles.form}>
+        {prompt ? (
+          <section className={clsx(prompts.card, !prompt.open && prompts.cardClosed)} aria-label="이번 주 질문">
+            <span className={prompts.eyebrow}>
+              <MessageCircleQuestion aria-hidden="true" className={styles.inlineIcon} />{" "}
+              {prompt.open
+                ? `이번 주 질문에 답하는 상상이에요${leftLabel(prompt.ends_at) ? ` · ${leftLabel(prompt.ends_at)}` : ""}`
+                : "끝난 질문이에요 · 질문 없이 자유 상상으로 올라가요"}
+            </span>
+            <strong className={prompts.question}>{prompt.title}</strong>
+            {prompt.body ? <p className={prompts.body}>{prompt.body}</p> : null}
+            <button type="button" className={prompts.close} aria-label="질문 없이 쓰기" onClick={() => setPrompt(null)}>
+              <X aria-hidden="true" />
+            </button>
+          </section>
+        ) : null}
         <fieldset className={styles.field}>
           <legend className={styles.label}>
             분야 <span className={styles.required}>필수</span>

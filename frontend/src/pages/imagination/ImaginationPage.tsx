@@ -1,4 +1,4 @@
-import { Bot, Network } from "lucide-react";
+import { Bot, EyeOff, MessageCircleQuestion, Network } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
@@ -15,6 +15,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useDreamerCard } from "../../hooks/useDreamerCard";
 import { fullDateTime } from "../../lib/actions";
 import type { Imagination } from "../../types/api";
+import { ItemTags } from "../../components/tags/ItemTags";
+import prompts from "../../components/prompt/Prompt.module.css";
 import styles from "./ImaginationPage.module.css";
 
 const KIND_LABEL = { original: "원본", blend: "Shake it", quote: "인용", comment: "댓글" } as const;
@@ -24,8 +26,10 @@ const KIND_LABEL = { original: "원본", blend: "Shake it", quote: "인용", com
  *   [←] 상상
  *   작성자 줄: 아바타 · 닉네임 · 운영자 배지 …… [팔로우] ⋯   (오른쪽 컬럼 "이 상상의 Dreamer" 와 같은 상태)
  *   제목 → 본문 → 왜 원하나요 → 이미지 → (인용 글) 원본 카드
- *   시간 줄: 오후 2:10 · 2026년 11월 10일 · 원본 / Shake it (· 계보)(· AI 도움: 혼합 글은 Shake it 과 뜻이 겹쳐 숨김, 2026-11-12)  — 분야 뱃지는 ⋯ > 뱃지 보기
+ *   시간 줄: 오후 2:10 · 2026년 11월 10일 · 원본 / Shake it (· 계보)(· AI 도움: 혼합 글은 Shake it 과 뜻이 겹쳐 숨김, 2026-11-12)
+ *   분류 줄: [분야] 회색 알약 + #주제(기술 태그) (+ 작성자면 [태그 편집]) — ⋯ > 뱃지 보기는 없앰 (2026-11-12)
  *     계보 링크는 혼합 글이거나 이 글에서 태어난 상상이 있을 때 (2026-11-12 사용자 지정: 이름 "계보", 시간 줄 안으로)
+ *   기술 태그 줄 (+ 작성자면 [태그 편집], 5-D) — 욕망 태그는 보이지 않는다
  *   액션 바 (위아래 선, 글 아래 한 번) → 댓글 입력창 → 댓글 목록
  * 댓글 주소(/i/댓글id)로 들어오면 원글의 그 댓글 위치(/i/원글#c댓글)로 옮긴다.
  */
@@ -91,6 +95,11 @@ export function ImaginationPage() {
   return (
     <article>
       <PageHeader title="상상" />
+      {item.hidden ? (
+        <p className={styles.hiddenNotice} role="status">
+          <EyeOff aria-hidden="true" /> 운영자가 숨긴 상상이에요. 다른 Dreamer 에게는 보이지 않아요.
+        </p>
+      ) : null}
       <div className={styles.page}>
         <header className={styles.authorRow}>
           <Link to={`/@${author.nickname}`} className={styles.author}>
@@ -112,6 +121,14 @@ export function ImaginationPage() {
           </span>
         </header>
 
+        {item.prompt ? (
+          <p className={styles.promptLine}>
+            <span className={prompts.answerLine}>
+              <MessageCircleQuestion aria-hidden="true" />
+              <span>이번 주 질문 · {item.prompt.title}</span>
+            </span>
+          </p>
+        ) : null}
         {item.kind === "quote" ? null : <h1 className={styles.title}>{item.display_title}</h1>}
 
         <p className={item.kind === "quote" ? styles.quoteBody : styles.body}>{item.body}</p>
@@ -169,6 +186,8 @@ export function ImaginationPage() {
             </>
           ) : null}
         </p>
+
+        <ItemTags item={item} onChange={setItem} />
 
         <div className={styles.actions}>
           <ActionBar item={item} onComment={() => comments.current?.focusComposer()} />

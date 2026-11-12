@@ -1,0 +1,126 @@
+/* 이번 주 질문 (Sprint 6-C): 오른쪽 컬럼 블록 · 홈 배너 · 글쓰기 위 질문 카드 · 상세 한 줄 */
+.eyebrow {
+  color: var(--color-accent-text);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+}
+
+.question {
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.body {
+  color: var(--color-text-body);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+}
+
+.meta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* 홈 배너 — 오른쪽 컬럼이 보이는 넓은 화면에서는 숨김 */
+.banner {
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-accent-soft);
+}
+
+@media (max-width: 1100px) {
+  .banner {
+    display: flex;
+  }
+}
+
+.bannerIcon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  color: var(--color-accent-text);
+}
+
+.bannerText {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bannerText .question {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 글쓰기 위 질문 카드 */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-3) var(--space-8) var(--space-3) var(--space-4);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+}
+
+.cardClosed {
+  border-color: var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.cardClosed .eyebrow {
+  color: var(--color-text-secondary);
+}
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-surface-hover);
+}
+
+.close svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 상세 · 카드 위 "이번 주 질문에 답한 상상" 한 줄 */
+.answerLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.answerLine svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.answerLine span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -26,11 +26,20 @@ class Actions(BaseModel):
     shake: ActionState
     bookmark: ActionState
     delete: ActionState
+    # 작성자 기술 태그 편집 (5-D). remaining = 더 붙일 수 있는 태그 수 (limit.tag_count − 지금 수)
+    edit_tags: ActionState
 
 
 class DomainRef(BaseModel):
     slug: str
     name: str
+
+
+class TagOut(BaseModel):
+    """화면에 보이는 기술 태그. name = 주소 · 비교용(/tags/:name), label = 화면 표기."""
+
+    name: str
+    label: str
 
 
 class Counts(BaseModel):
@@ -66,6 +75,13 @@ class QuotedOut(BaseModel):
     created_at: datetime | None = None
 
 
+class PromptRef(BaseModel):
+    """이번 주 질문에 답한 상상이면 그 질문 (6-C)."""
+
+    id: int
+    title: str
+
+
 class ImaginationOut(BaseModel):
     id: int
     kind: Kind
@@ -83,6 +99,10 @@ class ImaginationOut(BaseModel):
     created_at: datetime
     actions: Actions
     my: My
+    # 기술 태그 (지우지 않은 것). 욕망 태그는 분석용이라 내보내지 않는다 (2026-11-12 사용자 결정)
+    tags: list[TagOut] = []
+    # 운영자가 숨긴 글 (작성자 본인 · 운영자에게만 상세가 열린다, v11 F19)
+    hidden: bool = False
     quoted: QuotedOut | None = None
     # 혼합 글(kind=blend)일 때: 재료 글 2개 [상대 글, 섞은 사람의 글] (F8 · F9). 지워졌으면 deleted=true
     sources: list[QuotedOut] | None = None
@@ -92,6 +112,8 @@ class ImaginationOut(BaseModel):
     reply_to: AuthorOut | None = None
     # 팔로잉 탭 · 프로필 Wave 탭: "○○님이 Wave함" (이 사람의 Wave 로 보게 됨 → Wave 하면 via 로 기록)
     waved_by: AuthorOut | None = None
+    # 이번 주 질문에 답한 상상 (질문형 · 자유 상상 구분, F13)
+    prompt: PromptRef | None = None
 
 
 class FeedOut(BaseModel):
@@ -104,6 +126,10 @@ class ReactionOut(BaseModel):
 
     my: My
     counts: Counts
+
+
+class TagsIn(BaseModel):
+    tech: list[str] = Field(description="새 기술 태그 목록 전체 (최대 limit.tag_count, 기본 5)")
 
 
 class QuoteIn(BaseModel):

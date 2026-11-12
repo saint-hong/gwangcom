@@ -53,11 +53,18 @@ def get_or_create(db: Session, raw: str, type_: str) -> Tag | None:
     return db.scalars(select(Tag).where(Tag.name == name, Tag.type == type_)).one()
 
 
+ACTIVE = ImaginationTag.removed_at.is_(None)  # 작성자가 지우지 않은 태그
+
+
 def save_ai_tags(db: Session, item: Imagination, tags: dict[str, list[str]]) -> None:
-    """AI 태그를 갈아 끼운다. 작성자가 고친 태그(source=user)는 건드리지 않는다."""
+    """AI 태그를 갈아 끼운다.
+
+    작성자가 붙인 태그(source=user)는 건드리지 않는다. 작성자가 지운 태그(removed_at)도 기록으로 남기고,
+    다시 태깅해서 같은 태그가 나와도 되살리지 않는다 (같은 행이 있으면 그대로 둔다).
+    """
     db.execute(
         delete(ImaginationTag).where(
-            ImaginationTag.imagination_id == item.id, ImaginationTag.source == "ai"
+            ImaginationTag.imagination_id == item.id, ImaginationTag.source == "ai", ACTIVE
         )
     )
     for type_ in TAG_TYPES:
@@ -77,7 +84,7 @@ def tags_of(db: Session, item_id: int) -> list[Tag]:
         db.scalars(
             select(Tag)
             .join(ImaginationTag, ImaginationTag.tag_id == Tag.id)
-            .where(ImaginationTag.imagination_id == item_id)
+            .where(ImaginationTag.imagination_id == item_id, ACTIVE)
             .order_by(Tag.type.desc(), ImaginationTag.created_at, Tag.id)  # tech 먼저
         )
     )
@@ -132,3 +139,22 @@ def tag_all(db: Session, *, include_failed: bool = True) -> tuple[int, int]:
         if fails_in_row >= STOP_AFTER_FAILS:
             break  # 키 오류 · 장애처럼 계속 실패하면 멈춘다 (2026-11-11: 401 로 56번 시도한 일)
     return ok, len(items)
+
+
+# ---------------------------------------------------------------- 화면용 (Sprint 5-D)
+
+
+def tech_tags_for(db: Session, ids: list[int]) -> dict[int, list[Tag]]:
+    """글마다 화면에 보일 기술 태그 (지우지 않은 것, 붙은 순). 욕망 태그는 화면에 내보내지 않는다."""
+    out: dict[int, list[Tag]] = {i: [] for i in ids}
+    if not ids:
+        return out
+    rows = db.execute(
+        select(ImaginationTag.imagination_id, Tag)
+        .join(Tag, Tag.id == ImaginationTag.tag_id)
+        .where(ImaginationTag.imagination_id.in_(ids), ACTIVE, Tag.type == "tech")
+        .order_by(ImaginationTag.imagination_id, ImaginationTag.created_at, Tag.id)
+    )
+    for item_id, tag in rows:
+        out[item_id].append(tag)
+    return out

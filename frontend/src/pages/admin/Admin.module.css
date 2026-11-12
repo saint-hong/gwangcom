@@ -1,0 +1,806 @@
+/* 운영자 화면 공통 (Sprint 6-A). 색 · 간격은 tokens.css 변수만 */
+.status {
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.tabBar {
+  border-bottom: 1px solid var(--color-border);
+  height: 52px;
+  display: flex;
+}
+
+.tabBar > * {
+  flex: 1;
+}
+
+.denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.deniedIcon {
+  width: 40px;
+  height: 40px;
+  color: var(--color-text-tertiary);
+}
+
+.deniedTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+/* ── A4 게시물 관리 ── */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.seg button {
+  padding: 6px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.seg button[aria-pressed="true"] {
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 700;
+}
+
+.search {
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+}
+
+.search {
+  flex: 1;
+  min-width: 160px;
+}
+
+/* 표는 본문 폭 안에 맞춘다: 칸 폭 고정 + 길면 말줄임 (2026-11-12 화면을 넘친 문제) */
+/* 넓은 화면에서는 넘치지 않으므로 잘라내지 않는다 (정렬 메뉴가 표 밖으로 펼쳐지게) */
+.tableWrap {
+  overflow: visible;
+}
+
+.table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.cId { width: 52px; }
+.cKind { width: 76px; }
+.cAuthor { width: 96px; }
+.cCounts { width: 120px; }
+.cDate { width: 112px; }
+.cStatus { width: 120px; }
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.counts {
+  display: inline-flex;
+  gap: 10px;
+}
+
+.counts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.counts svg {
+  width: 13px;
+  height: 13px;
+}
+
+.table th {
+  padding: var(--space-2);
+  text-align: center; /* 칸 이름은 가운데 (2026-11-12 사용자) */
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.rowHidden td {
+  background: var(--color-surface-muted);
+}
+
+.kind {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  white-space: nowrap;
+}
+
+.content {
+  min-width: 0;
+}
+
+.contentTitle {
+  display: block;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contentTitle:hover {
+  color: var(--color-accent-text);
+}
+
+.contentBody {
+  display: -webkit-box;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.muted {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.statusHidden {
+  color: var(--color-danger);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.modNote {
+  margin-top: 2px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-2xs);
+}
+
+/* 숨기기 메모: 그 줄 바로 아래 한 줄 전체 */
+.reasonRow td {
+  padding-top: 0;
+  background: var(--color-surface-muted);
+}
+
+.reasonBox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.reasonInput {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+}
+
+
+/* 좁은 화면: 표는 가로로 밀어서 본다 (칸이 어긋나지 않게 숨기지 않음) */
+@media (max-width: 900px) {
+  .tableWrap {
+    overflow-x: auto;
+    padding-bottom: 280px; /* 정렬 메뉴가 잘리지 않을 자리 */
+    margin-bottom: -280px;
+  }
+
+  .table {
+    min-width: 760px;
+  }
+}
+
+/* 내용 칸: 누르면 그 줄 아래가 펼쳐진다 */
+.contentToggle {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0 20px 0 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.contentToggle:hover .contentTitle {
+  color: var(--color-accent-text);
+}
+
+.chevron {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-tertiary);
+  transition: transform 0.15s ease;
+}
+
+.contentToggle[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+
+.rowOpen td {
+  border-bottom-color: transparent;
+}
+
+/* 상태 토글 [보임 | 숨김] */
+.stateToggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.stateToggle button {
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.stateToggle button + button {
+  border-left: 1px solid var(--color-border);
+}
+
+.stateToggle button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.stateToggle button[aria-pressed="true"] {
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 700;
+  cursor: default;
+}
+
+.stateToggle .hideBtn[aria-pressed="true"] {
+  background: var(--color-danger);
+  color: var(--color-on-shake);
+}
+
+.stateToggle button:disabled:not([aria-pressed="true"]) {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* 펼친 줄 */
+.detailRow td {
+  padding-top: 0;
+}
+
+.detail {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.detailList {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.detailList dt {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.detailList dd {
+  min-width: 0;
+  margin: 0;
+  line-height: 24px;
+}
+
+.detailBody {
+  white-space: pre-wrap;
+  line-height: var(--line-height-body) !important;
+}
+
+.detailChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.detailEmpty {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.detailFoot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+}
+
+/* 칸 이름 + 정렬 아이콘 · 정렬 메뉴 (2026-11-12) */
+.sortHead {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sortBtn {
+  display: inline-flex;
+  padding: 3px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+}
+
+.sortBtn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.sortBtn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.sortActive {
+  color: var(--color-accent-text);
+}
+
+/* ── 6-B 기본 정책 · 사용자 관리 (A4 와 같은 표 · 토글 · 메뉴) ── */
+.section {
+  padding: var(--space-4) 0 var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sectionTitle {
+  margin: 0 var(--space-4) var(--space-1);
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+.sectionHint {
+  margin: 0 var(--space-4) var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.center {
+  text-align: center;
+}
+
+.cLabel { width: 150px; }
+.cTierName { width: 160px; }
+.cTierAction { width: 190px; }
+.cTierCol { width: 120px; }
+.cCount { width: 72px; }
+.cTarget { width: 150px; }
+.cValue { width: 100px; }
+.cSource { width: 110px; }
+.cExpire { width: 150px; }
+
+.groupRow td {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.range {
+  display: block;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-2xs);
+}
+
+.badge {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+}
+
+/* 표 칸 안의 버튼 묶음 (td 자체를 flex 로 만들면 표 줄이 어긋난다 — 2026-11-12 등급 표) */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* 모든 칸 가운데 정렬 + 넘치면 … (사용자 목록 · 사용자 상세, 2026-11-12 사용자) */
+.centerAll td {
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.centerAll .groupRow td {
+  text-align: left;
+}
+
+.addRow td {
+  background: var(--color-surface-muted);
+}
+
+.cellInput,
+.dateInput {
+  width: 100%;
+  height: 30px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+}
+
+.dateInput:disabled {
+  opacity: 0.5;
+}
+
+/* 숫자 칸 */
+.numField {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.numInput {
+  width: 72px;
+  height: 30px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: right;
+}
+
+.numInput:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+/* 비어 있음 = 따르는 값이 흐리게 (placeholder) */
+.numInherit {
+  border-style: dashed;
+}
+
+.numInput::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.unit {
+  min-width: 20px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: left;
+}
+
+/* 사용자 목록 */
+.userCell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.userCell > :last-child {
+  min-width: 0;
+}
+
+.userCell:hover {
+  color: var(--color-accent-text);
+}
+
+.roleAdmin {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.accentText {
+  color: var(--color-accent-text);
+}
+
+/* 사용자 상세 */
+.subBar {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.backLink:hover {
+  color: var(--color-text);
+}
+
+.backLink svg {
+  width: 14px;
+  height: 14px;
+}
+
+.profileRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profileText {
+  display: flex;
+  flex: 1;
+  min-width: 200px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profileName {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+.profileControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-2);
+  margin: 0 var(--space-4) var(--space-3);
+}
+
+.stat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.statNum {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+.statLabel {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceBadge {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  white-space: nowrap;
+}
+
+.sourceUser {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+  font-weight: 700;
+}
+
+.sourceTier {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.expired {
+  margin-left: 6px;
+  color: var(--color-danger);
+  font-size: var(--font-size-2xs);
+}
+
+@media (max-width: 900px) {
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ── 6-C 이번 주 질문 (A4 · A5 와 같은 표 · 토글 · 펼치기) ── */
+.cPeriod { width: 132px; }
+.cPromptState { width: 190px; }
+
+.btnIcon {
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+  vertical-align: -2px;
+}
+
+.formBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.formLabel {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.periodInputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.periodInputs .dateInput {
+  width: auto;
+}
+
+.contentBodyOne {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.periodLine {
+  display: block;
+  font-size: var(--font-size-2xs);
+}
+
+.promptState {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.ps_open {
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+}
+
+.ps_scheduled {
+  color: var(--color-text);
+}
+
+.ps_ended,
+.ps_off {
+  color: var(--color-text-tertiary);
+}
+
+.answerChip {
+  max-width: 260px;
+  padding: 2px 10px;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.answerChip:hover {
+  color: var(--color-accent-text);
+}
+
+.detail .formGrid + .detailList {
+  margin-top: var(--space-3);
+}
+
+.detail .detailList {
+  grid-template-columns: 64px 1fr;
+}

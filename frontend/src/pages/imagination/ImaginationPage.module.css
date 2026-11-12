@@ -193,3 +193,27 @@
   color: var(--color-text-secondary);
   font-weight: 400;
 }
+
+/* 운영자가 숨긴 글 (작성자 본인 · 운영자에게만 보임, Sprint 6-A) */
+.hiddenNotice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.hiddenNotice svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+/* 이번 주 질문에 답한 상상 (6-C) */
+.promptLine {
+  margin: var(--space-3) 0 0;
+}

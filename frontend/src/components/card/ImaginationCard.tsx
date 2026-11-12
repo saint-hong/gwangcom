@@ -11,6 +11,7 @@ import styles from "./ImaginationCard.module.css";
 import { ItemMenu } from "./ItemMenu";
 import { QuoteEmbed } from "./QuoteEmbed";
 import { SourceChips } from "./SourceChips";
+import { domainsOf, TagList } from "../tags/TagList";
 
 /**
  * 피드 카드 — 하이젠버그 카드 구성 (기획안 v9 F3)
@@ -97,6 +98,10 @@ export function ImaginationCard({
             </Link>
           </div>
         ) : null}
+
+        {data.kind === "comment" ? null : (
+          <TagList tags={data.tags ?? []} domains={domainsOf(data)} max={3} className={styles.tags} />
+        )}
 
         <ActionBar item={data} />
       </div>

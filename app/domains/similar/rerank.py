@@ -184,10 +184,11 @@ def _by_tags(db: Session, item: Imagination, limit: int) -> list[Imagination]:
 
     from app.domains.tags.models import ImaginationTag
 
-    mine = select(ImaginationTag.tag_id).where(ImaginationTag.imagination_id == item.id)
+    active = ImaginationTag.removed_at.is_(None)  # 작성자가 지운 태그는 빼고
+    mine = select(ImaginationTag.tag_id).where(ImaginationTag.imagination_id == item.id, active)
     shared = (
         select(ImaginationTag.imagination_id, func.count().label("n"))
-        .where(ImaginationTag.tag_id.in_(mine))
+        .where(ImaginationTag.tag_id.in_(mine), active)
         .group_by(ImaginationTag.imagination_id)
         .subquery()
     )

@@ -19,10 +19,13 @@ import { SiteFooter } from "./SiteFooter";
  * 인기 상상도 다른 화면과 같이 오른쪽 컬럼을 둔다 (2026-11-10 사용자 지정, 기획안 S7 "넓게" 를 바꿈).
  */
 const WIDE_PATHS: string[] = [];
+const WIDE_PREFIXES = ["/admin"]; // 운영자 화면은 표가 많아 넓게 (Sprint 6-A)
 
 export function AppShell() {
   const { theme, toggle } = useTheme();
-  const wide = WIDE_PATHS.includes(useLocation().pathname);
+  const { pathname } = useLocation();
+  const wide =
+    WIDE_PATHS.includes(pathname) || WIDE_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   return (
     <div className={styles.shell}>
       <MobileTopBar theme={theme} onToggleTheme={toggle} />

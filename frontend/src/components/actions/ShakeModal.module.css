@@ -1,4 +1,4 @@
-/* S7 Shake it 선택 창 — 창 틀은 인용하기 창(QuoteModal)과 같다.
+/* S5 Shake it 선택 창 — 창 틀은 인용하기 창(QuoteModal)과 같다.
    단, 목록이 길어서 창 틀은 고정(overflow hidden)하고 가운데(.scroll)만 스크롤한다
    → 스크롤바가 오른쪽 둥근 모서리를 덮지 않는다 */
 .backdrop {

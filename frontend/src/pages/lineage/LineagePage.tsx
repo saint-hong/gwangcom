@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Maximize2, Minus, Plus } from "lucide-react";
+import { Maximize2, Minimize2, Minus, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
@@ -38,12 +38,15 @@ function layout(data: Lineage): { nodes: Placed[]; width: number; height: number
 
 /**
  * S15 계보 (기획안 v10 F9, 화면 이름 "계보 그래프" → "계보" 2026-11-12)
- *   색: Shake it 글 = 보라 테두리, 사람이 쓴 상상(재료) = 회색 테두리 → 고르면(또는 지금 보는 글이면) 옅은 초록.
+ *   색: 평소 모두 회색 테두리(Shake it 글은 배경 옅은 보라). 고르면 테두리 색만 — 사람 상상 옅은 초록, Shake it 보라.
+ *   처음에는 지금 보는 글이 골라진 상태.
+ *   선: 평소 얇은 검은 실선, 노드를 고르면 그 노드에서 나가는 화살표(→ 태어난 글)만 옅은 파랑 (2026-11-12 사용자 지정).
  *   색 안내 줄은 뺐다 (그래프가 커지면 다시 넣는다, 2026-11-12 사용자 지정)
  *   Shake it 으로 이어진 글들의 그물: 화살표 = 재료 글 → 혼합 글. 현재 글을 가운데 강조.
  *   기본 위 · 아래 3단계, 노드 최대 100개 (넘으면 "더 깊이 보기").
  * - 노드를 한 번 누르면 아래에 미리보기 카드, 한 번 더 누르면 그 글 상세로 간다
  * - 확대 · 축소 · 이동: 버튼, 마우스 휠, 끌기, 모바일 두 손가락
+ * - 세 번째 버튼 = 크게 보기 팝업 (같은 그래프 · 미리보기를 넓은 창에서, Esc · 바깥 · 닫기로 닫음). 열고 닫을 때 화면에 맞춘다
  */
 export function LineagePage() {
   const { id } = useParams();
@@ -52,13 +55,15 @@ export function LineagePage() {
   const [data, setData] = useState<Lineage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  // 크게 보기 팝업 (2026-11-12 사용자 지정: 오른쪽 아래 세 번째 버튼)
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     setError(null);
     api<Lineage>(`/api/imaginations/${id}/lineage?up=${depth}&down=${depth}`).then(
       (d) => {
         setData(d);
-        setSelected(null);
+        setSelected(d.center_id); // 처음에는 지금 보는 글을 골라 둔다 (테두리 · 나가는 화살표 · 미리보기로 표시)
       },
       (e) => setError(e instanceof ApiError ? e.message : "계보를 불러오지 못했어요."),
     );
@@ -77,6 +82,23 @@ export function LineagePage() {
     setView({ k, x: (el.clientWidth - graph.width * k) / 2, y: (el.clientHeight - graph.height * k) / 2 });
   }, [graph]);
   useEffect(fit, [fit]);
+  // 팝업을 열고 닫으면 판 크기가 바뀌므로 다시 맞춘다
+  useEffect(() => {
+    const raf = requestAnimationFrame(fit);
+    return () => cancelAnimationFrame(raf);
+  }, [expanded, fit]);
+  // 팝업: Esc 로 닫기 · 뒤 화면 스크롤 막기
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setExpanded(false);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [expanded]);
 
   const zoomAt = (factor: number, cx?: number, cy?: number) =>
     setView((v) => {
@@ -141,7 +163,7 @@ export function LineagePage() {
     <div>
       <PageHeader title="계보" />
       <p className={styles.intro}>
-        Shake it 으로 섞여 이어진 상상들이에요. 화살표는 <b>재료 상상 → 섞여서 태어난 상상</b> 방향이에요.
+        Shake it 으로 섞은 상상들의 계보에요. 상상을 누르면 상세 보기로 이동할 수 있어요.
       </p>
 
       {error ? (
@@ -150,125 +172,156 @@ export function LineagePage() {
         <p className={styles.status}>불러오는 중…</p>
       ) : (
         <>
+          {/* 크게 보기: 같은 판 · 더 깊이 보기 · 미리보기를 팝업 틀로 감싼다 (평소에는 틀 없는 div) */}
           <div
-            ref={box}
-            className={styles.canvas}
-            onWheel={onWheel}
-            onPointerDown={onDown}
-            onPointerMove={onMove}
-            onPointerUp={onUp}
-            onPointerCancel={onUp}
-            onPointerLeave={onUp}
+            className={expanded ? styles.popBackdrop : undefined}
+            onMouseDown={expanded ? (e) => e.target === e.currentTarget && setExpanded(false) : undefined}
           >
             <div
-              className={styles.world}
-              style={{
-                width: graph.width,
-                height: graph.height,
-                transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})`,
-              }}
+              className={expanded ? styles.popDialog : undefined}
+              role={expanded ? "dialog" : undefined}
+              aria-modal={expanded ? true : undefined}
+              aria-label={expanded ? "계보 크게 보기" : undefined}
             >
-              <svg className={styles.edges} width={graph.width} height={graph.height} aria-hidden="true">
-                <defs>
-                  <marker id="lineage-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                    <path d="M0,0 L10,5 L0,10 z" className={styles.arrow} />
-                  </marker>
-                </defs>
-                {data.edges.map((e) => {
-                  const a = byId.get(e.source);
-                  const b = byId.get(e.target);
-                  if (!a || !b) return null;
-                  const x1 = a.x + NODE_W / 2;
-                  const y1 = a.y + NODE_H;
-                  const x2 = b.x + NODE_W / 2;
-                  const y2 = b.y - 2;
-                  const mid = (y1 + y2) / 2;
-                  return (
-                    <path
-                      key={`${e.source}-${e.target}`}
-                      d={`M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`}
-                      className={styles.edge}
-                      markerEnd="url(#lineage-arrow)"
-                    />
-                  );
-                })}
-              </svg>
-
-              {graph.nodes.map((n) => (
-                <button
-                  key={n.id}
-                  type="button"
-                  className={clsx(
-                    styles.node,
-                    n.kind === "blend" && styles.blend,
-                    n.id === data.center_id && styles.center,
-                    n.id === selected && styles.selected,
-                    n.deleted && styles.deleted,
-                  )}
-                  style={{ left: n.x, top: n.y, width: NODE_W, height: NODE_H }}
-                  onClick={() => press(n)}
-                  aria-label={n.deleted ? "삭제된 상상" : `${n.display_title} — ${n.author?.nickname}`}
-                  disabled={n.deleted}
+              {expanded ? (
+                <div className={styles.popTop}>
+                  <button type="button" className={styles.popClose} aria-label="닫기" onClick={() => setExpanded(false)}>
+                    <X aria-hidden="true" />
+                  </button>
+                  <span className={styles.popTitle}>계보</span>
+                </div>
+              ) : null}
+              <div
+                ref={box}
+                className={clsx(styles.canvas, expanded && styles.canvasPop)}
+                onWheel={onWheel}
+                onPointerDown={onDown}
+                onPointerMove={onMove}
+                onPointerUp={onUp}
+                onPointerCancel={onUp}
+                onPointerLeave={onUp}
+              >
+                <div
+                  className={styles.world}
+                  style={{
+                    width: graph.width,
+                    height: graph.height,
+                    transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})`,
+                  }}
                 >
-                  {n.deleted ? (
-                    <span className={styles.nodeTitle}>삭제된 상상</span>
-                  ) : (
-                    <>
-                      <span className={styles.nodeHead}>
-                        {n.author ? <Avatar name={n.author.nickname} src={n.author.avatar_url} size={20} /> : null}
-                        <span className={styles.nodeName}>{n.author?.nickname}</span>
-                        {n.kind === "blend" ? <ShakeIcon className={styles.nodeShake} aria-hidden="true" /> : null}
-                      </span>
-                      <span className={styles.nodeTitle}>{n.display_title}</span>
-                    </>
-                  )}
-                </button>
-              ))}
-            </div>
+                  <svg className={styles.edges} width={graph.width} height={graph.height} aria-hidden="true">
+                    <defs>
+                      <marker id="lineage-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                        <path d="M0,0 L10,5 L0,10 z" className={styles.arrow} />
+                      </marker>
+                      <marker id="lineage-arrow-active" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                        <path d="M0,0 L10,5 L0,10 z" className={styles.arrowActive} />
+                      </marker>
+                    </defs>
+                    {/* 고른 노드에서 나가는 화살표는 위에 그리도록 맨 뒤로 */}
+                    {[...data.edges]
+                      .sort((x, y) => Number(x.source === selected) - Number(y.source === selected))
+                      .map((e) => {
+                      const a = byId.get(e.source);
+                      const b = byId.get(e.target);
+                      if (!a || !b) return null;
+                      const x1 = a.x + NODE_W / 2;
+                      const y1 = a.y + NODE_H;
+                      const x2 = b.x + NODE_W / 2;
+                      const y2 = b.y - 2;
+                      const mid = (y1 + y2) / 2;
+                      const active = e.source === selected;
+                      return (
+                        <path
+                          key={`${e.source}-${e.target}`}
+                          d={`M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`}
+                          className={clsx(styles.edge, active && styles.edgeActive)}
+                          markerEnd={active ? "url(#lineage-arrow-active)" : "url(#lineage-arrow)"}
+                        />
+                      );
+                    })}
+                  </svg>
 
-            <div className={styles.tools} onPointerDown={(e) => e.stopPropagation()}>
-              <button type="button" aria-label="확대" onClick={() => zoomAt(1.2)}>
-                <Plus aria-hidden="true" />
-              </button>
-              <button type="button" aria-label="축소" onClick={() => zoomAt(1 / 1.2)}>
-                <Minus aria-hidden="true" />
-              </button>
-              <button type="button" aria-label="화면에 맞추기" onClick={fit}>
-                <Maximize2 aria-hidden="true" />
-              </button>
-            </div>
-          </div>
+                  {graph.nodes.map((n) => (
+                    <button
+                      key={n.id}
+                      type="button"
+                      className={clsx(
+                        styles.node,
+                        n.kind === "blend" && styles.blend,
+                            n.id === selected && styles.selected,
+                        n.deleted && styles.deleted,
+                      )}
+                      style={{ left: n.x, top: n.y, width: NODE_W, height: NODE_H }}
+                      onClick={() => press(n)}
+                      aria-label={n.deleted ? "삭제된 상상" : `${n.display_title} — ${n.author?.nickname}`}
+                      disabled={n.deleted}
+                    >
+                      {n.deleted ? (
+                        <span className={styles.nodeTitle}>삭제된 상상</span>
+                      ) : (
+                        <>
+                          <span className={styles.nodeHead}>
+                            {n.author ? <Avatar name={n.author.nickname} src={n.author.avatar_url} size={20} /> : null}
+                            <span className={styles.nodeName}>{n.author?.nickname}</span>
+                            {n.kind === "blend" ? <ShakeIcon className={styles.nodeShake} aria-hidden="true" /> : null}
+                          </span>
+                          <span className={styles.nodeTitle}>{n.display_title}</span>
+                        </>
+                      )}
+                    </button>
+                  ))}
+                </div>
 
-          {data.truncated || (depth < 5 && data.nodes.some((n) => Math.abs(n.depth) === depth)) ? (
-            <div className={styles.more}>
-              {data.truncated ? <span>상상이 너무 많아 일부만 보여요.</span> : null}
-              {depth < 5 ? (
-                <Button size="sm" variant="outline" onClick={() => setDepth(5)}>
-                  더 깊이 보기
-                </Button>
+                <div className={styles.tools} onPointerDown={(e) => e.stopPropagation()}>
+                  <button type="button" aria-label="확대" onClick={() => zoomAt(1.2)}>
+                    <Plus aria-hidden="true" />
+                  </button>
+                  <button type="button" aria-label="축소" onClick={() => zoomAt(1 / 1.2)}>
+                    <Minus aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={expanded ? "크게 보기 닫기" : "크게 보기"}
+                    onClick={() => setExpanded((v) => !v)}
+                  >
+                    {expanded ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
+                  </button>
+                </div>
+              </div>
+
+              {data.truncated || (depth < 5 && data.nodes.some((n) => Math.abs(n.depth) === depth)) ? (
+                <div className={styles.more}>
+                  {data.truncated ? <span>상상이 너무 많아 일부만 보여요.</span> : null}
+                  {depth < 5 ? (
+                    <Button size="sm" variant="outline" onClick={() => setDepth(5)}>
+                      더 깊이 보기
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {picked && !picked.deleted ? (
+                <div className={styles.preview}>
+                  <div className={styles.previewHead}>
+                    {picked.author ? <Avatar name={picked.author.nickname} src={picked.author.avatar_url} size={20} /> : null}
+                    <span className={styles.nodeName}>{picked.author?.nickname}</span>
+                    <span className={styles.previewKind}>
+                      {picked.kind === "blend" ? "Shake it" : picked.kind === "quote" ? "인용" : "원본"}
+                      {picked.domain ? ` · ${picked.domain.name}` : ""}
+                    </span>
+                  </div>
+                  <p className={styles.previewTitle}>{picked.display_title}</p>
+                  <div className={styles.previewFoot}>
+                    <span className={styles.previewHint}>노드를 한 번 더 누르면 상세로 가요</span>
+                    <Link to={`/i/${picked.id}`} className={styles.previewLink}>
+                      상세 보기
+                    </Link>
+                  </div>
+                </div>
               ) : null}
             </div>
-          ) : null}
-
-          {picked && !picked.deleted ? (
-            <div className={styles.preview}>
-              <div className={styles.previewHead}>
-                {picked.author ? <Avatar name={picked.author.nickname} src={picked.author.avatar_url} size={20} /> : null}
-                <span className={styles.nodeName}>{picked.author?.nickname}</span>
-                <span className={styles.previewKind}>
-                  {picked.kind === "blend" ? "Shake it" : picked.kind === "quote" ? "인용" : "원본"}
-                  {picked.domain ? ` · ${picked.domain.name}` : ""}
-                </span>
-              </div>
-              <p className={styles.previewTitle}>{picked.display_title}</p>
-              <div className={styles.previewFoot}>
-                <span className={styles.previewHint}>노드를 한 번 더 누르면 상세로 가요</span>
-                <Link to={`/i/${picked.id}`} className={styles.previewLink}>
-                  상세 보기
-                </Link>
-              </div>
-            </div>
-          ) : null}
+          </div>
         </>
       )}
     </div>

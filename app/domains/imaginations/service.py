@@ -18,11 +18,14 @@ from app.domains.imaginations.schemas import (
     FeedOut,
     ImaginationOut,
     My,
+    PromptRef,
     QuotedOut,
+    TagOut,
 )
 from app.domains.policy.service import EffectivePolicy, get_effective_policy
 from app.domains.reactions.models import Bookmark, Thunder, Wave
 from app.domains.shake.models import ImaginationParent
+from app.domains.tags.service import tech_tags_for
 from app.domains.users.models import Follow, User
 from app.domains.users.schemas import author_out
 from app.infrastructure.storage.images import save_image
@@ -58,6 +61,7 @@ class NewImagination:
     ai_assisted: bool = False
     shake_allowed: bool = True
     image: bytes | None = None
+    prompt_id: int | None = None  # 이번 주 질문 (지금 답할 수 있는 것만, 6-C)
 
 
 # ---------------------------------------------------------------- 응답 만들기
@@ -120,6 +124,7 @@ def present(
         return []
     policy = policy or get_effective_policy(db, user)
     my = my_states(db, user, [i.id for i in items])
+    tags = tech_tags_for(db, [i.id for i in items if i.kind != "comment"])
     # 혼합 글의 재료 (child → [position 0, 1] parent id)
     blend_ids = [i.id for i in items if i.kind == "blend"]
     source_ids: dict[int, list[int]] = {}
@@ -134,6 +139,14 @@ def present(
         {i.quoted_id for i in items if i.quoted_id}
         | {i.parent_id for i in items if i.parent_id}
         | {p for ids in source_ids.values() for p in ids}
+    )
+    from app.domains.prompts.models import Prompt  # 순환 import 를 피해 여기서
+
+    prompt_ids = {i.prompt_id for i in items if i.prompt_id}
+    prompts = (
+        {p.id: p.title for p in db.scalars(select(Prompt).where(Prompt.id.in_(prompt_ids)))}
+        if prompt_ids
+        else {}
     )
     refs = (
         {
@@ -167,8 +180,10 @@ def present(
                 shake_allowed=item.shake_allowed,
                 counts=counts_of(item),
                 created_at=item.created_at,
-                actions=build_actions(item, user, policy),
+                actions=build_actions(item, user, policy, len(tags.get(item.id, []))),
                 my=my[item.id],
+                tags=[TagOut(name=t.name, label=t.label) for t in tags.get(item.id, [])],
+                hidden=item.status == "hidden",
                 quoted=quoted,
                 sources=[_quoted_out(refs.get(p), p) for p in source_ids.get(item.id, [])]
                 if item.kind == "blend"
@@ -178,6 +193,9 @@ def present(
                 reply_to=author_out(parent.author) if parent is not None else None,
                 waved_by=author_out(waved_by[item.id])
                 if waved_by and item.id in waved_by
+                else None,
+                prompt=PromptRef(id=item.prompt_id, title=prompts[item.prompt_id])
+                if item.prompt_id in prompts
                 else None,
             )
         )
@@ -242,6 +260,11 @@ def create(db: Session, user: User, data: NewImagination) -> ImaginationOut:
     if domain is None:
         raise bad_request("domain_required", "분야를 하나 골라 주세요.")
 
+    from app.domains.prompts.service import (
+        check_answerable,  # prompts 가 imaginations 모델을 쓰므로 여기서
+    )
+
+    prompt_id = check_answerable(db, data.prompt_id)
     image_url = save_image(data.image, policy.limit("image_mb")) if data.image else None
 
     item = Imagination(
@@ -254,6 +277,7 @@ def create(db: Session, user: User, data: NewImagination) -> ImaginationOut:
         domain_id=domain.id,
         ai_assisted=data.ai_assisted,
         shake_allowed=data.shake_allowed,
+        prompt_id=prompt_id,
     )
     db.add(item)
     db.commit()
@@ -430,32 +454,49 @@ def trending(db: Session, user: User | None, limit: int = TRENDING_LIMIT) -> Fee
 
 def detail(db: Session, user: User | None, imagination_id: int) -> ImaginationOut:
     """상세. 댓글 id 로 열면 댓글 자체를 돌려준다 (화면은 root_id 로 원글에 가서 그 댓글을 보여 준다)."""
-    item = crud.get_visible(db, imagination_id)
-    if item is None:
+    item = db.get(Imagination, imagination_id)
+    # 운영자가 숨긴 글은 작성자 본인과 운영자에게만 보인다 (hidden=true 로 안내, v11 F19)
+    can_see_hidden = (
+        item is not None
+        and item.status == "hidden"
+        and user is not None
+        and (user.id == item.author_id or user.is_admin)
+    )
+    if item is None or not (item.status == "visible" or can_see_hidden):
         raise not_found("상상을 찾을 수 없어요. 삭제됐거나 주소가 틀렸을 수 있어요.")
-    if user is not None and item.kind != "comment":
+    if user is not None and item.kind != "comment" and item.status == "visible":
         crud.record_view(db, user_id=user.id, imagination_id=item.id)
         db.commit()
     return present_one(db, item, user)
 
 
-def delete(db: Session, user: User, imagination_id: int) -> None:
-    item = crud.get_visible(db, imagination_id)
-    if item is None:
-        raise not_found("상상을 찾을 수 없어요.")
-    if item.author_id != user.id:
-        raise forbidden("not_allowed", "내가 쓴 글만 지울 수 있어요.")
-    item.status = "deleted"  # 데이터 시점 보존 — 실제로 지우지 않고 숨긴다
+def adjust_related_counts(db: Session, item: Imagination, delta: int) -> None:
+    """글이 안 보이게 되거나(삭제 · 숨김, -1) 다시 보이면(+1) 다른 글의 집계 캐시를 맞춘다.
+
+    인용 수 · 재료 글의 Shake 수(계보 연결은 남긴다) · 댓글 수.
+    """
     if item.kind == "quote" and item.quoted_id:
-        bump(db, item.quoted_id, "quote_count", -1)
-    if item.kind == "blend":  # 재료 글의 Shake 수를 되돌린다 (계보 연결은 남긴다)
+        bump(db, item.quoted_id, "quote_count", delta)
+    if item.kind == "blend":
         for p in db.scalars(
             select(ImaginationParent.parent_id).where(ImaginationParent.child_id == item.id)
         ):
-            bump(db, p, "child_count", -1)
+            bump(db, p, "child_count", delta)
     if item.kind == "comment":
         if item.root_id:
-            bump(db, item.root_id, "comment_count", -1)
+            bump(db, item.root_id, "comment_count", delta)
         if item.parent_id and item.parent_id != item.root_id:
-            bump(db, item.parent_id, "comment_count", -1)
+            bump(db, item.parent_id, "comment_count", delta)
+
+
+def delete(db: Session, user: User, imagination_id: int) -> None:
+    """작성자 삭제. 운영자가 숨긴 내 글도 지울 수 있다 (집계는 숨길 때 이미 뺐다)."""
+    item = db.get(Imagination, imagination_id)
+    if item is None or item.status not in ("visible", "hidden"):
+        raise not_found("상상을 찾을 수 없어요.")
+    if item.author_id != user.id:
+        raise forbidden("not_allowed", "내가 쓴 글만 지울 수 있어요.")
+    if item.status == "visible":
+        adjust_related_counts(db, item, -1)
+    item.status = "deleted"  # 데이터 시점 보존 — 실제로 지우지 않고 숨긴다
     db.commit()

@@ -14,7 +14,9 @@ OWN = ActionState(allowed=False, reason="own_post")
 NOT_ALLOWED = ActionState(allowed=False, reason="not_allowed")
 
 
-def build_actions(item: Imagination, user: User | None, policy: EffectivePolicy) -> Actions:
+def build_actions(
+    item: Imagination, user: User | None, policy: EffectivePolicy, tag_count: int = 0
+) -> Actions:
     if user is None:
         return Actions(
             thunder=LOGIN,
@@ -24,9 +26,21 @@ def build_actions(item: Imagination, user: User | None, policy: EffectivePolicy)
             shake=LOGIN,
             bookmark=LOGIN,
             delete=NOT_ALLOWED,
+            edit_tags=NOT_ALLOWED,
         )
 
     mine = item.author_id == user.id
+    if item.status == "hidden":  # 숨긴 글은 반응할 수 없고, 작성자는 지우기만 할 수 있다
+        return Actions(
+            thunder=NOT_ALLOWED,
+            wave=NOT_ALLOWED,
+            quote=NOT_ALLOWED,
+            comment=NOT_ALLOWED,
+            shake=NOT_ALLOWED,
+            bookmark=NOT_ALLOWED,
+            delete=OK if mine else NOT_ALLOWED,
+            edit_tags=NOT_ALLOWED,
+        )
 
     def perm(key: str, *, block_own: bool = False) -> ActionState:
         if block_own and mine:
@@ -54,4 +68,8 @@ def build_actions(item: Imagination, user: User | None, policy: EffectivePolicy)
         shake=shake,
         bookmark=OK,
         delete=OK if mine else NOT_ALLOWED,
+        # 태그 편집: 내 글(댓글 제외)만. 본문 수정이 아니라 "상상은 수정 불가" 원칙과 부딪히지 않는다
+        edit_tags=ActionState(allowed=True, remaining=max(0, policy.limit("tag_count") - tag_count))
+        if mine and item.kind != "comment"
+        else NOT_ALLOWED,
     )

@@ -16,7 +16,7 @@
 
 **문서**
 
-- 기획안: [`../business_archy/플랫폼_기획안_v10.txt`](../business_archy/플랫폼_기획안_v10.txt)
+- 기획안: [`../business_archy/플랫폼_기획안_v11.txt`](../business_archy/플랫폼_기획안_v11.txt)
 - 현재 스프린트: [`docs/sprint.md`](docs/sprint.md) · 작업 기록: [`docs/work-log.md`](docs/work-log.md)
 - DB 접속·마이그레이션 규칙: [`docs/db-guide.md`](docs/db-guide.md) · 코드 구조: [`docs/app-structure.md`](docs/app-structure.md) · 디자인: [`docs/design-system.md`](docs/design-system.md)
 - 최근 변경: [맨 아래](#최근-변경)
@@ -136,6 +136,13 @@ Imagine-v1/
 
 ## 최근 변경
 
+- **2026-11-12 — Sprint 6-A · 6-B · 6-C ✅ 운영자 기능 (진행 중)** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - 운영자 화면 `/admin` 틀 · 게시물 관리(걸러 보기 · 정렬 · 페이지 번호 · 펼치기 · [보임 | 숨김]) · 숨긴 글 처리와 기록
+  - 기본 정책(한도 · 권한 × 전체 · 등급) · 등급 관리 · 사용자 관리(개인 예외 · 만료일) · 변경 기록 · 이번 주 질문(오른쪽 블록 · 홈 배너 · 글쓰기 질문 카드 · 질문형 상상 구분) · 마이그레이션 0010~0012
+- **2026-11-12 — 기획안 v11**: Sprint 4~5 결정(AI 모델 · 태그 규칙 · 욕망 태그 숨김 · 분야/주제 용어 · 리랭킹 · Shake it · 계보 화면)과 Sprint 6 시작 전 결정(6-A~6-E 단계 · 등급 초안 · Observe Note Markdown 등)을 한 번에 반영
+- **2026-11-12 — Sprint 5 ✅ 완료 (5-D 태그 화면 + 화면 정리)** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - 분류 줄 = [분야] 회색 알약 + #주제(기술 태그) 보라 알약, 작성자 태그 편집(최대 5개, 지운 태그는 기록), 주제 둘러보기 `/topics` · 태그별 상상 `/tags/:name`, 오른쪽 "추천 주제" = 인기 주제. 욕망 태그는 분석용(화면에 없음)
+  - Shake it 표시 정리(카드 배지 → 재료 줄, 혼합 글 "AI 도움" 숨김, 시간 줄 "계보") · 계보 화면(검은 선 + 파란 활성 화살표, 노드 색, 크게 보기 팝업) · 마이그레이션 0009
 - **2026-11-11 — Sprint 5-A · 5-B · 5-C ✅** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
   - 글을 올리면 AI 태깅 · 임베딩이 백그라운드로 자동 실행 (CLI `tag-all`), 본문 글꼴 Pretendard
   - Shake it: 내 상상 고르기 → 섞는 애니메이션 → 혼합 글 자동 게시 · 홈 맨 위 강조 · 재료 표시 · 알림 · 하루 10회

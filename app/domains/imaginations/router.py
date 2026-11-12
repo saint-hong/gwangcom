@@ -50,6 +50,7 @@ async def create_imagination(
     desire: Annotated[str | None, Form()] = None,
     ai_assisted: Annotated[bool, Form()] = False,
     shake_allowed: Annotated[bool, Form()] = True,
+    prompt_id: Annotated[int | None, Form(description="이번 주 질문에서 들어왔을 때")] = None,
     image: Annotated[UploadFile | None, File()] = None,
 ):
     """상상 쓰기 (multipart). 글자 수·하루 횟수는 내 이용 한도(/api/me/limits)로 검사한다."""
@@ -65,6 +66,7 @@ async def create_imagination(
             ai_assisted=ai_assisted,
             shake_allowed=shake_allowed,
             image=data or None,
+            prompt_id=prompt_id,
         ),
     )
     tasks.add_task(ai_jobs.after_post, out.id)  # 응답 뒤 태깅 · 임베딩 (F10 · F23)

@@ -1,3 +1,4 @@
+import { PromptBanner } from "../../components/prompt/PromptBanner";
 import { Sparkles, UsersRound } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -71,6 +72,7 @@ export function HomePage() {
         )}
       </div>
 
+      <PromptBanner />
       {user ? <ImaginePrompt user={user} /> : null}
 
       {tab === "following" && feed.done && feed.items.length === 0 && !feed.error ? (
