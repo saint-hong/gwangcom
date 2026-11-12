@@ -4,6 +4,14 @@
 
 ---
 
+## 2026-11-12 — GitHub 저장소 · README 정리
+
+- GitHub 저장소 `saint-hong/gwangcom` 의 `main` 에 Imagine-v1 첫 push (레포 루트 = Imagine-v1, 상위 기획 문서는 git 밖)
+- README: 맨 앞에 "왜 Imagine 인가 — 철학적 배경" 4줄 추가 (`business_archy/…_상상데이터_관측_사업_기획_통합.pdf` 논의를 요약, 보상 · 수익화 · 사례는 넣지 않음)
+- README: "최근 변경"을 맨 아래로 옮기고, 위 문서 목록에 바로 가는 링크를 둠 (계속 길어지는 절이라서). `/doc-log` 안내도 위치에 맞게 고침
+
+---
+
 ## 2026-11-11 — 하루 마감 점검
 
 - 하루 요약: `summary_imagine/논의요약_1111.txt` (결정 · 5-A~C 결과 · 기본값 · 남은 일)

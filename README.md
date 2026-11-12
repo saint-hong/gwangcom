@@ -5,43 +5,19 @@
 대중이 올린 상상(텍스트·이미지)이 쌓이면, 운영자가 그 안에서 반복되는 기술 조합과 욕망을 분석해 **Observe Note**로 발행합니다.
 프로토타입 UI/UX 는 하이젠버그(heisenberg.kr)의 화면 구조를 따릅니다.
 
+## 왜 Imagine 인가 — 철학적 배경
+
+- **상상은 현실보다 먼저 움직이는 데이터다.** 상상이 충분히 쌓이면 기술은 "발명"이 아니라 그 상상에 대한 "응답"으로 나타난다.
+- **허황된 상상은 틀린 예측이 아니라, 아직 완성되지 않은 방향이다.** 한 사람의 상상은 잡음이지만, 서로 모르는 사람들 사이에서 반복되면 욕망의 방향이 된다.
+- **상상은 아직 덜 익은 기술들을 부딪치게 한다.** 오래 지속된 욕망이 성숙한 기술들의 새로운 조합과 만날 때 다음 기술이 태어난다.
+- **예측하지 않고, 관측한다.** Imagine 은 미래의 정답이 아니라 기술이 나올 수밖에 없게 만드는 압력, 곧 미래가 만들어지는 초기 조건을 모은다.
+
+**문서**
+
 - 기획안: [`../business_archy/플랫폼_기획안_v10.txt`](../business_archy/플랫폼_기획안_v10.txt)
 - 현재 스프린트: [`docs/sprint.md`](docs/sprint.md) · 작업 기록: [`docs/work-log.md`](docs/work-log.md)
 - DB 접속·마이그레이션 규칙: [`docs/db-guide.md`](docs/db-guide.md) · 코드 구조: [`docs/app-structure.md`](docs/app-structure.md) · 디자인: [`docs/design-system.md`](docs/design-system.md)
-
----
-
-## 최근 변경
-
-- **2026-11-11 — Sprint 5-A · 5-B · 5-C ✅** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
-  - 글을 올리면 AI 태깅 · 임베딩이 백그라운드로 자동 실행 (CLI `tag-all`), 본문 글꼴 Pretendard
-  - Shake it: 내 상상 고르기 → 섞는 애니메이션 → 혼합 글 자동 게시 · 홈 맨 위 강조 · 재료 표시 · 알림 · 하루 10회
-  - 계보 그래프(재료 → 혼합 글) · 비슷한 상상 = 벡터 후보를 AI 가 다시 골라 이유와 함께 (CLI `similar-all`)
-- **2026-11-10 — Sprint 4 ✅ AI 모델 기반** ([AI 모델 결정](docs/ai-models.md)): 글 생성 Claude Haiku 5.5 · 임베딩 Gemini gemini-embedding-001, `.env` 로 제공자 전환(fake 포함), 호출 기록 · 하루 한도, CLI `embed-all` · `ai-eval`
-- **2026-11-10 — 기획안 v10**: Sprint 1~3 중 결정(X 구조 · 댓글 = 게시글 · 서재/프로필 탭 · 상상하기 · 뱃지 보기 · 인기 = 풍향계)을 한 번에 반영
-- **2026-11-10 — Sprint 3 ✅ 관계와 탐색** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
-  - 팔로우 · 팔로잉 탭("○○님이 Wave함") · 홈 상상하기 유도 영역 · 프로필/프로필 수정/알림을 X 구조로
-  - 인기 상상(최근 7일 점수 순) · 추천 탭 점수 적용 · 오른쪽 컬럼 인기 상상·추천 Dreamer · 설정(비밀번호)
-- **2026-11-10 — Sprint 2 ✅ 반응 · 댓글(X 구조) · 서재** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
-  - Thunder · Wave · 북마크 실제 동작(누르면 바로 반영), 내가 눌렀는지(`my`), Wave 메뉴 [Wave][인용하기] · 인용 카드
-  - 상상 상세를 X 게시물 구조로 재배치, 댓글·답글(댓글도 게시글처럼 같은 액션 바), 서재 [북마크 | Thunder | 최근 본 상상]
-  - seed-demo 에 샘플 반응·댓글·인용 추가
-- **2026-11-10 — Sprint 1 ✅ 회원 · 상상 쓰기 · 홈 피드 · 상세** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
-  - 로그인·가입 모달, 로그인 전·후 사이드바([상상 쓰기] · 계정 메뉴), 홈 [추천|팔로잉|최신] + 분야 칩, 글쓰기(이미지), 상세
-  - 이용 한도 계산(개인 → 등급 → 전체), 응답마다 `actions`, 피드 `next_cursor`, CLI `create-admin` · `seed-demo`
-- **2026-11-10 — 기획안 v9 · 용어 · UI 정리**: Thunder(번개) · Observe Note · Dreamer, 버튼 hover 는 움직임만 · 툴팁 없음, 맨 위 띠 64px
-- **2026-11-09 — UI 기준 반영 · 다듬기** ([디자인 시스템](docs/design-system.md) · [변경 요약](docs/work-log.md))
-  - 레이아웃: 하이젠버그 메인 캡처 기준 — 상단 헤더 없음, 왼쪽 사이드바(275) · 본문(600, 좌우 세로 테두리) · 오른쪽 카드 컬럼(350), 반응형 4단계
-  - 글꼴: **Pretendard** (로고만 나눔스퀘어 네오 Heavy) · 강조색: 보라(임시, 정체성 논의 후 확정)
-  - 분야: 본문 상단 글자 탭 (추천 · AI · Semiconductor · Space · Mobility · Bio · Energy · Mobile · Life)
-  - 피드 카드 · 액션 바: **공명 · Wave · 댓글 · Shake it …… 북마크 · 공유**, 버튼마다 hover 움직임
-  - 자체 아이콘: **Wave** = 말려 올라가는 파도(채움) · **Shake it** = 비빔밥 그릇 + 숟가락 · 젓가락 + 반짝이 별
-  - 브랜드: 글자 로고 "Imagine"(첫 글자 = 파비콘과 같은 I) · 파비콘 = 보라 정사각형 + I · 탭 제목 "Imagine - 당신의 상상이 세상을 바꿉니다"
-  - 개발 모드 홈에 "디자인 미리보기" 예시 카드 2개 (Sprint 1 에서 실제 글로 대체)
-- **2026-11-09 — Sprint 0 프로젝트 골격 ✅** ([상세](docs/work-log.md)) — 백엔드·프론트·DB(PostgreSQL+pgvector, Memgraph) 실행 확인
-  - 백엔드: FastAPI · 설정(.env) · SQLAlchemy 2 · Alembic(pgvector 확장) · `/health`
-  - 프론트: React 18 + Vite + TS · 디자인 토큰(라이트/다크) · 공통 레이아웃 · 아이콘 버튼
-  - 인프라: docker-compose (PostgreSQL 16 + pgvector, Memgraph 3.10.1)
+- 최근 변경: [맨 아래](#최근-변경)
 
 ---
 
@@ -153,3 +129,37 @@ Imagine-v1/
 ```
 
 자세한 구조는 [`docs/app-structure.md`](docs/app-structure.md).
+
+---
+
+## 최근 변경
+
+- **2026-11-11 — Sprint 5-A · 5-B · 5-C ✅** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - 글을 올리면 AI 태깅 · 임베딩이 백그라운드로 자동 실행 (CLI `tag-all`), 본문 글꼴 Pretendard
+  - Shake it: 내 상상 고르기 → 섞는 애니메이션 → 혼합 글 자동 게시 · 홈 맨 위 강조 · 재료 표시 · 알림 · 하루 10회
+  - 계보 그래프(재료 → 혼합 글) · 비슷한 상상 = 벡터 후보를 AI 가 다시 골라 이유와 함께 (CLI `similar-all`)
+- **2026-11-10 — Sprint 4 ✅ AI 모델 기반** ([AI 모델 결정](docs/ai-models.md)): 글 생성 Claude Haiku 5.5 · 임베딩 Gemini gemini-embedding-001, `.env` 로 제공자 전환(fake 포함), 호출 기록 · 하루 한도, CLI `embed-all` · `ai-eval`
+- **2026-11-10 — 기획안 v10**: Sprint 1~3 중 결정(X 구조 · 댓글 = 게시글 · 서재/프로필 탭 · 상상하기 · 뱃지 보기 · 인기 = 풍향계)을 한 번에 반영
+- **2026-11-10 — Sprint 3 ✅ 관계와 탐색** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - 팔로우 · 팔로잉 탭("○○님이 Wave함") · 홈 상상하기 유도 영역 · 프로필/프로필 수정/알림을 X 구조로
+  - 인기 상상(최근 7일 점수 순) · 추천 탭 점수 적용 · 오른쪽 컬럼 인기 상상·추천 Dreamer · 설정(비밀번호)
+- **2026-11-10 — Sprint 2 ✅ 반응 · 댓글(X 구조) · 서재** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - Thunder · Wave · 북마크 실제 동작(누르면 바로 반영), 내가 눌렀는지(`my`), Wave 메뉴 [Wave][인용하기] · 인용 카드
+  - 상상 상세를 X 게시물 구조로 재배치, 댓글·답글(댓글도 게시글처럼 같은 액션 바), 서재 [북마크 | Thunder | 최근 본 상상]
+  - seed-demo 에 샘플 반응·댓글·인용 추가
+- **2026-11-10 — Sprint 1 ✅ 회원 · 상상 쓰기 · 홈 피드 · 상세** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - 로그인·가입 모달, 로그인 전·후 사이드바([상상 쓰기] · 계정 메뉴), 홈 [추천|팔로잉|최신] + 분야 칩, 글쓰기(이미지), 상세
+  - 이용 한도 계산(개인 → 등급 → 전체), 응답마다 `actions`, 피드 `next_cursor`, CLI `create-admin` · `seed-demo`
+- **2026-11-10 — 기획안 v9 · 용어 · UI 정리**: Thunder(번개) · Observe Note · Dreamer, 버튼 hover 는 움직임만 · 툴팁 없음, 맨 위 띠 64px
+- **2026-11-09 — UI 기준 반영 · 다듬기** ([디자인 시스템](docs/design-system.md) · [변경 요약](docs/work-log.md))
+  - 레이아웃: 하이젠버그 메인 캡처 기준 — 상단 헤더 없음, 왼쪽 사이드바(275) · 본문(600, 좌우 세로 테두리) · 오른쪽 카드 컬럼(350), 반응형 4단계
+  - 글꼴: **Pretendard** (로고만 나눔스퀘어 네오 Heavy) · 강조색: 보라(임시, 정체성 논의 후 확정)
+  - 분야: 본문 상단 글자 탭 (추천 · AI · Semiconductor · Space · Mobility · Bio · Energy · Mobile · Life)
+  - 피드 카드 · 액션 바: **공명 · Wave · 댓글 · Shake it …… 북마크 · 공유**, 버튼마다 hover 움직임
+  - 자체 아이콘: **Wave** = 말려 올라가는 파도(채움) · **Shake it** = 비빔밥 그릇 + 숟가락 · 젓가락 + 반짝이 별
+  - 브랜드: 글자 로고 "Imagine"(첫 글자 = 파비콘과 같은 I) · 파비콘 = 보라 정사각형 + I · 탭 제목 "Imagine - 당신의 상상이 세상을 바꿉니다"
+  - 개발 모드 홈에 "디자인 미리보기" 예시 카드 2개 (Sprint 1 에서 실제 글로 대체)
+- **2026-11-09 — Sprint 0 프로젝트 골격 ✅** ([상세](docs/work-log.md)) — 백엔드·프론트·DB(PostgreSQL+pgvector, Memgraph) 실행 확인
+  - 백엔드: FastAPI · 설정(.env) · SQLAlchemy 2 · Alembic(pgvector 확장) · `/health`
+  - 프론트: React 18 + Vite + TS · 디자인 토큰(라이트/다크) · 공통 레이아웃 · 아이콘 버튼
+  - 인프라: docker-compose (PostgreSQL 16 + pgvector, Memgraph 3.10.1)
