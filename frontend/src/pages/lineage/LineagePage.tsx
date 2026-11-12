@@ -37,7 +37,9 @@ function layout(data: Lineage): { nodes: Placed[]; width: number; height: number
 }
 
 /**
- * S15 계보 그래프 (기획안 v10 F9)
+ * S15 계보 (기획안 v10 F9, 화면 이름 "계보 그래프" → "계보" 2026-11-12)
+ *   색: Shake it 글 = 보라 테두리, 사람이 쓴 상상(재료) = 회색 테두리 → 고르면(또는 지금 보는 글이면) 옅은 초록.
+ *   색 안내 줄은 뺐다 (그래프가 커지면 다시 넣는다, 2026-11-12 사용자 지정)
  *   Shake it 으로 이어진 글들의 그물: 화살표 = 재료 글 → 혼합 글. 현재 글을 가운데 강조.
  *   기본 위 · 아래 3단계, 노드 최대 100개 (넘으면 "더 깊이 보기").
  * - 노드를 한 번 누르면 아래에 미리보기 카드, 한 번 더 누르면 그 글 상세로 간다
@@ -137,7 +139,7 @@ export function LineagePage() {
   const picked = selected !== null ? byId.get(selected) : undefined;
   return (
     <div>
-      <PageHeader title="계보 그래프" />
+      <PageHeader title="계보" />
       <p className={styles.intro}>
         Shake it 으로 섞여 이어진 상상들이에요. 화살표는 <b>재료 상상 → 섞여서 태어난 상상</b> 방향이에요.
       </p>
@@ -148,12 +150,6 @@ export function LineagePage() {
         <p className={styles.status}>불러오는 중…</p>
       ) : (
         <>
-          <div className={styles.legend}>
-            <span className={clsx(styles.dot, styles.dotOrigin)} /> 사람이 쓴 상상
-            <span className={clsx(styles.dot, styles.dotBlend)} /> Shake it
-            <span className={clsx(styles.dot, styles.dotCenter)} /> 지금 보고 있는 상상
-          </div>
-
           <div
             ref={box}
             className={styles.canvas}

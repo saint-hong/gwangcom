@@ -53,6 +53,10 @@
   --gradient-shake: linear-gradient(135deg, var(--color-shake-from), var(--color-shake-to));
   --color-on-shake: #ffffff;        /* Shake 그라데이션 위 글자 · 아이콘 */
 
+  /* 계보 그래프: 사람이 쓴 상상(재료)을 골랐을 때 (2026-11-12 사용자 지정, 옅은 초록) */
+  --color-material-active: #4ade80;
+  --color-material-soft: #f0fdf4;
+
   /* 타이포 */
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
     "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
@@ -118,6 +122,9 @@
   --color-thunder: #fbbf24;
   --color-wave: #1d9bf0;
   --color-danger: #f87171;
+
+  --color-material-active: #22c55e;
+  --color-material-soft: #12261a;
 
   --shadow-pop: 0 4px 20px rgba(0, 0, 0, 0.6);
 }

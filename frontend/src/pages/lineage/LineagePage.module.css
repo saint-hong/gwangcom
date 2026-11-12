@@ -12,39 +12,6 @@
   text-align: center;
 }
 
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
-  margin: var(--space-3) var(--space-4);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-}
-
-.dot {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  margin-left: 6px;
-  border-radius: var(--radius-sm);
-  border: 2px solid var(--color-border-strong);
-  background: var(--color-surface);
-}
-
-.dot:first-child {
-  margin-left: 0;
-}
-
-.dotBlend {
-  border-color: var(--color-shake-from);
-}
-
-.dotCenter {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
-}
-
 /* 끌어서 이동 · 휠로 확대하는 판 */
 .canvas {
   position: relative;
@@ -110,13 +77,26 @@
   border-color: var(--color-shake-from);
 }
 
-.center {
+/* 사람이 쓴 상상(재료): 지금 보는 글이거나 골랐을 때 옅은 초록 */
+.center,
+.selected {
+  border-color: var(--color-material-active);
+  background: var(--color-material-soft);
+}
+
+.selected {
+  box-shadow: 0 0 0 3px var(--color-material-active);
+}
+
+/* Shake it 글은 보라 그대로 */
+.blend.center {
   border-color: var(--color-accent);
   background: var(--color-accent-soft);
   box-shadow: 0 0 0 3px var(--color-accent-border);
 }
 
-.selected {
+.blend.selected {
+  border-color: var(--color-shake-from);
   box-shadow: 0 0 0 3px var(--color-accent);
 }
 

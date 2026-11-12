@@ -4,6 +4,17 @@
 
 ---
 
+## 2026-11-12 — 계보 화면 정리 (사용자 지정)
+
+- 제목 "계보 그래프" → **"계보"**
+- 색 안내 줄(사람이 쓴 상상 · Shake it · 지금 보고 있는 상상) 제거 — 지금은 그래프가 작아 필요 없음, 넓어지면 다시
+- 노드 색: Shake it 글은 보라 그대로. 사람이 쓴 상상(재료)은 평소 회색 테두리 → 고르면 옅은 초록 테두리 + 링. 지금 보는 글이 사람 상상이면 초록 테두리 + 옅은 초록 배경 (보라는 Shake it 에만 쓰도록)
+- 새 토큰 `--color-material-active` · `--color-material-soft` (라이트 · 다크)
+- 파일: `pages/lineage/LineagePage.tsx` · `.module.css` · `styles/tokens.css`
+- 검증: `npm run build` 통과. 화면 확인은 사용자 몫
+
+---
+
 ## 2026-11-12 — 피드 카드 재료 줄 한 줄 고정 (사용자 지정)
 
 - 재료가 줄을 넘으면 두 줄로 내리지 않고 한 줄 + "…" (`components/card/SourceChips.tsx` 새로 만듦, `ImaginationCard.module.css`)
