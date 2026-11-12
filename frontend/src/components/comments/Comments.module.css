@@ -1,0 +1,230 @@
+.section {
+  border-top: 1px solid var(--color-border);
+}
+
+/* 입력창 */
+.composer {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.replyComposer {
+  padding-left: calc(var(--space-4) + 52px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.replyHint {
+  margin: 0 0 6px 44px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.composerRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.composerInput {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-lg);
+  line-height: 1.5;
+}
+
+.composerInput::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.composerOpen {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.composerFoot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.counter,
+.over {
+  margin-right: auto;
+  padding-left: 52px;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.over {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.error {
+  margin-top: var(--space-2);
+  padding-left: 52px;
+  color: #dc2626;
+  font-size: var(--font-size-sm);
+}
+
+/* 댓글 줄 (X 구조) */
+.thread {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) 0;
+  scroll-margin-top: 80px;
+}
+
+.highlight {
+  background: var(--color-accent-soft);
+}
+
+.rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+}
+
+/* 아바타 아래로 다음 답글까지 이어지는 세로선 */
+.threadLine {
+  flex: 1;
+  width: 2px;
+  margin-top: 4px;
+  background: var(--color-border-strong);
+  border-radius: 1px;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 2px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  font-size: var(--font-size-md);
+  line-height: 22px;
+}
+
+.name {
+  font-weight: 800;
+  color: var(--color-text);
+}
+
+.writer {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+}
+
+.date {
+  color: var(--color-text-secondary);
+}
+
+.more {
+  margin: -6px -8px 0 0;
+}
+
+.body {
+  margin-top: 2px;
+  font-size: var(--font-size-md);
+  line-height: 1.55;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.moreText {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* 답글이 남은 삭제된 댓글 자리 */
+.gone {
+  position: relative;
+  padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--space-4) + 52px);
+}
+
+.goneText {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.threadLineGone {
+  position: absolute;
+  top: var(--space-3);
+  bottom: 0;
+  left: calc(var(--space-4) + 19px);
+  width: 2px;
+  background: var(--color-border-strong);
+}
+
+.status,
+.empty {
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-size: var(--font-size-sm);
+}
+
+.retry {
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .composer,
+  .item {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+}

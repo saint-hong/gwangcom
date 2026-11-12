@@ -1,0 +1,82 @@
+/* 오른쪽 컬럼 카드와 같은 틀 (RightRail .card) */
+.block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+}
+
+.list {
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  padding: 8px 0;
+}
+
+.row:hover .itemTitle {
+  text-decoration: underline;
+}
+
+.text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* AI 가 붙인 "왜 비슷한가" */
+.reason {
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+/* 좁은 화면(오른쪽 컬럼 없음)에서만 상세 글 아래에 */
+.inline {
+  margin: var(--space-4) var(--space-4) 0;
+}
+
+@media (min-width: 1101px) {
+  .inline {
+    display: none;
+  }
+}

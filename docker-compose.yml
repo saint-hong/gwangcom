@@ -1,0 +1,46 @@
+# Imagine 개발용 인프라 — PostgreSQL(pgvector) + Memgraph
+#
+# 실행:   docker compose up -d postgres memgraph
+# 상태:   docker compose ps
+# 중지:   docker compose stop          (데이터는 볼륨에 남음)
+# 초기화: docker compose down -v       (⚠ 데이터까지 삭제)
+#
+# 백엔드·프론트는 PC 에서 직접 실행한다 (README 참고).
+# 값은 같은 폴더의 .env 를 읽는다 (POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_PORT).
+
+name: imagine
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: imagine-postgres
+    environment:
+      POSTGRES_DB: imagine_dev
+      POSTGRES_USER: ${POSTGRES_USER:-imagine}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-imagine_local_pw}
+      TZ: Asia/Seoul
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - imagine-pg-data:/var/lib/postgresql/data
+      # 첫 실행 때만: imagine_test DB 생성 + pgvector 확장 활성화
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-imagine} -d imagine_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  memgraph:
+    # Insurance-Helper-v4 와 같은 버전으로 고정
+    image: memgraph/memgraph:3.10.1
+    container_name: imagine-memgraph
+    ports:
+      - "7687:7687"
+    command: ["--log-level=WARNING", "--also-log-to-stderr"]
+    volumes:
+      - imagine-memgraph-data:/var/lib/memgraph
+
+volumes:
+  imagine-pg-data:
+  imagine-memgraph-data:

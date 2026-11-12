@@ -1,0 +1,29 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.accent {
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent-border);
+  color: var(--color-accent-text);
+}
+
+.neutral {
+  height: 20px;
+  padding: 0 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.link:hover {
+  filter: brightness(0.97);
+}

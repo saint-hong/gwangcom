@@ -1,0 +1,53 @@
+.row {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* 넘칠 때만 아래에 가는 가로 스크롤 바 (2026-11-10 사용자 요청: 오른쪽에 가려진 항목을 옮겨 볼 수 있게) */
+.row {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.row::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
+
+.row::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+}
+
+.row::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chip {
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text-body);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.chip:hover {
+  background: var(--color-surface-hover);
+}
+
+.selected,
+.selected:hover {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 800;
+}

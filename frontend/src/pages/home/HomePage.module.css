@@ -1,0 +1,52 @@
+.tabBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+@media (max-width: 700px) {
+  .tabBar {
+    top: var(--mobile-bar-height);
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.emptyIcon {
+  width: 34px;
+  height: 34px;
+  color: var(--color-accent);
+}
+
+.emptyTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+}
+
+.emptyText {
+  max-width: 340px;
+  margin-bottom: var(--space-2);
+  color: var(--color-text-secondary);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4) var(--space-8);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}

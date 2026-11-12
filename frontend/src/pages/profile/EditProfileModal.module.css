@@ -1,0 +1,218 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6vh var(--space-4) var(--space-4);
+  background: rgba(15, 20, 25, 0.45);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 600px;
+  max-height: 88vh;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 53px;
+  padding: 0 var(--space-4);
+}
+
+.heading {
+  flex: 1;
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+}
+
+.iconBtn {
+  display: inline-flex;
+  padding: 6px;
+  margin-left: -6px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  background: var(--color-surface-muted);
+}
+
+.iconBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.save {
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.scroll {
+  overflow-y: auto;
+  padding-bottom: var(--space-5);
+}
+
+.cover {
+  position: relative;
+  aspect-ratio: 3 / 1;
+  background: var(--color-surface-muted);
+  overflow: hidden;
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.8);
+}
+
+.coverTools {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+/* 이미지 위의 둥근 반투명 버튼 */
+.overlayBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(15, 20, 25, 0.6);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.overlayBtn:hover {
+  background: rgba(15, 20, 25, 0.45);
+}
+
+.overlayBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.avatarWrap {
+  position: relative;
+  display: inline-flex;
+  margin: -56px 0 0 var(--space-4);
+  border-radius: 50%;
+  border: 4px solid var(--color-bg);
+  background: var(--color-bg);
+}
+
+.avatarBtn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.field {
+  display: block;
+  margin: var(--space-4) var(--space-4) 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.field:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.label {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  outline: none;
+  padding: 2px 0 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-lg);
+}
+
+/* 안쪽 칸에는 포커스 테두리를 그리지 않는다 — 바깥 상자(.field)만 강조 (2026-11-10 사용자 지정) */
+.input:focus-visible,
+.textarea:focus-visible {
+  outline: none;
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.hint {
+  margin: 6px var(--space-4) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.counter,
+.over {
+  font-variant-numeric: tabular-nums;
+}
+
+.over {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.error {
+  margin: var(--space-3) var(--space-4) 0;
+  color: #dc2626;
+  font-size: var(--font-size-sm);
+}
+
+@media (max-width: 700px) {
+  .backdrop {
+    padding: 0;
+  }
+  .dialog {
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+  }
+}

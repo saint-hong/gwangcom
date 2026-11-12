@@ -1,0 +1,123 @@
+/* ────────────────────────────────────────────────────────────────
+   Imagine 디자인 토큰 — 라이트 / 다크
+   기준: 하이젠버그 메인 화면 캡처 (etc_datas/heisenberg_main.png)
+     · 간격 · 배치 · 테두리 · 글자 크기는 캡처를 따른다
+     · 강조색은 보라 계열 (서비스 정체성과 함께 추후 확정)
+   글꼴: Pretendard 가변 글꼴 (npm pretendard, main.tsx 에서 불러옴) · 로고만 나눔스퀘어 네오 Heavy
+   모든 화면·그래프는 이 변수만 쓴다.
+   ──────────────────────────────────────────────────────────────── */
+
+/* 로고 전용: 나눔스퀘어 네오 Heavy (고정 굵기 — 가변 글꼴보다 획이 확실히 두껍다) */
+@font-face {
+  font-family: "NanumSquare Neo Heavy";
+  src: url("https://hangeul.pstatic.net/hangeul_static/webfont/NanumSquareNeo/NanumSquareNeoTTF-eHv.woff")
+    format("woff");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* 표면 · 테두리 */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f3f5;   /* 검색창 · 메뉴 hover */
+  --color-surface-hover: #f5f6f7;   /* 카드 hover */
+  --color-border: #eceef0;          /* 피드 구분선 · 카드 테두리 */
+  --color-border-strong: #cfd5db;   /* 외곽선 버튼 */
+
+  /* 글자 */
+  --color-text: #0f1419;
+  --color-text-body: #2b3036;       /* 요약 본문 */
+  --color-text-secondary: #536471;  /* 날짜 · 보조 */
+  --color-text-tertiary: #8b98a5;
+  --color-text-inverse: #ffffff;
+
+  /* 강조 (보라 — 임시, 추후 확정) */
+  --color-accent: #6d28d9;
+  --color-accent-hover: #5b21b6;
+  --color-accent-soft: #f4f0fe;     /* 태그 배경 */
+  --color-accent-border: #e2d8fb;   /* 태그 테두리 */
+  --color-accent-text: #5b21b6;     /* 태그 · 링크 글자 */
+
+  /* 반응 색 (액션 바) */
+  --color-thunder: #d97706;         /* Thunder(번개) 켜짐 — 흰 배경에서 보이도록 진한 노랑 */
+  --color-wave: #1d9bf0;            /* Wave 켜짐 */
+  --color-danger: #dc2626;          /* 오류 안내 글자 */
+
+  /* Shake it 전용 */
+  --color-shake-from: #7c3aed;
+  --color-shake-to: #ec4899;
+  --gradient-shake: linear-gradient(135deg, var(--color-shake-from), var(--color-shake-to));
+  --color-on-shake: #ffffff;        /* Shake 그라데이션 위 글자 · 아이콘 */
+
+  /* 타이포 */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --font-size-2xs: 12px;   /* 소속·태그 pill */
+  --font-size-xs: 13px;    /* 인기 글 메타 */
+  --font-size-sm: 14px;
+  --font-size-md: 15px;    /* 본문 · 이름 · 날짜 */
+  --font-size-lg: 17px;    /* 글 제목 · 왼쪽 메뉴 */
+  --font-size-xl: 20px;    /* 오른쪽 카드 제목 */
+  --font-size-logo: 23px;
+  --line-height-body: 1.5;
+
+  /* 간격 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* 모서리 · 그림자 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;      /* 카드 · 본문 이미지 */
+  --radius-pill: 9999px;
+  --shadow-pop: 0 4px 20px rgba(15, 20, 25, 0.14);
+
+  /* 레이아웃 (캡처 기준: 왼쪽 275 · 본문 600 · 오른쪽 350) */
+  --layout-max: 1265px;
+  --col-left: 275px;
+  --col-left-collapsed: 88px;
+  --col-main: 600px;
+  --col-right: 350px;
+  --col-right-gap: 30px;
+  --tab-height: 64px;               /* 맨 위 띠 높이: 로고 · 분야 탭 · 검색창의 세로 가운데를 한 줄에 맞춘다 */
+  --mobile-bar-height: 53px;
+  --bottom-tab-height: 56px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #0e0f11;
+  --color-surface: #0e0f11;
+  --color-surface-muted: #1d1f23;
+  --color-surface-hover: #16181b;
+  --color-border: #2a2d32;
+  --color-border-strong: #464b52;
+
+  --color-text: #e7e9ea;
+  --color-text-body: #c9cdd1;
+  --color-text-secondary: #8b98a5;
+  --color-text-tertiary: #6e767d;
+  --color-text-inverse: #0e0f11;
+
+  --color-accent: #8b5cf6;
+  --color-accent-hover: #a78bfa;
+  --color-accent-soft: #241a3a;
+  --color-accent-border: #3b2c5e;
+  --color-accent-text: #c4b5fd;
+
+  --color-thunder: #fbbf24;
+  --color-wave: #1d9bf0;
+  --color-danger: #f87171;
+
+  --shadow-pop: 0 4px 20px rgba(0, 0, 0, 0.6);
+}

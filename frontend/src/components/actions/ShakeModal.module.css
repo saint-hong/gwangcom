@@ -1,0 +1,333 @@
+/* S7 Shake it 선택 창 — 창 틀은 인용하기 창(QuoteModal)과 같다.
+   단, 목록이 길어서 창 틀은 고정(overflow hidden)하고 가운데(.scroll)만 스크롤한다
+   → 스크롤바가 오른쪽 둥근 모서리를 덮지 않는다 */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh var(--space-4) var(--space-4);
+  background: rgba(15, 20, 25, 0.45);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 86vh;
+  overflow: hidden;
+  max-width: 560px;
+  padding: var(--space-3) var(--space-4) 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-pop);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2) -6px;
+}
+
+.close {
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+.headingIcon {
+  width: 22px;
+  height: 22px;
+  color: var(--color-shake-from);
+}
+
+.intro {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-body);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+}
+
+/* 가운데만 스크롤 (스크롤바가 창 안쪽에 생기도록 오른쪽 여백을 스크롤 영역 안으로) */
+.scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 calc(-1 * var(--space-4));
+  padding: 0 var(--space-4) var(--space-2);
+}
+
+.label {
+  margin: var(--space-4) 0 var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.error {
+  margin-top: var(--space-3);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text-body);
+  font-size: var(--font-size-sm);
+}
+
+.empty p {
+  margin: 0;
+}
+
+/* 내 상상 목록 — 카드 모양 라디오 */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--color-surface-hover);
+}
+
+.picked,
+.picked:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.radio {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border-strong);
+  border-radius: 50%;
+}
+
+.picked .radio {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 3px var(--color-bg);
+  background: var(--color-accent);
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.optionTitle {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.optionMeta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.more {
+  align-self: center;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) 0 var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.quota {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 섞는 중: 두 카드가 흔들리며 가운데로 모여 합쳐진다 ── */
+.mixing {
+  padding: var(--space-6) 0 var(--space-6);
+  text-align: center;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+}
+
+.card {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 42%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+  text-align: left;
+}
+
+.cardA {
+  left: 2%;
+  animation:
+    approachA 1.6s ease-in forwards,
+    jiggle 0.18s linear infinite;
+}
+
+.cardB {
+  right: 2%;
+  animation:
+    approachB 1.6s ease-in forwards,
+    jiggle 0.18s linear infinite reverse;
+}
+
+.cardName {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+}
+
+.cardTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.core {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--gradient-shake);
+  color: var(--color-on-shake);
+  opacity: 0;
+  animation:
+    coreIn 1.6s ease-in forwards,
+    pulse 0.9s ease-in-out 1.6s infinite;
+}
+
+.coreIcon {
+  width: 34px;
+  height: 34px;
+  color: var(--color-on-shake);
+}
+
+.mixText {
+  margin: var(--space-4) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+@keyframes jiggle {
+  0% { rotate: -4deg; }
+  50% { rotate: 4deg; }
+  100% { rotate: -4deg; }
+}
+
+@keyframes approachA {
+  from { transform: translate(0, -50%) scale(1); opacity: 1; }
+  80% { opacity: 1; }
+  to { transform: translate(55%, -50%) scale(0.5); opacity: 0; }
+}
+
+@keyframes approachB {
+  from { transform: translate(0, -50%) scale(1); opacity: 1; }
+  80% { opacity: 1; }
+  to { transform: translate(-55%, -50%) scale(0.5); opacity: 0; }
+}
+
+@keyframes coreIn {
+  0%, 60% { opacity: 0; transform: scale(0.3); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1) rotate(-6deg); }
+  50% { transform: scale(1.12) rotate(6deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardA,
+  .cardB {
+    animation: none;
+    transform: translateY(-50%);
+  }
+  .core {
+    animation: none;
+    opacity: 1;
+  }
+}

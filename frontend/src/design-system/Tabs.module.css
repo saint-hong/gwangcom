@@ -1,0 +1,74 @@
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* 넘칠 때만 아래에 가는 가로 스크롤 바 (2026-11-10 사용자 요청: 오른쪽에 가려진 항목을 옮겨 볼 수 있게) */
+.tabs {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.tabs::-webkit-scrollbar {
+  display: block;
+  height: 6px;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+}
+
+.tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+.tab {
+  flex: 1 0 auto;
+  min-width: 72px;
+  padding: 0 var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+/* 고르게: 모든 탭이 같은 폭 (글자 길이와 관계없이 간격이 같아 보이게) */
+.even {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: var(--color-surface-hover);
+}
+
+.label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: var(--tab-height);
+}
+
+.selected {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.selected .label::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+}

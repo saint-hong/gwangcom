@@ -1,0 +1,143 @@
+.wrap {
+  position: relative;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.chip:hover,
+.chip[aria-expanded="true"] {
+  background: var(--color-surface-muted);
+}
+
+.names {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.name {
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.handle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dots {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 40;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.profile:hover,
+.item:hover,
+.logout:hover {
+  background: var(--color-surface-hover);
+}
+
+.profileName {
+  display: block;
+  font-weight: 800;
+}
+
+.profileSub {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.group {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-1) 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-5);
+  color: var(--color-text-body);
+  font-size: var(--font-size-sm);
+}
+
+.item svg {
+  width: 17px;
+  height: 17px;
+  color: var(--color-text-secondary);
+}
+
+.logout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px var(--space-5);
+  border: 0;
+  background: transparent;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.email {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+/* 900px 미만(사이드바 접힘): 아바타만 */
+@media (max-width: 900px) {
+  .chip {
+    justify-content: center;
+    padding: var(--space-2);
+  }
+  .names,
+  .dots {
+    display: none;
+  }
+  .menu {
+    right: auto;
+    width: 240px;
+  }
+}

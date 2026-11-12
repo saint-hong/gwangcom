@@ -1,0 +1,50 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 글자 로고: Heavy 글꼴 + 외곽선으로 더 굵게, 가로 1.14배 — 크기는 조금만 */
+.word {
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--color-accent);
+  font-family: "NanumSquare Neo Heavy", var(--font-sans);
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  transform: scaleX(1.14);
+  transform-origin: left center;
+  margin-right: 0.14em; /* 가로로 늘린 만큼 레이아웃 폭 확보 */
+  -webkit-text-stroke: 0.9px currentColor;
+  paint-order: stroke fill;
+}
+
+/* 첫 글자 I: 나눔스퀘어 네오 Heavy 글꼴 수치 기준 (unitsPerEm 1000)
+   - 대문자 I 글리프: 아래 -106 ~ 위 716 → 높이 0.822em, 기준선보다 0.106em 아래까지 내려옴
+   - flex 기준선 정렬로 svg 아래 끝이 기준선에 붙으므로 0.106em 만큼 내려서 다른 글자와 바닥을 맞춘다 */
+.capI {
+  width: 0.52em;
+  height: 0.822em;
+  position: relative;
+  top: 0.106em;
+  margin-right: 0.06em;
+  overflow: visible;
+}
+
+.mark {
+  display: none;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+}
+
+/* 사이드바가 접혔을 때: 마크만 */
+@media (max-width: 900px) and (min-width: 701px) {
+  .word {
+    display: none;
+  }
+  .mark {
+    display: block;
+  }
+}

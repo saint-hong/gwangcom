@@ -1,0 +1,48 @@
+.bar {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    height: var(--bottom-tab-height);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+}
+
+.icon {
+  width: 26px;
+  height: 26px;
+}
+
+.iconWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* 안 읽은 알림이 있으면 점 */
+.dot {
+  position: absolute;
+  top: -1px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--color-bg);
+  background: var(--color-accent);
+}

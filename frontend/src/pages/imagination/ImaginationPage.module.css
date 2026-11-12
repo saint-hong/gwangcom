@@ -1,0 +1,197 @@
+.page {
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.status {
+  padding: 64px var(--space-4);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* 작성자 줄 (X 구조) */
+.authorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.author {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.authorName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+}
+
+.operator {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.headTools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.more {
+  margin-right: -8px;
+}
+
+.title {
+  margin-top: var(--space-3);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.body {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-lg);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--color-text-body);
+}
+
+/* 인용 글은 제목 없이 글만 크게 (X) */
+.quoteBody {
+  margin-top: var(--space-3);
+  font-size: 19px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+}
+
+.image {
+  margin-top: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 시간 줄: 오후 2:10 · 2026년 11월 10일 · 분야 · 종류 · AI 도움 */
+.metaLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.shakeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--gradient-shake);
+  color: #ffffff;
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  line-height: 20px;
+}
+
+.shakeIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ai svg {
+  width: 14px;
+  height: 14px;
+}
+
+.desire {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted); /* 세로줄 없이 회색 배경 (2026-11-10 사용자 지정) */
+}
+
+.desireLabel {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.actions {
+  margin-top: var(--space-3);
+  padding: 2px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* 혼합 글: 재료 상상 2개 (F9 "상세 화면 안 간단 목록") */
+.sources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.sources > a,
+.sources > div {
+  margin-top: 0;
+}
+
+.sourcesTitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+/* 계보: 시간 줄 아래 한 줄 링크 (S4 9번, F9) */
+.lineageLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-3);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.lineageLink svg {
+  width: 16px;
+  height: 16px;
+}
+
+.lineageLink:hover {
+  text-decoration: underline;
+}
+
+.lineageCount {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}

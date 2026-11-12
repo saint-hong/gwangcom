@@ -1,0 +1,51 @@
+[project]
+name = "imagine"
+version = "0.1.0"
+description = "Imagine — 상상을 올리고, 공명하고, Shake it으로 섞어 보는 상상 플랫폼 (광화문컴퍼니)"
+requires-python = ">=3.12"
+readme = "README.md"
+
+dependencies = [
+    # HTTP API
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    # 설정 / 검증
+    "pydantic>=2.8.0",
+    "pydantic-settings>=2.4.0",
+    # 데이터베이스 (PostgreSQL 16 + pgvector — 개발·운영 동일)
+    "sqlalchemy>=2.0.30",
+    "alembic>=1.13.0",
+    "psycopg[binary]>=3.2.0",
+    "pyjwt>=2.15.1",
+    "bcrypt>=5.0.0",
+    "python-multipart>=0.0.33",
+    "pillow>=13.0.0",
+    "email-validator>=2.3.0",
+    "anthropic>=2.7.0",
+    "pgvector>=0.5.1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.16.0",
+    "pytest>=8.2.0",
+    "ruff>=0.6.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["app", "tests"]
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+known-third-party = ["alembic", "fastapi", "sqlalchemy"]   # 로컬 alembic/ 폴더와 혼동 방지
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"

@@ -1,0 +1,54 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.md .iconWrap {
+  width: 36px;
+  height: 36px;
+}
+
+.sm .iconWrap {
+  width: 32px;
+  height: 32px;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.icon {
+  width: 19px;
+  height: 19px;
+}
+
+.count {
+  min-width: 1ch;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  padding-right: 4px;
+}
+
+/* 흐린 버튼(aria-disabled)은 눌러서 안내 메시지를 볼 수 있게 클릭은 받는다 */
+.button[aria-disabled="true"] {
+  cursor: pointer;
+}
+
+.button[aria-disabled="true"]:hover svg {
+  animation: none !important;
+}

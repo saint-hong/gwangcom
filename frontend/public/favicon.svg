@@ -1,0 +1,5 @@
+<!-- Imagine 파비콘: 보라 둥근 정사각형 + 흰 대문자 I (하이젠버그 파비콘 형식) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#6d28d9"/>
+  <path fill="#ffffff" d="M10 7h12v4h-3.5v10H22v4H10v-4h3.5V11H10z"/>
+</svg>

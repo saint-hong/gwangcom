@@ -1,0 +1,103 @@
+/* IconButton(sm)과 같은 크기·모양. 마우스를 올리면 색·배경 변화 없이 움직임만 */
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  overflow: visible;
+}
+
+/* 숟가락·젓가락이 번갈아 들썩이고, 별이 하나씩 깜빡인다 */
+.icon :global(.shake-spoon),
+.icon :global(.shake-chopsticks),
+.icon :global(.shake-star) {
+  transform-box: fill-box;
+}
+
+.icon :global(.shake-spoon) {
+  transform-origin: 80% 90%;
+}
+
+.icon :global(.shake-chopsticks) {
+  transform-origin: 10% 90%;
+}
+
+.icon :global(.shake-star) {
+  transform-origin: center;
+}
+
+.button:hover .icon :global(.shake-spoon) {
+  animation: bob-left 0.7s ease-in-out infinite;
+}
+
+.button:hover .icon :global(.shake-chopsticks) {
+  animation: bob-right 0.7s ease-in-out 0.35s infinite;
+}
+
+.button:hover .icon :global(.shake-star) {
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+.button:hover .icon :global(.shake-star-2) { animation-delay: 0.25s; }
+.button:hover .icon :global(.shake-star-3) { animation-delay: 0.5s; }
+.button:hover .icon :global(.shake-star-4) { animation-delay: 0.75s; }
+.button:hover .icon :global(.shake-star-5) { animation-delay: 1s; }
+
+@keyframes bob-left {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-1.6px) rotate(-8deg); }
+}
+
+@keyframes bob-right {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-1.6px) rotate(8deg); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.1; transform: scale(0.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:hover .icon :global(.shake-spoon),
+  .button:hover .icon :global(.shake-chopsticks),
+  .button:hover .icon :global(.shake-star) {
+    animation: none;
+  }
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.button:disabled:hover .icon :global(*),
+.button[aria-disabled="true"]:hover .icon :global(*) {
+  animation: none;
+}
+
+.count {
+  min-width: 1ch;
+  padding-right: 4px;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}

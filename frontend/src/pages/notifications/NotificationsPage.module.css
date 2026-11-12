@@ -1,0 +1,80 @@
+.tabs {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.row:hover {
+  background: var(--color-surface-hover);
+}
+
+/* 안 읽은 알림: 옅은 보라 배경 */
+.unread {
+  background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent);
+}
+
+.typeIcon {
+  flex: none;
+  display: inline-flex;
+  justify-content: flex-end;
+  width: 40px;
+  padding-top: 4px;
+}
+
+.typeIcon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.thunder {
+  color: var(--color-thunder);
+}
+
+.wave {
+  color: var(--color-wave);
+}
+
+.follow {
+  color: var(--color-accent);
+}
+
+.shaken {
+  color: var(--color-shake-from);
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.line {
+  font-size: var(--font-size-md);
+  line-height: 1.45;
+}
+
+.line b {
+  font-weight: 800;
+}
+
+.date {
+  color: var(--color-text-secondary);
+}
+
+.snippet {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
