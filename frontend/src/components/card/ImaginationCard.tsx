@@ -10,6 +10,7 @@ import { WaveIcon } from "../actions/WaveIcon";
 import styles from "./ImaginationCard.module.css";
 import { ItemMenu } from "./ItemMenu";
 import { QuoteEmbed } from "./QuoteEmbed";
+import { SourceChips } from "./SourceChips";
 
 /**
  * 피드 카드 — 하이젠버그 카드 구성 (기획안 v9 F3)
@@ -21,7 +22,7 @@ import { QuoteEmbed } from "./QuoteEmbed";
  *          | 액션 바
  * 팔로잉 탭 · 프로필 Wave 탭에서는 맨 위에 "≈ ○○님이 Wave함" 한 줄 (X 의 재게시 줄).
  * 인용 글·댓글은 제목 대신 본문을 그대로 보여 준다 (X 방식). 댓글 카드는 서재 북마크 탭에서 쓴다.
- * 혼합 글: 재료 줄 [Shake it 배지 · 상대 글 · 내 글 …… 계보] (2026-11-12 사용자 지정: 배지를 "재료" 자리로). fresh = 방금 섞어 올린 글 강조 (F8)
+ * 혼합 글: 재료 줄 [Shake it 배지 · 상대 글 · 내 글 (넘치면 …) …… 계보] — 항상 한 줄 (2026-11-12 사용자 지정: 배지를 "재료" 자리로). fresh = 방금 섞어 올린 글 강조 (F8)
  */
 export function ImaginationCard({
   data,
@@ -90,17 +91,7 @@ export function ImaginationCard({
               <ShakeIcon className={styles.shakeBadgeIcon} aria-hidden="true" />
               Shake it
             </span>
-            {(data.sources ?? []).map((s, i) =>
-              s.deleted || s.id === null ? (
-                <span key={i} className={clsx(styles.source, styles.sourceGone)}>
-                  삭제된 상상
-                </span>
-              ) : (
-                <Link key={i} to={`/i/${s.id}`} className={styles.source} title={s.display_title ?? undefined}>
-                  {s.display_title}
-                </Link>
-              ),
-            )}
+            <SourceChips sources={data.sources ?? []} />
             <Link to={`/i/${data.id}/lineage`} className={styles.lineage} aria-label="계보 보기">
               <Network aria-hidden="true" strokeWidth={1.8} />
             </Link>

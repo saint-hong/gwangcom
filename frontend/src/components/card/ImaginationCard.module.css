@@ -99,6 +99,8 @@
 .shakeBadge {
   display: inline-flex;
   align-items: center;
+  flex: none;
+  white-space: nowrap;
   gap: 4px;
   padding: 1px 10px 1px 8px;
   border-radius: var(--radius-pill);
@@ -178,7 +180,7 @@
 
 .sources {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* 항상 한 줄, 넘치면 … (2026-11-12 사용자 지정) */
   align-items: center;
   gap: 6px;
   margin-top: var(--space-3);
@@ -187,7 +189,30 @@
   border-radius: var(--radius-md);
 }
 
+.sourceList {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 6px;
+  overflow: hidden;
+}
+
+/* 넘칠 때 끝을 흐리게 지워 알약이 칼로 자른 듯 보이지 않게 */
+.sourceListCut {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+
+.sourceMore {
+  flex: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
 .source {
+  flex: 0 1 auto;
+  min-width: 72px; /* 이보다 줄여야 하면 뒤쪽 알약이 가려진다 */
   max-width: 220px;
   padding: 2px 10px;
   border-radius: var(--radius-pill);
@@ -208,6 +233,7 @@
 
 .lineage {
   position: relative;
+  flex: none;
   margin-left: auto;
   display: inline-flex;
   color: var(--color-text-secondary);
