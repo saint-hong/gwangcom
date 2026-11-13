@@ -124,3 +124,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+a.answerLine:hover span,
+a.question:hover {
+  text-decoration: underline;
+}
+
+a.eyebrow:hover {
+  text-decoration: underline;
+}

@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes } from "react";
 import { Link, type LinkProps } from "react-router-dom";
 import styles from "./Button.module.css";
 
-type Variant = "primary" | "outline";
+type Variant = "primary" | "outline" | "dark"; // dark = 검정 채움 (보라 버튼 옆 보조 동작, 2026-11-13)
 type Size = "lg" | "md" | "sm";
 
 type Common = { variant?: Variant; size?: Size; block?: boolean; className?: string };

@@ -414,7 +414,7 @@ function RowDetail({
         ) : null}
       </dl>
       <div className={styles.detailFoot}>
-        <ButtonLink size="sm" variant="outline" to={href}>
+        <ButtonLink size="sm" variant="dark" to={href}>
           상세 보기
         </ButtonLink>
       </div>

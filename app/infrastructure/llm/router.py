@@ -23,7 +23,7 @@ from app.infrastructure.llm.providers.base import (
 from app.infrastructure.llm.providers.fake import FakeProvider
 from app.shared.time import kst_day_start
 
-Feature = Literal["tagging", "shake", "note_draft", "similar_rerank"]
+Feature = Literal["tagging", "shake", "note_draft", "similar_rerank", "user_summary"]
 
 _providers: dict[str, LlmProvider] = {}
 
@@ -36,6 +36,7 @@ def route(feature: Feature, settings: Settings | None = None) -> tuple[str, str]
         "shake": "shake",
         "note_draft": "note",
         "similar_rerank": "similar",
+        "user_summary": "summary",
     }[feature]
     provider = getattr(s, f"llm_{key}_provider") or s.llm_provider
     model = getattr(s, f"llm_{key}_model") or s.llm_model

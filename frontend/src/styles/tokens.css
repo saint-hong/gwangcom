@@ -59,6 +59,39 @@
   --color-lineage-edge: #111827;
   --color-lineage-edge-active: #60a5fa;
 
+  /* AI 분석 영역 (운영자 사용자 상세 "AI가 분석했어요", 2026-11-13) — 옅은 파랑 */
+  --color-ai-soft: #eff6ff;
+  --color-ai-border: #dbeafe;
+  --color-ai-text: #1d4ed8;
+
+  /* 반응 그래프 (질문 상세, 2026-11-13) — 검사 스크립트로 색각 이상 · 대비 통과 */
+  --color-chart-thunder: #d97706;
+  --color-chart-wave: #2563eb;
+  --color-chart-comment: #db2777;
+  /* 대시보드 차트 (6-D, 2026-11-13) — dataviz 검증 팔레트. 분야 8개 = 고정 순서 1~8 (흰 바탕에서 3·4·5 는 3:1 미만 → 범례 · 표 · 툴팁으로 보완)
+     기술 = 보라 · 욕망 = 주황 (두 색 검증 통과) · 크기(히트맵) = 파랑 한 색 단계 */
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  --viz-4: #eda100;
+  --viz-5: #e87ba4;
+  --viz-6: #008300;
+  --viz-7: #6250d6;
+  --viz-8: #e34948;
+  --viz-tech: #6250d6;
+  --viz-desire: #eb6834;
+  --viz-seq-0: #f3f4f6;
+  --viz-seq-1: #cde2fb;
+  --viz-seq-2: #9ec5f4;
+  --viz-seq-3: #6da7ec;
+  --viz-seq-4: #3987e5;
+  --viz-seq-5: #256abf;
+  --viz-seq-6: #184f95;
+  --viz-grid: #eceef1;
+  --viz-axis: #9aa0a6;
+  --viz-up: #0f7b0f;
+  --viz-down: #c43d3d;
+
   /* 타이포 */
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
     "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
@@ -128,6 +161,35 @@
   --color-material-active: #22c55e;
   --color-lineage-edge: #e5e7eb;    /* 다크 모드에서는 검정이 안 보여 밝은 회색 */
   --color-lineage-edge-active: #7dd3fc;
+
+  --color-ai-soft: #0f1d33;
+  --color-ai-border: #1e3a5f;
+  --color-ai-text: #93c5fd;
+
+  --color-chart-thunder: #d97706;
+  --color-chart-wave: #3b82f6;
+  --color-chart-comment: #ec4899;
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-4: #c98500;
+  --viz-5: #d55181;
+  --viz-6: #008300;
+  --viz-7: #9085e9;
+  --viz-8: #e66767;
+  --viz-tech: #9085e9;
+  --viz-desire: #d95926;
+  --viz-seq-0: #1a1c20;
+  --viz-seq-1: #0d366b;
+  --viz-seq-2: #104281;
+  --viz-seq-3: #184f95;
+  --viz-seq-4: #256abf;
+  --viz-seq-5: #3987e5;
+  --viz-seq-6: #6da7ec;
+  --viz-grid: #23262b;
+  --viz-axis: #6b7178;
+  --viz-up: #4ade80;
+  --viz-down: #f87171;
 
   --shadow-pop: 0 4px 20px rgba(0, 0, 0, 0.6);
 }

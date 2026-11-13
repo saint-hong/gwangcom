@@ -5,13 +5,14 @@ import { Button } from "../../design-system";
 import type { PolicyKey, PolicyValue, PolicyView, Tier } from "../../types/api";
 import styles from "./Admin.module.css";
 import { logTarget, shortDate, showValue } from "./adminFormat";
+import { ChangeLogSection } from "./ChangeLogSection";
 import { PolicyInput } from "./PolicyInput";
 
 /**
  * A6 기본 정책 (Sprint 6-B, 기획안 v11 F20)
  *   ① 한도 · 권한 표: 항목 | 전체 기본값 | 등급마다 값 (비우면 전체 기본값을 따름 — 흐린 글씨로 따르는 값)
- *   ② 등급: 이름 · 설명 · 사용자 수 · 기본 등급 · [기본으로] [지우기] + 새 등급 추가
- *   ③ 최근 변경 기록 (전체 · 등급)
+ *   ② 등급: 이름 · 설명 · 사용자 수 · 설정([기본으로] [지우기]) + 새 등급 추가
+ *   ③ 최근 변경 기록 (전체 · 등급) — [새로고침] · 페이지 번호 (ChangeLogSection)
  *   적용 순서: 개인 예외(A5) → 등급 → 전체 기본값. 값을 바꾸면 바로 저장된다 (Enter · 칸 벗어나기 · 토글).
  */
 export function AdminPolicyPage() {
@@ -68,7 +69,7 @@ export function AdminPolicyPage() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>한도 · 권한</h2>
         <p className={styles.sectionHint}>
-          적용 순서: 개인 예외(사용자 탭) → 등급 → 전체 기본값. 등급 칸을 비우면 전체 기본값을 따라요.
+          적용 순서: 개인 예외(사용자 탭) → 등급 → 전체 기본값. 등급 칸의 [기본값 적용]을 누르면 전체 기본값을 따라요.
         </p>
         <div className={styles.tableWrap}>
           <table className={`${styles.table} ${styles.centerAll}`}>
@@ -83,12 +84,31 @@ export function AdminPolicyPage() {
               <tr>
                 <th>항목</th>
                 <th>전체 기본값</th>
-                {data.tiers.map((t) => (
-                  <th key={t.id}>
-                    {t.name}
-                    {t.is_default ? <span className={styles.badge}>기본</span> : null}
-                  </th>
-                ))}
+                {data.tiers.map((t) => {
+                  const custom = Object.keys(data.tier_values[String(t.id)] ?? {}).length;
+                  return (
+                    <th key={t.id}>
+                      <div className={styles.tierHead}>
+                        <span>
+                          {t.name}
+                          {t.is_default ? <span className={styles.badge}>기본</span> : null}
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.textBtn}
+                          disabled={busy || custom === 0}
+                          title={custom === 0 ? "이미 모든 항목이 전체 기본값이에요" : `직접 정한 ${custom}개 항목을 전체 기본값으로`}
+                          onClick={() => {
+                            if (window.confirm(`"${t.name}" 등급의 ${custom}개 항목을 모두 전체 기본값으로 바꿀까요?`))
+                              void send(`/api/admin/tiers/${t.id}/reset`, "POST", undefined, `${t.name}에 전체 기본값을 적용했어요.`);
+                          }}
+                        >
+                          기본값 전체 적용
+                        </button>
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -117,14 +137,25 @@ export function AdminPolicyPage() {
                           const tv = data.tier_values[String(t.id)]?.[k.key];
                           return (
                             <td key={t.id} className={styles.center}>
-                              <PolicyInput
-                                spec={k}
-                                value={tv ?? null}
-                                allowEmpty
-                                placeholder={g}
-                                onSave={(v) => save(k.key, t, v)}
-                                disabled={busy}
-                              />
+                              <div className={styles.tierCell}>
+                                <PolicyInput
+                                  spec={k}
+                                  value={tv ?? null}
+                                  allowEmpty
+                                  placeholder={g}
+                                  onSave={(v) => save(k.key, t, v)}
+                                  disabled={busy}
+                                />
+                                <button
+                                  type="button"
+                                  className={styles.textBtn}
+                                  disabled={busy || tv == null}
+                                  title={tv == null ? "이미 전체 기본값을 따르고 있어요" : `전체 기본값(${showValue(k, g)})으로`}
+                                  onClick={() => save(k.key, t, null)}
+                                >
+                                  기본값 적용
+                                </button>
+                              </div>
                             </td>
                           );
                         })}
@@ -152,7 +183,7 @@ export function AdminPolicyPage() {
               <th>이름</th>
               <th>설명</th>
               <th>사용자</th>
-              <th aria-label="관리" />
+              <th>설정</th>
             </tr>
           </thead>
           <tbody>
@@ -219,14 +250,7 @@ export function AdminPolicyPage() {
         </table>
       </section>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>최근 변경 기록</h2>
-        {data.logs.length === 0 ? (
-          <p className={styles.sectionHint}>아직 바꾼 기록이 없어요.</p>
-        ) : (
-          <LogTable logs={data.logs} specOf={specOf} />
-        )}
-      </section>
+      <ChangeLogSection specOf={specOf} reloadKey={data} />
     </div>
   );
 }

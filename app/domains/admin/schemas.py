@@ -85,6 +85,24 @@ class ChangeLogOut(BaseModel):
     at: datetime
 
 
+class ChangeLogsOut(BaseModel):
+    """변경 기록 한 페이지 (A5 · A6 기록 영역, 페이지 번호 · 20 · 50 · 100개씩)."""
+
+    items: list[ChangeLogOut]
+    total: int
+    page: int
+    size: int
+
+
+class UserSummaryOut(BaseModel):
+    """A5 사용자 상세 "AI가 분석했어요" — 활동 요약 6칸을 바탕으로 한 짧은 설명 (판단 아님)."""
+
+    summary: str | None  # AI 를 쓸 수 없으면 null
+    error: str | None = None  # 그때 보여 줄 안내
+    model: str | None = None
+    at: datetime | None = None
+
+
 class PolicyOut(BaseModel):
     """A6 기본 정책: 항목 · 전체 기본값 · 등급별 값(없으면 전체 기본값을 따름) · 등급 · 최근 변경."""
 

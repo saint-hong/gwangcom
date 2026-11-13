@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import type { ReactNode } from "react";
 import { TagPill } from "../../design-system";
 import type { DomainRef, TagRef } from "../../types/api";
 import styles from "./Tags.module.css";
@@ -16,19 +17,22 @@ export function domainsOf(item: { domain: DomainRef; secondary_domain: DomainRef
  *   용어: 분야 = 고정 8개(누르면 홈 그 분야), 주제 = 기술 태그(누르면 S9 태그별 상상).
  *   예전 ⋯ > 뱃지 보기 는 없앴다. 욕망 태그는 분석용이라 서버가 보내지 않는다.
  * max: 주제는 카드에서 3개까지 (기획안 "#기술요소 1~3개"). 분야는 늘 다 보인다.
+ * after: 줄 맨 끝 알약 자리 (상세의 [태그 편집], 2026-11-13) — 자리가 모자라면 통째로 다음 줄로 내려간다.
  */
 export function TagList({
   tags,
   domains = [],
   max,
   className,
+  after,
 }: {
   tags: TagRef[];
   domains?: DomainRef[];
   max?: number;
   className?: string;
+  after?: ReactNode;
 }) {
-  if (tags.length === 0 && domains.length === 0) return null;
+  if (tags.length === 0 && domains.length === 0 && !after) return null;
   const shown = max ? tags.slice(0, max) : tags;
   return (
     <ul className={clsx(styles.list, className)} aria-label="분야 · 주제">
@@ -44,6 +48,7 @@ export function TagList({
           <TagPill to={tagPath(t)}>#{t.label}</TagPill>
         </li>
       ))}
+      {after ? <li className={styles.after}>{after}</li> : null}
     </ul>
   );
 }

@@ -5,12 +5,15 @@ import { useAuth, type AuthMode } from "./hooks/useAuth";
 import { PlaceholderPage } from "./pages/common/PlaceholderPage";
 import { FollowListRoute, ProfileRoute } from "./pages/common/ProfileRoute";
 import { AdminImaginationsPage } from "./pages/admin/AdminImaginationsPage";
+import { AdminDashboardPage } from "./pages/admin/dashboard/AdminDashboardPage";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminPolicyPage } from "./pages/admin/AdminPolicyPage";
 import { AdminPromptsPage } from "./pages/admin/AdminPromptsPage";
 import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { TagPage } from "./pages/topics/TagPage";
+import { PromptListPage } from "./pages/prompt/PromptListPage";
+import { PromptPage } from "./pages/prompt/PromptPage";
 import { TopicsPage } from "./pages/topics/TopicsPage";
 import { HomePage } from "./pages/home/HomePage";
 import { ImaginationPage } from "./pages/imagination/ImaginationPage";
@@ -44,6 +47,8 @@ export function App() {
         <Route path="trending" element={<TrendingPage />} />
         <Route path="topics" element={<TopicsPage />} />
         <Route path="tags/:name" element={<TagPage />} />
+        <Route path="prompts" element={<PromptListPage />} />
+        <Route path="prompts/:id" element={<PromptPage />} />
         <Route path="notes" element={<PlaceholderPage title="Observe Note" sprint="Sprint 6" />} />
         <Route path="notes/:id" element={<PlaceholderPage title="Observe Note" sprint="Sprint 6" />} />
         <Route path="library" element={<LibraryPage />} />
@@ -52,7 +57,7 @@ export function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="feedback" element={<PlaceholderPage title="피드백 및 문의하기" sprint="Sprint 9" />} />
         <Route path="admin" element={<AdminLayout />}>
-          <Route index element={<PlaceholderPage title="대시보드" sprint="Sprint 6-D" />} />
+          <Route index element={<AdminDashboardPage />} />
           <Route path="notes/*" element={<PlaceholderPage title="Observe Note 작성" sprint="Sprint 6-E" />} />
           <Route path="prompts" element={<AdminPromptsPage />} />
           <Route path="imaginations" element={<AdminImaginationsPage />} />

@@ -150,3 +150,52 @@ def test_role_and_tier_changes(client) -> None:
     assert me.status_code == 400 and me.json()["detail"]["code"] == "self_role"
     # 일반 사용자는 막힌다
     assert client.get("/api/admin/users", headers=auth(signup(client, "x1"))).status_code == 403
+
+
+def test_change_log_pages_and_ai_summary(client) -> None:
+    """2026-11-13: 변경 기록 페이지 번호 · 사용자 상세 AI 요약 (fake 제공자)."""
+    admin, user = signup(client, "logboss"), signup(client, "logged")
+    make_admin(admin)
+    h = auth(admin)
+    for v in (11, 12, 13):
+        client.put(
+            "/api/admin/policy",
+            json={"scope": "global", "tier_id": None, "key": "limit.shake_daily", "value": v},
+            headers=h,
+        )
+    uid = user["user"]["id"]
+    client.put(
+        f"/api/admin/users/{uid}/policy", json={"key": "limit.shake_daily", "value": 20}, headers=h
+    )
+
+    page = client.get("/api/admin/policy/logs?size=20", headers=h).json()
+    assert page["total"] >= 3 and page["page"] == 1 and page["size"] == 20
+    assert page["items"][0]["new_value"] == 13  # 최신순
+    mine = client.get(f"/api/admin/policy/logs?user_id={uid}", headers=h).json()
+    assert mine["total"] == 1 and mine["items"][0]["user"] == "logged"
+    assert client.get("/api/admin/policy/logs?size=7", headers=h).status_code == 400
+    assert client.get("/api/admin/policy/logs", headers=auth(user)).status_code == 403
+
+    s = client.get(f"/api/admin/users/{uid}/summary", headers=h).json()
+    assert s["summary"] and s["error"] is None
+    assert client.get(f"/api/admin/users/{uid}/summary", headers=auth(user)).status_code == 403
+
+
+def test_reset_tier_to_defaults(client) -> None:
+    """등급 이름 옆 [기본값 전체 적용]: 등급 값을 모두 지우고 항목마다 기록 (2026-11-13)."""
+    admin = signup(client, "boss")
+    make_admin(admin)
+    data = client.get("/api/admin/policy", headers=auth(admin)).json()
+    active = tier_id(data, "활발한 Dreamer")
+    for key, value in (("limit.shake_daily", 30), ("perm.can_shake", False)):
+        body = {"scope": "tier", "tier_id": active, "key": key, "value": value}
+        client.put("/api/admin/policy", json=body, headers=auth(admin))
+
+    res = client.post(f"/api/admin/tiers/{active}/reset", headers=auth(admin))
+    assert res.status_code == 200 and res.json()["tier_values"].get(str(active), {}) == {}
+    logs = res.json()["logs"]
+    assert sorted((lg["key"], lg["new_value"]) for lg in logs[:2]) == [
+        ("limit.shake_daily", None),
+        ("perm.can_shake", None),
+    ]
+    assert client.post("/api/admin/tiers/9999/reset", headers=auth(admin)).status_code == 404

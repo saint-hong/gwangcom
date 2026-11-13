@@ -1,8 +1,8 @@
 """users 모델 — 회원 · 팔로우 (기획안 v9 7장 users · follows). 연령대는 받지 않는다 (v9)."""
 
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, Index, String, func
+from sqlalchemy import BigInteger, CheckConstraint, Date, DateTime, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.core.database import Base
@@ -44,3 +44,19 @@ class Follow(Base):
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserVisit(Base):
+    """하루 접속 기록 (6-D 활성화 분석, 2026-11-13) — 로그인한 Dreamer 가 그날(한국 날짜) 처음 요청할 때 한 줄.
+
+    활동(글 · 반응)이 없어도 "들어와서 보기만 한 날"을 알 수 있다 → 신규 Dreamer 첫 7일 단계표의 "다시 들어옴".
+    """
+
+    __tablename__ = "user_visits"
+    __table_args__ = (Index("ix_user_visits_day", "day"),)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    day: Mapped[date] = mapped_column(Date, primary_key=True)  # 한국 날짜
+    first_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

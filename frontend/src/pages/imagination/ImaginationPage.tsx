@@ -123,10 +123,10 @@ export function ImaginationPage() {
 
         {item.prompt ? (
           <p className={styles.promptLine}>
-            <span className={prompts.answerLine}>
+            <Link to={`/prompts/${item.prompt.id}`} className={prompts.answerLine}>
               <MessageCircleQuestion aria-hidden="true" />
               <span>이번 주 질문 · {item.prompt.title}</span>
-            </span>
+            </Link>
           </p>
         ) : null}
         {item.kind === "quote" ? null : <h1 className={styles.title}>{item.display_title}</h1>}

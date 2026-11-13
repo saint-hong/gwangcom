@@ -1,6 +1,6 @@
 # 코드 구조
 
-> 갱신: 2026-11-12 (Sprint 5) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
+> 갱신: 2026-11-13 (Sprint 6) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
 
 ## 백엔드 `app/`
 
@@ -12,20 +12,21 @@ app/
 │
 ├── domains/                    # 비즈니스 (router → service → crud → models/schemas)
 │   ├── auth/                   # 가입·로그인·JWT ✅ security(bcrypt·PyJWT) · deps(optional/current/admin_user) · router · service · schemas
-│   ├── users/                  # 사용자 ✅ models(+Follow) · crud · schemas · service(프로필·탭·팔로우·추천·프로필 수정·비밀번호) · router(/api/users/*)
+│   ├── users/                  # 사용자 ✅ models(+Follow · UserVisit 하루 접속) · visits(접속 기록) · crud · schemas · service(프로필·탭·팔로우·추천·프로필 수정·비밀번호) · router(/api/users/*)
 │   ├── imaginations/           # 상상 ✅ models(+조회 기록, 댓글도 kind=comment) · crud · service(쓰기·인용·피드·상세·삭제, present = actions·my·인용 원본) · actions · router · ai_jobs(글 올린 뒤 백그라운드 태깅·임베딩)
 │   ├── reactions/              # Thunder·Wave·북마크 ✅ models(+reaction_events) · service(켜기·끄기 · 서재) · router(/thunder·/wave·/bookmark · /api/me/library)
 │   ├── comments/               # 댓글·답글 ✅ service(1단계 모음 · 최신순 · 삭제 자리) · router — 저장은 imaginations(kind=comment)
 │   ├── tags/                   # 분야·태그 ✅ models(Domain · Tag · ImaginationTag(+removed_at)) · router(/api/domains · 태그 편집 · /api/topics · /api/tags/{name}/imaginations) · tagging.py(태깅 호출) · service(정규화 · 저장 · tag_all · 화면용 기술 태그) · browse(작성자 편집 · 주제 · 태그별 상상, 5-D)
 │   ├── shake/                  # Shake it ✅ blend.py(혼합 호출 + 출력 검사) · models(ImaginationParent · ShakeAttempt) · service(선택 창 · 섞어서 게시) · router(/api/shake) · lineage(계보 그래프 노드 · 화살표)
-│   ├── prompts/                # 이번 주 질문 ✅ models(Prompt) · schemas · service(지금 질문 · 상태 · 답할 수 있는지 · 운영자 목록/만들기/고치기/지우기) · router(/api/prompts/* · /api/admin/prompts) — 6-C
+│   ├── prompts/                # 이번 주 질문 ✅ models(Prompt) · schemas · service(지금 질문 · 상태 · 답할 수 있는지 · 운영자 목록/만들기/고치기/지우기) · router(/api/prompts/* · /api/admin/prompts) · feed(질문 상세 답한 상상, 순환 import 피해 분리) — 6-C, 답한 사용자 · insight 2026-11-13
+│   ├── analytics/              # 분석 대시보드 ✅ (6-D, 2026-11-13) period(기간 · 시간 칸, 한국 시간) · frame(기간 안 대중 상상 + 태그 한 번에 읽기) · insights(개요 · 기술 흐름 · 교차: 생키 · 네트워크 · 욕망×기술 · 기술 조합) · engagement(반응 순위 · 질문형 비율 · 요일×시간 · Shake it · AI 사용량) · activation(신규 Dreamer 활성화) · summary(전체 현황, 기간 무관) · schemas · router(/api/admin/analytics/* : overview · tech · cross · engagement · activation · shake · ai · summary + export.csv)
 │   ├── notes/                  # Observe Note                      (Sprint 6)
 │   ├── notifications/          # 알림 ✅ models · service(notify · 목록 · 안 읽은 수 · 읽음) · router(/api/notifications)
 │   ├── policy/                 # 이용 한도 ✅ models(등급·설정) · service(최종 한도 계산) · router(/api/me/limits) — 관리 화면 Sprint 6
 │   ├── activity/               # 내 활동                        (Sprint 8)
 │   ├── graph/                  # Memgraph 동기화·탐색기           (Sprint 7)
 │   ├── similar/                # 임베딩·비슷한 상상 ✅ models(ImaginationEmbedding · SimilarSet · SimilarLink) · service(embed_all · find_similar = 1단계 벡터) · rerank(2단계 LLM 리랭킹 · 저장 · 화면용 similar_for) · schemas
-│   └── admin/                  # 운영자 ✅ models(ModerationLog) · schemas · service(게시물 목록 · 숨김/되돌림) · policy_admin(6-B 기본 정책 · 등급 · 사용자 목록/상세 · 개인 예외 · 변경 기록) · router(/api/admin/*, admin_user). 통계는 6-D
+│   └── admin/                  # 운영자 ✅ models(ModerationLog) · schemas · service(게시물 목록 · 숨김/되돌림) · policy_admin(6-B 기본 정책 · 등급 · 사용자 목록/상세 · 개인 예외 · 변경 기록 · 기록 페이지) · user_summary(사용자 상세 AI 요약, 2026-11-13) · router(/api/admin/*, admin_user). 통계는 6-D
 │
 ├── infrastructure/             # 외부 시스템·기반
 │   ├── core/                   # config · database · logging · exceptions · model_registry(모든 모델 등록)
@@ -36,9 +37,9 @@ app/
 │       (Sprint 7: graph/)
 │
 ├── shared/                     # errors(오류 형식) · cursor(next_cursor) · time(한국 시간 자정)
-└── interfaces/cli/             # create-admin · seed-demo · embed-all · similar · ai-eval(모델 실측) (seed_data.py · ai_eval.py)
+└── interfaces/cli/             # create-admin · seed-demo(16주 샘플: seed_demo.py 만드는 순서 · seed_topics.py 주제 · 질문 · seed_data.py 댓글 · 인용 문장) · embed-all · tag-all · similar · ai-eval(모델 실측, ai_eval.py)
 
-prompts/v1/                     # LLM 프롬프트 (tagging.md · shake.md) — 코드와 분리
+prompts/v1/                     # LLM 프롬프트 (tagging · shake · similar_rerank · user_summary) — 코드와 분리
 ```
 
 ## 프론트엔드 `frontend/src/`
@@ -90,8 +91,9 @@ src/
 │   ├── card/ItemMenu           # ⋯ 메뉴 — 링크 복사 · (내 글·댓글) 삭제 (뱃지 보기는 2026-11-12 제거)
 │   ├── card/SourceChips        # 혼합 글 카드 재료 줄 알약 (한 줄 고정, 넘치면 …)
 │   ├── similar/SimilarBlock    # 상세 오른쪽 컬럼 "비슷한 상상" (이유 한 줄, 5-C)
-│   ├── prompt/                 # useCurrentPrompt · leftLabel · PromptBanner(좁은 화면 홈 배너) · Prompt.module.css (오른쪽 블록 · 글쓰기 카드 · 상세 한 줄 공통)
+│   ├── prompt/                 # usePromptList(/api/prompts) · leftLabel · PromptBanner(좁은 화면 홈 배너) · Prompt.module.css (오른쪽 블록 · 글쓰기 카드 · 상세 한 줄 공통)
 │   ├── common/                 # Pagination(페이지 번호 + 개수) · SelectMenu(작은 메뉴 선택) · DropMenu.module.css
+│   ├── charts/                 # 차트 (6-D, 라이브러리 없이 SVG · CSS) core(폭 · 눈금 · 툴팁 · 범례 · 분야 색) · TimeChart(선 · 쌓은 면적 · 쌓은 막대 + 사건 표시) · basic(Sparkline · Delta · Bars · Heatmap · PunchCard · Columns) · relations(Scatter 사분면 · Network 힘 배치 · Sankey) · Charts.module.css
 │   ├── tags/TagList            # 분류 줄 [분야] 회색 + #주제 보라 (카드 최대 3) · tagPath · domainsOf
 │   ├── tags/ItemTags           # 상세 분류 줄 + 작성자 기술 태그 편집 상자
 │   ├── comments/               # CommentSection(목록·무한 스크롤) · CommentItem(X 줄 + 같은 액션 바) · CommentComposer(접힘 → 펼침)
@@ -108,12 +110,13 @@ src/
     ├── imagination/ImaginationPage  # S4 상상 상세 (X 구조) + 댓글 · 재료 상상 · 시간 줄 [Shake it] · 계보 · 분류 줄(태그 편집) · (좁은 화면) 비슷한 상상
     ├── lineage/LineagePage     # S15 계보 (층 배치 · 화살표 · 확대/축소/이동 · 미리보기 · 크게 보기 팝업)
     ├── topics/                 # S8 TopicsPage(분야별 주제) · S9 TagPage(태그별 상상)
+    ├── prompt/                 # PromptListPage(질문 목록 /prompts: 진행 중 · 끝난 질문) · PromptPage(질문 상세 /prompts/:id: 질문 머리 · 반응 그래프 · 답한 상상) — 2026-11-13
     ├── library/LibraryPage     # S12 서재 [Thunder | Wave | Shake it | 북마크 | 최근 본 상상]
     ├── trending/TrendingPage   # S7 인기 상상 (순위 + 액션 바, 오른쪽 컬럼 있음)
     ├── profile/                # S11 ProfilePage(X, [상상|댓글|인용]) · EditProfileModal(커버·이미지·이름·소개) · FollowListPage(S17 팔로워·팔로잉)
     ├── notifications/          # S13 알림 [전체 | 댓글] (X)
     ├── settings/SettingsPage   # S14 비밀번호 변경
-    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css
+    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeAiTabs, parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · CSV · 통계 캐시) · settings(그래프 설정: 기간 · 개수 · 항목 · 모양), Dashboard.module.css)
     └── common/                 # PlaceholderPage(미구현 화면) · ProfileRoute(/@닉네임)
 ```
 

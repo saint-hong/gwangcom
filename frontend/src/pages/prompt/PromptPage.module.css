@@ -1,0 +1,307 @@
+/* 이번 주 질문 상세 (/prompts/:id, 2026-11-13) */
+.status {
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+/* 질문 머리 — 상상 상세의 본문 자리 */
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-accent-soft);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.eyebrow svg {
+  width: 16px;
+  height: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.body {
+  margin: 0;
+  color: var(--color-text-body);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-body);
+}
+
+.headFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.meta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* 반응 그래프 */
+.chart {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chartHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.chartTitle {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+.legend {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.thunder {
+  background: var(--color-chart-thunder);
+}
+
+.wave {
+  background: var(--color-chart-wave);
+}
+
+.comment {
+  background: var(--color-chart-comment);
+}
+
+.chartEmpty,
+.chartNote {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.chartNote {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-xs);
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 120px 1fr 36px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 2px 0;
+}
+
+.who {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.who:hover .whoName {
+  text-decoration: underline;
+}
+
+.whoName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 쌓은 막대: 칸 사이 2px 틈, 끝만 둥글게 */
+.track {
+  position: relative;
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  min-width: 0;
+}
+
+.seg {
+  height: 100%;
+  min-width: 3px;
+}
+
+.seg:last-of-type {
+  border-radius: 0 4px 4px 0;
+}
+
+.total {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tipItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tipItem svg {
+  width: 13px;
+  height: 13px;
+}
+
+.tipMuted {
+  color: var(--color-text-secondary);
+}
+
+.listTitle {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+@media (max-width: 500px) {
+  .barRow {
+    grid-template-columns: 88px 1fr 32px;
+  }
+}
+
+/* 질문 목록 /prompts 카드 (2026-11-13) — 피드 카드처럼 줄마다 구분선, 누르면 질문 상세 */
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card:hover {
+  background: var(--color-surface-hover);
+}
+
+.cardMain {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-text);
+}
+
+.eyebrowMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.eyebrowMuted svg {
+  width: 16px;
+  height: 16px;
+}
+
+.cardTitle {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.cardMain:hover .cardTitle {
+  text-decoration: underline;
+}
+
+.cardBody {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text-body);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.cardChevron {
+  width: 14px;
+  height: 14px;
+}
+
+.cardAction {
+  flex: none;
+  padding-top: 18px;
+}

@@ -15,7 +15,13 @@
   margin-top: var(--space-3);
 }
 
+.after {
+  display: inline-flex;
+}
+
 .editBtn {
+  flex: none;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 4px;

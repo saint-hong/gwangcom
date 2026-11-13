@@ -51,7 +51,7 @@
 
 - Wave 확산 경로 예: `SELECT w.user_id, w.via_user_id, w.created_at FROM waves w WHERE w.imagination_id = 123 ORDER BY 3;`
 
-- 샘플 데이터: `uv run python -m app.interfaces.cli seed-demo` — Dreamer 10 · 상상 50 · 댓글 · 인용 · 반응 · 팔로우 · 알림 (`--reset` 으로 다시 넣기 — **샘플 계정(dreamerNN)이 쓴 글·반응도 모두 지워진다**). DBeaver 에서 손으로 넣지 않는다.
+- 샘플 데이터: `uv run python -m app.interfaces.cli seed-demo` — 16주치(2026-11-13 다시 만듦): Dreamer 72 · 상상 약 600(원본 · 인용) · 이번 주 질문 11 · 댓글 · 반응 · 팔로우 · Shake it(혼합 · 실패 · 계보) · 조회 · 하루 접속 · 알림. 태그는 AI 를 부르지 않고 주제에서 바로 붙임(유료 API 없음). 내용은 `app/interfaces/cli/seed_topics.py`, 만드는 순서는 `seed_demo.py` (`--reset` 으로 다시 넣기 — **샘플 계정(dreamerNN)이 쓴 글·반응도 모두 지워진다**, 샘플 질문도 지움 — 운영자가 만든 질문은 남김). DBeaver 에서 손으로 넣지 않는다.
 - 이용 한도를 바꿔 보려면 (관리 화면은 Sprint 6) — 개인 예외 예:
   `INSERT INTO policy_settings (scope, user_id, key, value) VALUES ('user', 1, 'limit.body_chars', '1000');`
 
@@ -141,6 +141,16 @@
 
 - **분석: 질문형(prompt_id 있음)과 자유 상상을 나눠 본다** (질문 편향 통제 — 운영자가 던진 질문이 반복 상상을 만들 수 있음)
 - 답한 상상이 있는 질문은 지우지 않는다(끄기만) → prompt_id 가 SET NULL 로 지워져 구분이 사라지는 일을 막음
+
+## 테이블 추가 (Sprint 6-D, 마이그레이션 0013, 2026-11-13)
+
+| 테이블 | 내용 |
+|---|---|
+| user_visits | 하루 접속 기록 (user_id · day(한국 날짜) · first_at). 기본 키 (user_id, day) — 하루 한 줄 |
+
+- 로그인한 요청(토큰이 맞는 요청)의 그날 첫 번째에 남긴다 (`app/domains/users/visits.py`, 인증 의존성 `optional_user` 에서 부름). 같은 날 다시 와도 늘지 않는다
+- **분석: 2026-11-13 부터 쌓인다.** 그 전 날짜의 "들어왔나"는 글 · 반응 같은 활동으로만 알 수 있다
+- 쓰는 곳: 대시보드 신규 Dreamer 활성화(다시 들어옴 · 계속 활동 · 마지막 활동)
 
 ## 띄우기 · 끄기
 ```bash

@@ -95,7 +95,9 @@ def test_admin_list_update_delete(client) -> None:
     off = client.patch(
         f"/api/admin/prompts/{a['id']}", json={"is_active": False}, headers=auth(admin)
     )
-    assert off.json()["status"] == "off"
+    assert off.json()["status"] == "off" and off.json()["phase"] == "open"  # 꺼도 기간 상태는 진행
+    assert [p["id"] for p in items("?sort=active&order=desc")["items"]] == [b["id"], a["id"]]
+    assert [p["phase"] for p in items("?sort=status&order=asc")["items"]] == ["open", "scheduled"]
     assert client.get("/api/prompts/current").json() is None
     bad = client.patch(
         f"/api/admin/prompts/{b['id']}", json={"ends_at": iso(0)}, headers=auth(admin)
@@ -113,3 +115,62 @@ def test_admin_list_update_delete(client) -> None:
     assert has.status_code == 400 and has.json()["detail"]["code"] == "has_answers"
     assert client.delete(f"/api/admin/prompts/{b['id']}", headers=auth(admin)).status_code == 204
     assert client.get("/api/admin/prompts", headers=auth(user)).status_code == 403
+
+
+def test_answerers_insight_and_feed(client) -> None:
+    """2026-11-13: 답한 사용자 수 · 사용자별 반응(그래프) · 질문 상세 답한 상상 목록."""
+    admin, a, b, fan = (signup(client, n) for n in ("boss2", "alice", "bob", "fan"))
+    make_admin(admin)
+    p = make_prompt(client, admin, "답한 사람 질문", start=-1, end=5)
+    a1 = post(client, a, p["id"], body="하늘을 나는 학교 하나").json()
+    post(client, a, p["id"], body="하늘을 나는 학교 둘")
+    b1 = post(client, b, p["id"], body="바다 속 학교 하나").json()
+    post(client, a, None, body="질문과 상관없는 상상")  # 자유 상상은 세지 않는다
+    for tok in (fan, a):
+        client.post(f"/api/imaginations/{b1['id']}/thunder", headers=auth(tok))
+    client.post(f"/api/imaginations/{a1['id']}/thunder", headers=auth(fan))
+
+    row = client.get("/api/admin/prompts?sort=answerers&order=desc", headers=auth(admin)).json()[
+        "items"
+    ][0]
+    assert row["id"] == p["id"] and row["answer_count"] == 3 and row["answerer_count"] == 2
+    assert client.get("/api/prompts/current").json()["answerer_count"] == 2
+
+    people = client.get(f"/api/admin/prompts/{p['id']}/answerers", headers=auth(admin)).json()
+    assert [(x["author"]["nickname"], x["answers"], x["thunders"]) for x in people] == [
+        ("bob", 1, 2),
+        ("alice", 2, 1),
+    ]
+    assert people[1]["best_id"] == a1["id"] and people[0]["total"] == 2
+
+    ins = client.get(f"/api/prompts/{p['id']}/insight").json()
+    assert ins["prompt"]["title"] == "답한 사람 질문" and len(ins["answerers"]) == 2
+    feed = client.get(f"/api/prompts/{p['id']}/imaginations").json()
+    assert len(feed["items"]) == 3 and feed["next_cursor"] is None
+    assert all(i["prompt"]["id"] == p["id"] for i in feed["items"])
+
+    # 꺼진 질문은 사용자 화면에서 404, 운영자는 볼 수 있다
+    client.patch(f"/api/admin/prompts/{p['id']}", json={"is_active": False}, headers=auth(admin))
+    assert client.get(f"/api/prompts/{p['id']}/insight").status_code == 404
+    assert client.get(f"/api/prompts/{p['id']}/imaginations").status_code == 404
+    assert (
+        client.get(f"/api/admin/prompts/{p['id']}/answerers", headers=auth(admin)).status_code
+        == 200
+    )
+    assert client.get(f"/api/admin/prompts/{p['id']}/answerers", headers=auth(a)).status_code == 403
+
+
+def test_public_prompt_list(client) -> None:
+    """2026-11-13: 진행 중 질문이 여러 개면 모두 목록에 (첫 번째 = 지금 질문)."""
+    admin = signup(client, "boss3")
+    make_admin(admin)
+    a = make_prompt(client, admin, "먼저 시작", start=-3, end=4)
+    b = make_prompt(client, admin, "나중 시작", start=-1, end=None)
+    old = make_prompt(client, admin, "끝난 질문", start=-10, end=-2)
+    make_prompt(client, admin, "예정 질문", start=2, end=9)
+    make_prompt(client, admin, "꺼진 질문", start=-1, end=5, is_active=False)
+    data = client.get("/api/prompts").json()
+    assert [p["id"] for p in data["open"]] == [b["id"], a["id"]]
+    assert [p["id"] for p in data["ended"]] == [old["id"]] and data["ended"][0]["open"] is False
+    assert data["ended_total"] == 1
+    assert client.get("/api/prompts/current").json()["id"] == data["open"][0]["id"]

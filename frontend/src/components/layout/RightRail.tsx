@@ -1,4 +1,4 @@
-import { MessageCircle, Search, Zap } from "lucide-react";
+import { ChevronRight, MessageCircle, Search, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
@@ -8,7 +8,7 @@ import { useDreamerCard } from "../../hooks/useDreamerCard";
 import type { Dreamer, Imagination, Page, Topics } from "../../types/api";
 import { ShakeIcon } from "../actions/ShakeIcon";
 import { WaveIcon } from "../actions/WaveIcon";
-import { leftLabel, useCurrentPrompt } from "../prompt/useCurrentPrompt";
+import { leftLabel, usePromptList } from "../prompt/useCurrentPrompt";
 import prompts from "../prompt/Prompt.module.css";
 import { SimilarBlock } from "../similar/SimilarBlock";
 import { tagPath } from "../tags/TagList";
@@ -19,11 +19,13 @@ import { SiteFooter } from "./SiteFooter";
 /**
  * 오른쪽 컬럼 (로그인 전·후 같음, 기획안 v9 4장)
  *   검색창 → (상세 화면) 이 상상의 Dreamer → 비슷한 상상(F23) → 이번 주 질문 → 인기 상상 1~5 → 추천 Dreamer 3명 → 추천 주제 → 푸터
- * 이번 주 질문은 /api/prompts/current (6-C). 좁은 화면은 홈 피드 위 배너(PromptBanner)가 대신한다.
+ * 이번 주 질문은 /api/prompts 진행 중 첫 번째 (제목 옆 "(N개)" = 진행 중 수, 2026-11-13). 좁은 화면은 홈 피드 위 배너(PromptBanner)가 대신한다.
  */
 export function RightRail() {
   const { user, openAuth } = useAuth();
-  const prompt = useCurrentPrompt();
+  // 진행 중 질문이 여러 개일 수 있다 (2026-11-13): 블록에는 지금 질문(첫 번째), 제목을 누르면 /prompts 목록
+  const promptList = usePromptList();
+  const prompt = promptList === undefined ? undefined : promptList.open[0] ?? null;
   const { pathname } = useLocation();
   const dreamer = useDreamerCard();
   const [trending, setTrending] = useState<Imagination[] | null>(null);
@@ -61,13 +63,19 @@ export function RightRail() {
 
         {/* 이번 주 질문 (6-C): 질문이 있으면 질문 · 설명 · 남은 기간 · 답한 상상 수 → [상상하기] = 질문에 답하는 글쓰기 */}
         <section className={styles.card}>
-          <h2 className={styles.title}>이번 주 질문</h2>
+          <Link to="/prompts" className={styles.titleLink} title="이번 주 질문 모두 보기">
+            <h2 className={styles.title}>
+              이번 주 질문
+              {promptList && promptList.open.length > 0 ? <span className={styles.titleCount}> ({promptList.open.length}개)</span> : null}
+            </h2>
+            <ChevronRight aria-hidden="true" />
+          </Link>
           {prompt ? (
             <>
               <strong className={prompts.question}>{prompt.title}</strong>
               {prompt.body ? <p className={prompts.body}>{prompt.body}</p> : null}
               <span className={prompts.meta}>
-                {[leftLabel(prompt.ends_at), `답한 상상 ${prompt.answer_count}개`].filter(Boolean).join(" · ")}
+                {[leftLabel(prompt.ends_at), `답한 상상 ${prompt.answer_count}개`, `${prompt.answerer_count}명 참여`].filter(Boolean).join(" · ")}
               </span>
             </>
           ) : (
@@ -75,15 +83,25 @@ export function RightRail() {
               {prompt === undefined ? "불러오는 중…" : "운영자가 질문을 올리면 여기에 보여요. 질문에 답하듯 상상을 올려 보세요."}
             </p>
           )}
-          {user ? (
-            <ButtonLink to={prompt ? `/write?prompt=${prompt.id}` : "/write"} size="sm" className={styles.cardButton}>
-              상상하기
-            </ButtonLink>
-          ) : (
-            <Button size="sm" className={styles.cardButton} onClick={() => openAuth("login")}>
-              상상하기
-            </Button>
-          )}
+          {/* 2026-11-13: [자세히 보기](왼쪽, 인기 상상 "더 보기"와 같은 글자 버튼) · [상상하기](오른쪽 끝) */}
+          <div className={styles.cardFoot}>
+            {prompt ? (
+              <Link to={`/prompts/${prompt.id}`} className={styles.more}>
+                자세히 보기
+              </Link>
+            ) : (
+              <span />
+            )}
+            {user ? (
+              <ButtonLink to={prompt ? `/write?prompt=${prompt.id}` : "/write"} size="sm">
+                상상하기
+              </ButtonLink>
+            ) : (
+              <Button size="sm" onClick={() => openAuth("login")}>
+                상상하기
+              </Button>
+            )}
+          </div>
         </section>
 
         <section className={styles.card}>

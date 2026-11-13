@@ -12,8 +12,16 @@ from sqlalchemy.orm import Session
 
 from app.domains.imaginations.models import Imagination
 from app.domains.prompts.models import Prompt
-from app.domains.prompts.schemas import AdminPromptOut, AdminPromptsOut, PromptOut
+from app.domains.prompts.schemas import (
+    AdminPromptOut,
+    AdminPromptsOut,
+    AnswererOut,
+    PromptInsightOut,
+    PromptListOut,
+    PromptOut,
+)
 from app.domains.users.models import User
+from app.domains.users.schemas import author_out
 from app.shared.errors import bad_request, not_found
 from app.shared.time import now_utc
 
@@ -23,6 +31,16 @@ PAGE_SIZES = (20, 50, 100)
 def is_open(p: Prompt, now: datetime | None = None) -> bool:
     now = now or now_utc()
     return p.is_active and p.starts_at <= now and (p.ends_at is None or p.ends_at > now)
+
+
+def phase_of(p: Prompt, now: datetime | None = None) -> str:
+    """기간만 본 상태 (켜짐 · 꺼짐과 따로, 2026-11-13 A3 상태 칸): scheduled 예정 · open 진행 · ended 종료."""
+    now = now or now_utc()
+    if p.starts_at > now:
+        return "scheduled"
+    if p.ends_at is not None and p.ends_at <= now:
+        return "ended"
+    return "open"
 
 
 def status_of(p: Prompt, now: datetime | None = None) -> str:
@@ -36,9 +54,16 @@ def status_of(p: Prompt, now: datetime | None = None) -> str:
     return "open"
 
 
+ANSWER = (Imagination.status == "visible", Imagination.kind == "original")
+
+
 def _answers_sub():
     return (
-        select(Imagination.prompt_id, func.count().label("n"))
+        select(
+            Imagination.prompt_id,
+            func.count().label("n"),
+            func.count(func.distinct(Imagination.author_id)).label("people"),
+        )
         .where(
             Imagination.prompt_id.is_not(None),
             Imagination.status == "visible",
@@ -64,6 +89,64 @@ def _answer_count(db: Session, prompt_id: int) -> int:
     )
 
 
+def _answerer_count(db: Session, prompt_id: int) -> int:
+    return (
+        db.scalar(
+            select(func.count(func.distinct(Imagination.author_id))).where(
+                Imagination.prompt_id == prompt_id, *ANSWER
+            )
+        )
+        or 0
+    )
+
+
+def answerers(db: Session, prompt_id: int) -> list[AnswererOut]:
+    """답한 사용자별 반응 합계 (반응 많은 순 → 답 많은 순 → 먼저 답한 순)."""
+    total = Imagination.thunder_count + Imagination.wave_count + Imagination.comment_count
+    rows = db.execute(
+        select(Imagination, User)
+        .join(User, User.id == Imagination.author_id)
+        .where(Imagination.prompt_id == prompt_id, *ANSWER)
+        .order_by(total.desc(), Imagination.created_at)
+    ).all()
+    people: dict[int, dict] = {}
+    for item, user in rows:
+        d = people.get(user.id)
+        if d is None:  # 처음 보는 사람 = 그 사람의 반응 가장 많은 답
+            d = people[user.id] = {
+                "author": author_out(user),
+                "answers": 0,
+                "thunders": 0,
+                "waves": 0,
+                "comments": 0,
+                "best_id": item.id,
+                "first": item.created_at,
+            }
+        d["answers"] += 1
+        d["thunders"] += item.thunder_count
+        d["waves"] += item.wave_count
+        d["comments"] += item.comment_count
+        d["first"] = min(d["first"], item.created_at)
+    out = [
+        AnswererOut(total=d["thunders"] + d["waves"] + d["comments"], **d) for d in people.values()
+    ]
+    first = {d["author"].id: d["first"] for d in people.values()}
+    out.sort(key=lambda a: (-a.total, -a.answers, first[a.author.id]))
+    return out
+
+
+def insight(db: Session, prompt_id: int) -> PromptInsightOut:
+    """사용자 화면 질문 상세 (꺼진 · 예정 질문은 404)."""
+    prompt = get_public(db, prompt_id)
+    return PromptInsightOut(prompt=prompt, answerers=answerers(db, prompt_id))
+
+
+def admin_answerers(db: Session, prompt_id: int) -> list[AnswererOut]:
+    if db.get(Prompt, prompt_id) is None:
+        raise not_found("질문을 찾을 수 없어요.")
+    return answerers(db, prompt_id)
+
+
 def _out(db: Session, p: Prompt) -> PromptOut:
     return PromptOut(
         id=p.id,
@@ -73,6 +156,7 @@ def _out(db: Session, p: Prompt) -> PromptOut:
         ends_at=p.ends_at,
         open=is_open(p),
         answer_count=_answer_count(db, p.id),
+        answerer_count=_answerer_count(db, p.id),
     )
 
 
@@ -89,6 +173,32 @@ def current(db: Session) -> PromptOut | None:
         .limit(1)
     )
     return _out(db, p) if p else None
+
+
+ENDED_LIMIT = 20
+
+
+def public_list(db: Session) -> PromptListOut:
+    """사용자 화면 질문 목록. 꺼진 · 예정 질문은 보이지 않는다.
+    진행 중은 여러 개일 수 있다 (2026-11-13 사용자: 질문이 둘 이상이면 모두 볼 수 있어야 함).
+    진행 중 첫 번째 = 지금 질문(current) 과 같은 규칙 (가장 늦게 시작한 것)."""
+    now = now_utc()
+    base = select(Prompt).where(Prompt.is_active.is_(True), Prompt.starts_at <= now)
+    open_rows = db.scalars(
+        base.where(or_(Prompt.ends_at.is_(None), Prompt.ends_at > now)).order_by(
+            Prompt.starts_at.desc(), Prompt.id.desc()
+        )
+    ).all()
+    ended = base.where(Prompt.ends_at.is_not(None), Prompt.ends_at <= now)
+    ended_total = db.scalar(select(func.count()).select_from(ended.subquery())) or 0
+    ended_rows = db.scalars(
+        ended.order_by(Prompt.ends_at.desc(), Prompt.id.desc()).limit(ENDED_LIMIT)
+    ).all()
+    return PromptListOut(
+        open=[_out(db, p) for p in open_rows],
+        ended=[_out(db, p) for p in ended_rows],
+        ended_total=ended_total,
+    )
 
 
 def get_public(db: Session, prompt_id: int) -> PromptOut:
@@ -112,7 +222,7 @@ def check_answerable(db: Session, prompt_id: int | None) -> int | None:
 # ---------------------------------------------------------------- 운영자 A3
 
 
-def _admin_row(p: Prompt, answers: int, creator: str | None) -> AdminPromptOut:
+def _admin_row(p: Prompt, answers: int, people: int, creator: str | None) -> AdminPromptOut:
     return AdminPromptOut(
         id=p.id,
         title=p.title,
@@ -121,7 +231,9 @@ def _admin_row(p: Prompt, answers: int, creator: str | None) -> AdminPromptOut:
         ends_at=p.ends_at,
         is_active=p.is_active,
         status=status_of(p),  # type: ignore[arg-type]
+        phase=phase_of(p),  # type: ignore[arg-type]
         answer_count=answers,
+        answerer_count=people,
         created_by=creator,
         created_at=p.created_at,
     )
@@ -142,14 +254,20 @@ def admin_list(
     now = now_utc()
     answers = _answers_sub()
     n = func.coalesce(answers.c.n, 0)
+    people = func.coalesce(answers.c.people, 0)
     status_expr = case(
         (Prompt.is_active.is_(False), 3),
         (Prompt.starts_at > now, 1),
         (and_(Prompt.ends_at.is_not(None), Prompt.ends_at <= now), 2),
         else_=0,
-    )  # 0 진행 중 · 1 예정 · 2 끝 · 3 꺼짐
+    )  # 0 진행 중 · 1 예정 · 2 끝 · 3 꺼짐 (위 탭 거르기)
+    phase_expr = case(
+        (Prompt.starts_at > now, 1),
+        (and_(Prompt.ends_at.is_not(None), Prompt.ends_at <= now), 2),
+        else_=0,
+    )  # 상태 칸 정렬: 0 진행 · 1 예정 · 2 종료 (켜짐 · 꺼짐과 따로, 2026-11-13)
     query = (
-        select(Prompt, n, User.nickname)
+        select(Prompt, n, people, User.nickname)
         .outerjoin(answers, answers.c.prompt_id == Prompt.id)
         .outerjoin(User, User.id == Prompt.created_by)
     )
@@ -165,8 +283,10 @@ def admin_list(
         "title": Prompt.title,
         "starts": Prompt.starts_at,
         "ends": Prompt.ends_at,
-        "status": status_expr,
+        "status": phase_expr,
+        "active": Prompt.is_active,
         "answers": n,
+        "answerers": people,
         "created": Prompt.created_at,
     }[sort]
     ordered = col.asc().nulls_last() if order == "asc" else col.desc().nulls_last()
@@ -176,7 +296,7 @@ def admin_list(
         query.order_by(ordered, Prompt.id.desc()).offset((page - 1) * size).limit(size)
     ).all()
     return AdminPromptsOut(
-        items=[_admin_row(p, a, c) for p, a, c in rows], total=total, page=page, size=size
+        items=[_admin_row(p, a, pp, c) for p, a, pp, c in rows], total=total, page=page, size=size
     )
 
 
@@ -189,7 +309,7 @@ def _admin_one(db: Session, p: Prompt) -> AdminPromptOut:
     creator = (
         db.scalar(select(User.nickname).where(User.id == p.created_by)) if p.created_by else None
     )
-    return _admin_row(p, _answer_count(db, p.id), creator)
+    return _admin_row(p, _answer_count(db, p.id), _answerer_count(db, p.id), creator)
 
 
 def create(db: Session, admin: User, data) -> AdminPromptOut:

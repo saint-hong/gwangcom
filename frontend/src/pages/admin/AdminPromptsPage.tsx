@@ -5,20 +5,21 @@ import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { Pagination } from "../../components/common/Pagination";
 import { useToast } from "../../components/feedback/Toast";
-import { Button } from "../../design-system";
-import type { AdminItems, AdminPrompt, AdminPrompts, PromptStatus } from "../../types/api";
+import { Avatar, Button, ButtonLink } from "../../design-system";
+import type { AdminItems, AdminPrompt, AdminPrompts, Answerer, PromptStatus } from "../../types/api";
 import styles from "./Admin.module.css";
 import { shortDate } from "./adminFormat";
 import { SortHeader, type Sort, type SortOption } from "./SortHeader";
 
 const STATUS: { value: "all" | PromptStatus; label: string }[] = [
   { value: "all", label: "전체" },
-  { value: "open", label: "진행 중" },
+  { value: "open", label: "진행" },
   { value: "scheduled", label: "예정" },
-  { value: "ended", label: "끝" },
+  { value: "ended", label: "종료" },
   { value: "off", label: "꺼짐" },
 ];
-const STATUS_LABEL: Record<PromptStatus, string> = { open: "진행 중", scheduled: "예정", ended: "끝", off: "꺼짐" };
+// 상태 칸 = 기간만 본 상태 (켜짐 · 꺼짐은 설정 칸, 2026-11-13 사용자 요청)
+const PHASE_LABEL: Record<AdminPrompt["phase"], string> = { open: "진행", scheduled: "예정", ended: "종료" };
 
 const up = (key: string, asc: string, desc: string): SortOption[] => [
   { key, order: "asc", label: asc },
@@ -37,8 +38,16 @@ const SORTS: Record<string, SortOption[]> = {
     { key: "answers", order: "desc", label: "답한 상상 많은 순" },
     { key: "answers", order: "asc", label: "답한 상상 적은 순" },
   ],
+  answerers: [
+    { key: "answerers", order: "desc", label: "답한 사용자 많은 순" },
+    { key: "answerers", order: "asc", label: "답한 사용자 적은 순" },
+  ],
   created: up("created", "오래된 순", "최근 만든 순"),
-  status: up("status", "진행 중 → 꺼짐 순", "꺼짐 → 진행 중 순"),
+  status: up("status", "진행 → 종료 순", "종료 → 진행 순"),
+  active: [
+    { key: "active", order: "desc", label: "켜짐 먼저" },
+    { key: "active", order: "asc", label: "꺼짐 먼저" },
+  ],
 };
 
 /** datetime-local 입력값 ↔ ISO (브라우저 시간대 = 한국 시간 기준으로 쓴다) */
@@ -60,7 +69,8 @@ const emptyDraft = (): Draft => {
 /**
  * A3 이번 주 질문 관리 (Sprint 6-C, 기획안 v11 F13) — A4 · A5 와 같은 표 · 정렬 · 토글 · 펼치기 · 페이지 번호
  *   [전체 · 진행 중 · 예정 · 끝 · 꺼짐] · 찾기 · [+ 새 질문] → 표
- *   줄: 번호 · 질문(누르면 펼침: 고치기 · 답한 상상 · 지우기) · 기간 · 답한 상상 · 만든 사람 · 상태(알약 + [켜짐 | 꺼짐])
+ *   줄: 번호 · 질문(누르면 펼침: 고치기 · 답한 사용자 · 답한 상상 · 지우기) · 기간 · 답한 상상 · 답한 사용자 · 만든 사람 · 상태(진행 · 종료 뱃지) · 설정(켜짐 · 꺼짐)
+ *   (2026-11-13) 답한 사용자 칸 · 펼친 줄에 답한 사용자(반응 많은 순). 질문별 관리 화면 · 보상은 추후 고도화
  *   지금 질문 = 켜져 있고 기간 안인 것 중 가장 늦게 시작한 것 → 오른쪽 컬럼 · 홈 배너 · 글쓰기 질문 카드
  */
 export function AdminPromptsPage() {
@@ -164,8 +174,10 @@ export function AdminPromptsPage() {
             <col />
             <col className={styles.cPeriod} />
             <col className={styles.cCount} />
+            <col className={styles.cPeople} />
             <col className={styles.cAuthor} />
-            <col className={styles.cPromptState} />
+            <col className={styles.cPhase} />
+            <col className={styles.cSetting} />
           </colgroup>
           <thead>
             <tr>
@@ -182,10 +194,16 @@ export function AdminPromptsPage() {
                 <SortHeader label="답한 상상" options={SORTS.answers} value={sort} onChange={setSort} />
               </th>
               <th>
+                <SortHeader label="답한 사용자" options={SORTS.answerers} value={sort} onChange={setSort} />
+              </th>
+              <th>
                 <SortHeader label="만든 사람" options={SORTS.created} value={sort} onChange={setSort} />
               </th>
               <th>
-                <SortHeader label="상태" options={SORTS.status} value={sort} onChange={setSort} alignRight />
+                <SortHeader label="상태" options={SORTS.status} value={sort} onChange={setSort} />
+              </th>
+              <th>
+                <SortHeader label="설정" options={SORTS.active} value={sort} onChange={setSort} alignRight />
               </th>
             </tr>
           </thead>
@@ -208,9 +226,12 @@ export function AdminPromptsPage() {
                       <span className={styles.periodLine}>~ {p.ends_at ? shortDate(p.ends_at) : "끝 없음"}</span>
                     </td>
                     <td>{p.answer_count}</td>
+                    <td>{p.answerer_count}명</td>
                     <td title={p.created_by ?? undefined}>{p.created_by ?? "—"}</td>
                     <td>
-                      <span className={clsx(styles.promptState, styles[`ps_${p.status}`])}>{STATUS_LABEL[p.status]}</span>
+                      <span className={clsx(styles.promptState, styles[`ps_${p.phase}`])}>{PHASE_LABEL[p.phase]}</span>
+                    </td>
+                    <td>
                       <div className={styles.stateToggle} role="group" aria-label={`${p.id}번 켜기 · 끄기`}>
                         {[true, false].map((on) => (
                           <button
@@ -234,7 +255,7 @@ export function AdminPromptsPage() {
                   </tr>
                   {isOpen ? (
                     <tr className={styles.detailRow}>
-                      <td colSpan={6}>
+                      <td colSpan={8}>
                         <PromptDetail prompt={p} busy={busy} act={act} onDeleted={() => setOpen(null)} />
                       </td>
                     </tr>
@@ -317,13 +338,43 @@ function PromptDetail({
     ends: toLocalInput(prompt.ends_at),
   });
   const [answers, setAnswers] = useState<AdminItems | null>(null);
+  const [people, setPeople] = useState<Answerer[] | null>(null);
   useEffect(() => {
     api<AdminItems>(`/api/admin/imaginations?prompt_id=${prompt.id}&size=20`).then(setAnswers, () => setAnswers(null));
+    api<Answerer[]>(`/api/admin/prompts/${prompt.id}/answerers`).then(setPeople, () => setPeople([]));
   }, [prompt.id]);
 
   return (
     <div className={styles.detail}>
       <PromptForm draft={draft} onChange={setDraft} />
+      <div className={styles.detailList}>
+        <span className={styles.formLabel}>답한 사용자</span>
+        <div className={styles.detailChips}>
+          {people === null ? (
+            <span className={styles.detailEmpty}>불러오는 중…</span>
+          ) : people.length === 0 ? (
+            <span className={styles.detailEmpty}>아직 없어요</span>
+          ) : (
+            <>
+              {people.slice(0, 10).map((a) => (
+                <Link
+                  key={a.author.id}
+                  to={`/admin/users/${a.author.id}`}
+                  className={styles.answererChip}
+                  title={`답 ${a.answers}개 · Thunder ${a.thunders} · Wave ${a.waves} · 댓글 ${a.comments}`}
+                >
+                  <Avatar name={a.author.nickname} src={a.author.avatar_url} size={20} />
+                  {a.author.nickname}
+                  <span className={styles.muted}>
+                    답 {a.answers} · 반응 {a.total}
+                  </span>
+                </Link>
+              ))}
+              {people.length > 10 ? <span className={styles.detailEmpty}>외 {people.length - 10}명</span> : null}
+            </>
+          )}
+        </div>
+      </div>
       <div className={styles.detailList}>
         <span className={styles.formLabel}>답한 상상</span>
         <div className={styles.detailChips}>
@@ -357,6 +408,12 @@ function PromptDetail({
             >
               지우기
             </Button>
+          ) : null}
+          {/* 저장 옆, 같은 크기의 검정 버튼 (2026-11-13 사용자 요청) */}
+          {prompt.status === "open" || prompt.status === "ended" ? (
+            <ButtonLink to={`/prompts/${prompt.id}`} size="sm" variant="dark">
+              사용자 화면에서 보기
+            </ButtonLink>
           ) : null}
           <Button
             size="sm"

@@ -12,7 +12,13 @@ import styles from "./Tags.module.css";
  * - 목록 전체를 PUT 으로 보낸다. 지운 태그는 서버가 기록으로 남긴다 (분석용)
  * - 분야 알약이 늘 앞에 있다 (분류 줄, 2026-11-12)
  */
-export function ItemTags({ item, onChange }: { item: Imagination; onChange: (next: Imagination) => void }) {
+export function ItemTags({
+  item,
+  onChange,
+}: {
+  item: Imagination;
+  onChange: (next: Imagination) => void;
+}) {
   const can = item.actions.edit_tags;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string[]>([]);
@@ -24,22 +30,28 @@ export function ItemTags({ item, onChange }: { item: Imagination; onChange: (nex
   if (!editing) {
     return (
       <div className={styles.row}>
-        <TagList tags={item.tags} domains={domainsOf(item)} />
-        {can.allowed ? (
-          <button
-            type="button"
-            className={styles.editBtn}
-            onClick={() => {
-              setDraft(item.tags.map((t) => t.label));
-              setText("");
-              setError(null);
-              setEditing(true);
-            }}
-          >
-            <Pencil aria-hidden="true" />
-            {item.tags.length === 0 ? "태그 달기" : "태그 편집"}
-          </button>
-        ) : null}
+        {/* [태그 편집]은 태그 줄 맨 끝 알약 — 태그가 늘어도 버튼이 눌려 글자가 꺾이지 않는다 (2026-11-13) */}
+        <TagList
+          tags={item.tags}
+          domains={domainsOf(item)}
+          after={
+            can.allowed ? (
+              <button
+                type="button"
+                className={styles.editBtn}
+                onClick={() => {
+                  setDraft(item.tags.map((t) => t.label));
+                  setText("");
+                  setError(null);
+                  setEditing(true);
+                }}
+              >
+                <Pencil aria-hidden="true" />
+                {item.tags.length === 0 ? "태그 달기" : "태그 편집"}
+              </button>
+            ) : null
+          }
+        />
       </div>
     );
   }
@@ -47,7 +59,13 @@ export function ItemTags({ item, onChange }: { item: Imagination; onChange: (nex
   const add = () => {
     const v = text.trim().replace(/^#+/, "").trim();
     if (!v) return;
-    if (!draft.some((d) => d.replace(/\s+/g, "").toLowerCase() === v.replace(/\s+/g, "").toLowerCase())) {
+    if (
+      !draft.some(
+        (d) =>
+          d.replace(/\s+/g, "").toLowerCase() ===
+          v.replace(/\s+/g, "").toLowerCase(),
+      )
+    ) {
       setDraft((prev) => [...prev, v]);
     }
     setText("");
@@ -62,7 +80,9 @@ export function ItemTags({ item, onChange }: { item: Imagination; onChange: (nex
     }
   };
   const save = async () => {
-    const pending = text.trim() ? [...draft, text.trim().replace(/^#+/, "").trim()] : draft;
+    const pending = text.trim()
+      ? [...draft, text.trim().replace(/^#+/, "").trim()]
+      : draft;
     setSaving(true);
     setError(null);
     try {
@@ -115,10 +135,17 @@ export function ItemTags({ item, onChange }: { item: Imagination; onChange: (nex
           />
         )}
       </div>
-      <p className={styles.hint}>Enter 로 더해요. 상상에 쓰인 기술을 짧게 적어 주세요.</p>
+      <p className={styles.hint}>
+        Enter 로 더해요. 상상에 쓰인 기술을 짧게 적어 주세요.
+      </p>
       {error ? <p className={styles.error}>{error}</p> : null}
       <div className={styles.foot}>
-        <Button size="sm" variant="outline" onClick={() => setEditing(false)} disabled={saving}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setEditing(false)}
+          disabled={saving}
+        >
           취소
         </Button>
         <Button size="sm" onClick={() => void save()} disabled={saving}>

@@ -1,0 +1,520 @@
+/* 차트 공통 (6-D 대시보드, 2026-11-13) — 격자 · 축은 흐리게, 숫자는 글자 색 */
+.chartBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.plot {
+  position: relative;
+  width: 100%;
+}
+
+.plot svg {
+  display: block;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--viz-grid);
+  stroke-width: 1;
+}
+
+.axisY,
+.axisX,
+.axisLeft,
+.axisTitleX,
+.axisTitleY {
+  fill: var(--color-text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.axisY {
+  text-anchor: end;
+  dominant-baseline: middle;
+}
+
+.axisX {
+  text-anchor: middle;
+}
+
+.axisTitleX {
+  text-anchor: end;
+  font-weight: 600;
+}
+
+.axisTitleY {
+  font-weight: 600;
+}
+
+.line {
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* 쌓은 면적: 층 사이 바탕색 1px 틈 */
+.area {
+  stroke: var(--color-surface);
+  stroke-width: 1;
+  opacity: 0.9;
+}
+
+.crosshair {
+  stroke: var(--color-text-secondary);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.dot {
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+
+.eventLine {
+  stroke: var(--color-accent);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+  opacity: 0.7;
+}
+
+.eventMark {
+  fill: var(--color-accent);
+  font-size: 9px;
+  text-anchor: middle;
+}
+
+/* 툴팁 */
+.tip {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  min-width: 120px;
+  max-width: 260px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  pointer-events: none;
+}
+
+.tipTitle {
+  margin-bottom: 2px;
+  font-weight: 800;
+}
+
+.tipRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.tipRow b {
+  margin-left: auto;
+  padding-left: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tipLabel {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  text-overflow: ellipsis;
+}
+
+.tipEvent {
+  margin-top: 2px;
+  color: var(--color-accent-text);
+  font-weight: 600;
+  white-space: normal;
+}
+
+/* 범례 */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.swatchLine {
+  display: inline-block;
+  flex: none;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+/* 흐름선 · 증감 */
+.spark {
+  display: block;
+}
+
+.deltaUp,
+.deltaDown,
+.deltaFlat,
+.deltaNew {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.deltaUp {
+  color: var(--viz-up);
+}
+
+.deltaDown {
+  color: var(--viz-down);
+}
+
+.deltaFlat {
+  color: var(--color-text-tertiary);
+}
+
+.deltaNew {
+  color: var(--color-accent-text);
+}
+
+/* 가로 막대 목록 */
+/* 목록 전체를 한 격자로 — 줄마다 덧붙임(note) 폭이 달라도 막대 길이의 기준(막대 칸 폭)이 같게 (2026-11-13 수정:
+   줄마다 따로 격자였을 때 덧붙임이 짧은 줄의 막대가 더 길어 보였음) */
+.bars {
+  display: grid;
+  grid-template-columns: var(--label-w, 120px) minmax(0, 1fr) minmax(40px, max-content) auto;
+  align-items: center;
+  gap: 6px var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-sm);
+}
+
+.barRow {
+  display: contents;
+}
+
+/* 좁은 화면에서 막대 칸이 0 으로 눌리지 않게 — 이름 + 막대 최소 폭을 지키고 넘치면 좌우 스크롤 (2026-11-13) */
+.barsScroll {
+  overflow-x: auto;
+}
+
+.barsScroll > .bars {
+  min-width: calc(var(--label-w, 120px) + 240px);
+}
+
+.barLabel {
+  overflow: hidden;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.barLabel:hover {
+  text-decoration: underline;
+}
+
+.barTrack {
+  height: 12px;
+  min-width: 0;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+}
+
+.barValue {
+  white-space: nowrap;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.barNote:empty {
+  min-width: 0;
+}
+
+.barNote {
+  min-width: 56px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 히트맵 */
+/* 히트맵: 넓으면 좌우, 줄이 많으면(최대 높이) 상하 스크롤 — 날짜 · 기술 이름 줄은 위에 고정 (2026-11-13) */
+.heatWrap {
+  position: relative;
+  max-height: 600px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.heatWrap .heat > span:first-child,
+.heatWrap .heatColSpan,
+.heatWrap .heatCol,
+.heatWrap .heatColRot {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--color-surface);
+}
+
+.heat {
+  display: grid;
+  gap: 2px;
+  font-size: var(--font-size-xs);
+}
+
+.heatRowWrap {
+  display: contents;
+}
+
+.heatRow {
+  overflow: hidden;
+  align-self: center;
+  padding-right: 6px;
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heatCol,
+.heatColRot {
+  overflow: hidden;
+  padding-bottom: 4px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 날짜 열 이름은 몇 칸마다 하나라 옆 빈칸까지 넘쳐도 된다 (잘려서 "1…"이 되지 않게) */
+.heatCol {
+  overflow: visible;
+  display: flex;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 사선 열 이름 (2026-11-13) — 칸 가운데 아래에서 오른쪽 위로 40°, 너무 길면 … */
+.heatColRot {
+  position: relative;
+  height: 80px;
+  padding-bottom: 0;
+  overflow: visible;
+}
+
+.heatColRotText {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  max-width: 110px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: rotate(-40deg);
+  transform-origin: 0 50%;
+}
+
+.heatCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  cursor: default;
+}
+
+.heatCell:hover {
+  outline: 2px solid var(--color-text);
+  outline-offset: -1px;
+}
+
+/* 세로 막대 (분포) */
+.columns {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  padding-top: 18px;
+}
+
+.col {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.colBar {
+  width: min(48px, 70%);
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+}
+
+.colValue {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.colLabel {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* 산점도 */
+.point {
+  stroke: var(--color-surface);
+  stroke-width: 2;
+  cursor: default;
+}
+
+.pointLabel,
+.nodeLabel,
+.sankeyLabel {
+  fill: var(--color-text);
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.nodeLabel {
+  text-anchor: middle;
+  font-weight: 600;
+}
+
+.medianLine {
+  stroke: var(--viz-axis);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.quadLabel {
+  fill: var(--color-text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* 네트워크 */
+.edge {
+  stroke: var(--viz-axis);
+  stroke-linecap: round;
+}
+
+.node {
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+
+.sankeyLabel {
+  font-weight: 600;
+}
+
+/* 네트워크 확대 · 축소 (2026-11-13) — 그림 오른쪽 위, 빈 곳을 끌어서 옮김 */
+.plot:has(.netSvg) {
+  overflow: hidden;
+}
+
+.netSvg {
+  cursor: grab;
+  touch-action: none;
+}
+
+.netSvg:active {
+  cursor: grabbing;
+}
+
+.zoomBar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.zoomBar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.zoomBar button + button {
+  border-left: 1px solid var(--color-border);
+}
+
+.zoomBar button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.zoomBar button:disabled {
+  color: var(--color-text-tertiary);
+  cursor: default;
+}
+
+.zoomBar svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* 날짜 열 이름 (autoLabels) — 몇 칸을 합친 폭 안에서만, 넘치지 않음 · 칸이 좁아지면 글자도 작아짐 (2026-11-13) */
+.heatColSpan {
+  overflow: hidden;
+  padding: 0 0 4px 2px;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* 사선 열 이름은 옆 칸 위로 넘어가므로 바탕을 깔지 않는다 (바탕이 있으면 다음 칸이 글자를 가림) */
+.heatWrap .heatColRot {
+  background: none;
+}

@@ -10,6 +10,7 @@
 | 자동 태깅 (F10) | anthropic | **Claude Haiku 5.5** (`claude-haiku-5-5`) | effort `low`, 구조화 출력(JSON 스키마) | 20/20 성공, 결과가 정확하고 비용이 가장 낮은 단계 |
 | Shake it 혼합 (F8) | anthropic | **Claude Haiku 5.5** | effort `low` | 10/10 성공 · 출력 검사 10/10 통과, 두 상상의 흔적이 살아 있고 엉뚱함 |
 | Observe Note 초안 (F14) | anthropic | Claude Haiku 5.5 (임시) | — | Sprint 6 에서 실측. 품질이 부족하면 상위 모델(Sonnet 5.5)을 기능별로 지정 |
+| 운영자 사용자 활동 요약 (A5, 2026-11-13) | anthropic | Claude Haiku 5.5 | effort `low`, 구조화 출력, `LLM_SUMMARY_*` | 활동 6칸 숫자 설명이라 가벼운 모델로 충분. 개발 서버 실측 3.6초. 같은 숫자면 다시 부르지 않음 |
 | 임베딩 · 비슷한 상상 (F23) | gemini | **gemini-embedding-001**, 768 차원 | taskType `SEMANTIC_SIMILARITY`, 직접 정규화 | 사용자 결정 (Gemini). 비슷한 쌍이 의미에 맞게 잡힘 |
 | 비슷한 상상 기준값 | — | `SIMILAR_THRESHOLD=0.85` 유지 | — | 아래 3장 분포 참고 |
 

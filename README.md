@@ -78,8 +78,8 @@ uv run alembic upgrade head               # DB 구조 최신화 (처음, 그리�
 uv run uvicorn app.main:app --reload      # http://localhost:8000
 ```
 
-- 샘플 데이터 (처음 한 번): `uv run python -m app.interfaces.cli seed-demo` → Dreamer 10명 · 상상 50개
-  - 로그인: `dreamer01@demo.example.com` / `imagine1234` (01~10)
+- 샘플 데이터 (처음 한 번): `uv run python -m app.interfaces.cli seed-demo` → 16주치: Dreamer 72명 · 상상 약 600개 · 이번 주 질문 11개 · 반응 · 댓글 · Shake it · 하루 접속 (대시보드 확인용, `--reset` 으로 다시 넣기)
+  - 로그인: `dreamer01@demo.example.com` / `imagine1234` (01~72)
 - 운영자 계정: `uv run python -m app.interfaces.cli create-admin --email <이메일> --nickname <닉네임>` (비밀번호는 입력 창)
 - 상태 확인: http://localhost:8000/health → `"database": "ok"` 이면 DB 연결 성공
 - API 문서: http://localhost:8000/docs
@@ -136,6 +136,10 @@ Imagine-v1/
 
 ## 최근 변경
 
+- **2026-11-13 — Sprint 6-D 분석 대시보드 + 화면 확인 수정** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - `/admin` 대시보드 탭 6개(개요 · 기술 흐름 · 교차 분석 · 반응 · 질문 · 활동 · Shake it · AI 사용량), SVG 차트 직접(시계열 · 히트맵 · 사분면 · 네트워크 · 흐름도 · 요일 × 시간)
+  - 개요 맨 위 전체 현황(기간과 상관없음) · 그래프마다 [설정 ▾](기간 · 개수 · 항목) · 기술 신호는 비중 비교 · 신규 Dreamer 활성화 + 하루 접속 기록(마이그레이션 0013)
+  - `seed-demo` 16주치(Dreamer 72 · 상상 약 600) · 이번 주 질문 목록 `/prompts` · 질문 상세 · 사용자 상세 AI 요약 · 정책 [기본값 적용]
 - **2026-11-12 — Sprint 6-A · 6-B · 6-C ✅ 운영자 기능 (진행 중)** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
   - 운영자 화면 `/admin` 틀 · 게시물 관리(걸러 보기 · 정렬 · 페이지 번호 · 펼치기 · [보임 | 숨김]) · 숨긴 글 처리와 기록
   - 기본 정책(한도 · 권한 × 전체 · 등급) · 등급 관리 · 사용자 관리(개인 예외 · 만료일) · 변경 기록 · 이번 주 질문(오른쪽 블록 · 홈 배너 · 글쓰기 질문 카드 · 질문형 상상 구분) · 마이그레이션 0010~0012

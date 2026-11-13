@@ -18,6 +18,7 @@ from app.domains.admin.schemas import (
     AdminUserRow,
     AdminUsersOut,
     ChangeLogOut,
+    ChangeLogsOut,
     LimitRow,
     PolicyKeyOut,
     PolicyOut,
@@ -104,7 +105,7 @@ def _log(
     )
 
 
-def _logs(db: Session, *conditions) -> list[ChangeLogOut]:
+def _logs(db: Session, *conditions, limit: int = LOG_LIMIT, offset: int = 0) -> list[ChangeLogOut]:
     admin_t = User.__table__.alias("log_admin")
     user_t = User.__table__.alias("log_user")
     rows = db.execute(
@@ -114,7 +115,8 @@ def _logs(db: Session, *conditions) -> list[ChangeLogOut]:
         .outerjoin(UserTier, UserTier.id == PolicyChangeLog.tier_id)
         .where(*conditions)
         .order_by(PolicyChangeLog.created_at.desc(), PolicyChangeLog.id.desc())
-        .limit(LOG_LIMIT)
+        .offset(offset)
+        .limit(limit)
     ).all()
     out = []
     for log, admin_nick, user_nick, tier_name in rows:
@@ -135,6 +137,26 @@ def _logs(db: Session, *conditions) -> list[ChangeLogOut]:
             )
         )
     return out
+
+
+def log_page(db: Session, *, user_id: int | None, page: int, size: int) -> ChangeLogsOut:
+    """변경 기록 페이지: user_id 가 있으면 그 사용자 기록, 없으면 전체 기본값 · 등급 기록.
+    기록은 지우지 않는다 (누가 · 언제 · 무엇을 바꿨는지가 운영 근거라서) — 화면은 새로고침만."""
+    if size not in PAGE_SIZES:
+        raise bad_request("invalid_size", "한 페이지에 20 · 50 · 100개씩 볼 수 있어요.")
+    if user_id is not None:
+        _get_user(db, user_id)
+        cond = PolicyChangeLog.user_id == user_id
+    else:
+        cond = PolicyChangeLog.target_scope.in_(("global", "tier"))
+    total = db.scalar(select(func.count()).select_from(PolicyChangeLog).where(cond)) or 0
+    page = min(max(1, page), max(1, -(-total // size)))
+    return ChangeLogsOut(
+        items=_logs(db, cond, limit=size, offset=(page - 1) * size),
+        total=total,
+        page=page,
+        size=size,
+    )
 
 
 def _setting(db: Session, scope: str, key: str, *, tier_id=None, user_id=None):
@@ -246,6 +268,21 @@ def update_tier(
     except IntegrityError as exc:
         db.rollback()
         raise conflict("tier_exists", "같은 이름의 등급이 있어요.") from exc
+    return policy_view(db)
+
+
+def reset_tier(db: Session, admin: User, tier_id: int) -> PolicyOut:
+    """등급의 모든 항목을 전체 기본값으로 (2026-11-13 등급 이름 옆 [기본값 전체 적용]).
+    등급 값을 지워 전체 기본값을 따르게 하고, 지운 항목마다 변경 기록을 남긴다."""
+    if db.get(UserTier, tier_id) is None:
+        raise not_found("등급을 찾을 수 없어요.")
+    rows = db.scalars(
+        select(PolicySetting).where(PolicySetting.scope == "tier", PolicySetting.tier_id == tier_id)
+    ).all()
+    for row in rows:
+        _log(db, admin, scope="tier", key=row.key, old=row.value, new=None, tier_id=tier_id)
+        db.delete(row)
+    db.commit()
     return policy_view(db)
 
 
@@ -367,17 +404,15 @@ def _get_user(db: Session, user_id: int) -> User:
     return user
 
 
-def user_detail(db: Session, user_id: int) -> AdminUserDetail:
-    user = _get_user(db, user_id)
-    tier_id = _tier_id_for(db, user)
-    tier = db.get(UserTier, tier_id) if tier_id else None
+def activity_of(db: Session, user: User) -> ActivityOut:
+    """활동 요약 6칸 (보이는 글만)."""
 
     def count(*cond) -> int:
         return db.scalar(select(func.count()).select_from(Imagination).where(*cond)) or 0
 
     mine = (Imagination.author_id == user.id, Imagination.status == "visible")
     policy = get_effective_policy(db, user)
-    activity = ActivityOut(
+    return ActivityOut(
         posts=count(*mine, Imagination.kind.in_(("original", "quote"))),
         blends=count(*mine, Imagination.kind == "blend"),
         comments=count(*mine, Imagination.kind == "comment"),
@@ -390,6 +425,14 @@ def user_detail(db: Session, user_id: int) -> AdminUserDetail:
         posts_today=policy.posts_today,
         shakes_today=policy.shakes_today,
     )
+
+
+def user_detail(db: Session, user_id: int) -> AdminUserDetail:
+    user = _get_user(db, user_id)
+    tier_id = _tier_id_for(db, user)
+    tier = db.get(UserTier, tier_id) if tier_id else None
+
+    activity = activity_of(db, user)
     resolved = resolve_with_source(db, user)
     exceptions = {
         r.key: r

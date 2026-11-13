@@ -1,7 +1,7 @@
 """Imagine 관리 명령 (기획안 v9 11장 interfaces/cli).
 
 uv run python -m app.interfaces.cli create-admin --email admin@example.com --nickname 운영자1
-uv run python -m app.interfaces.cli seed-demo            # 샘플 Dreamer 10명 · 상상 50개 + 반응·댓글·인용
+uv run python -m app.interfaces.cli seed-demo            # 16주치 샘플: Dreamer 72명 · 상상 · 질문 · 반응 · Shake it · 접속
 uv run python -m app.interfaces.cli seed-demo --reset    # 샘플 데이터를 지우고 다시 넣기
 uv run python -m app.interfaces.cli embed-all [--force]  # 원본·인용 임베딩 (Sprint 4)
 uv run python -m app.interfaces.cli tag-all [--pending-only]  # 태깅 안 된 글 태깅 (Sprint 5)
@@ -12,23 +12,17 @@ uv run python -m app.interfaces.cli ai-eval              # 모델 실측: 태깅
 
 import argparse
 import getpass
-import random
 import sys
-from datetime import timedelta
 
-from sqlalchemy import delete, select, text
+from sqlalchemy import select, text
 
 from app.domains.auth.schemas import SignupIn
 from app.domains.auth.security import hash_password
-from app.domains.imaginations.models import Imagination, ImaginationView
-from app.domains.reactions.models import Bookmark, ReactionEvent, Thunder, Wave
-from app.domains.tags.models import Domain
+from app.domains.imaginations.models import Imagination
 from app.domains.users import crud as users_crud
-from app.domains.users.models import Follow, User
+from app.domains.users.models import User
 from app.infrastructure.core import model_registry  # noqa: F401 — 모든 모델 등록 (FK 해석)
 from app.infrastructure.core.database import get_sessionmaker
-from app.interfaces.cli.seed_data import COMMENTS, DREAMERS, IMAGINATIONS, QUOTES, REPLIES
-from app.shared.time import now_utc
 
 DEMO_EMAIL_DOMAIN = "demo.example.com"  # example.com 은 예시용으로 예약된 주소 (실제 메일 없음)
 DEMO_PASSWORD = "imagine1234"
@@ -64,138 +58,31 @@ def create_admin(args: argparse.Namespace) -> int:
 
 
 def seed_demo(args: argparse.Namespace) -> int:
-    rng = random.Random(20261110)  # 매번 같은 결과
+    """16주치 샘플 (Dreamer 72명 · 상상 수백 개 · 질문 11개 · 반응 · Shake it · 접속) — seed_demo.py 참고."""
+    from app.interfaces.cli import seed_demo as demo
+
     with get_sessionmaker()() as db:
         demo_users = select(User.id).where(User.email.like(f"%@{DEMO_EMAIL_DOMAIN}"))
-        if db.scalar(select(User.id).where(User.id.in_(demo_users)).limit(1)):
+        if db.scalar(demo_users.limit(1)):
             if not args.reset:
                 print("샘플 데이터가 이미 있어요. 다시 넣으려면 --reset 을 붙이세요.")
                 return 0
-            db.execute(delete(User).where(User.id.in_(demo_users)))  # 상상도 함께 지워진다
-            db.commit()
-
-        domains = {d.slug: d.id for d in db.scalars(select(Domain))}
-        pw_hash = hash_password(DEMO_PASSWORD)  # 같은 비밀번호라 한 번만 계산
-        users = []
-        for i, nickname in enumerate(DREAMERS, start=1):
-            u = User(
-                email=f"dreamer{i:02d}@{DEMO_EMAIL_DOMAIN}",
-                password_hash=pw_hash,
-                nickname=nickname,
-                bio=f"{nickname}의 상상 노트",
-            )
-            db.add(u)
-            users.append(u)
-        db.flush()
-
-        now = now_utc()
-        items = []
-        for n, (slug, title, body, desire) in enumerate(IMAGINATIONS):
-            item = Imagination(
-                author_id=users[n % len(users)].id,
-                title=title,
-                body=body,
-                desire=desire,
-                domain_id=domains[slug],
-                ai_assisted=rng.random() < 0.15,
-                created_at=now - timedelta(minutes=rng.randint(10, 14 * 24 * 60)),
-            )
-            db.add(item)
-            items.append(item)
-        db.flush()
-        _seed_activity(db, rng, users, items, now)
+            demo.reset(db, DEMO_EMAIL_DOMAIN)
+        stats = demo.seed(db, DEMO_EMAIL_DOMAIN, hash_password(DEMO_PASSWORD))
+        ids = list(db.scalars(demo_users))
+        _seed_notifications(db, ids)
+        _recount(db, ids)
         db.commit()
-        print(
-            f"샘플 Dreamer {len(users)}명 · 상상 {len(IMAGINATIONS)}개 + 반응·댓글·인용·팔로우·알림을 넣었어요.\n"
-            f"로그인: dreamer01@{DEMO_EMAIL_DOMAIN} / {DEMO_PASSWORD} (01~10)"
-        )
+    print(
+        f"샘플 Dreamer {stats['users']}명 · 상상 {stats['posts']}개(원본 · 인용) · 질문 {stats['prompts']}개 · "
+        f"혼합 글 {stats['blends']}개 · Thunder {stats['thunders']}개 · 댓글 {stats['comments']}개 (16주)\n"
+        f"로그인: dreamer01@{DEMO_EMAIL_DOMAIN} / {DEMO_PASSWORD} (01~{stats['users']:02d})"
+    )
     return 0
 
 
-def _after(rng: random.Random, start, now):
-    """start 와 지금 사이의 무작위 시각."""
-    span = max(60, int((now - start).total_seconds()))
-    return start + timedelta(seconds=rng.randint(30, span))
-
-
-def _seed_activity(db, rng: random.Random, users, items, now) -> None:
-    """Sprint 2 샘플 활동: Thunder · Wave · 북마크 · 조회 · 댓글·답글 · 인용. 수 캐시는 마지막에 다시 센다."""
-    for u in users:
-        others = [i for i in items if i.author_id != u.id]
-        for model, k in ((Thunder, 12), (Wave, 3), (Bookmark, 4)):
-            for it in rng.sample(others, k):
-                at = _after(rng, it.created_at, now)
-                db.add(model(user_id=u.id, imagination_id=it.id, created_at=at))
-                kind = model.__tablename__.rstrip("s")
-                db.add(
-                    ReactionEvent(
-                        user_id=u.id, imagination_id=it.id, type=kind, on=True, created_at=at
-                    )
-                )
-        for it in rng.sample(items, 8):
-            db.add(
-                ImaginationView(
-                    user_id=u.id, imagination_id=it.id, viewed_at=_after(rng, it.created_at, now)
-                )
-            )
-
-    comments = []
-    for it in rng.sample(items, 25):
-        for _ in range(rng.randint(1, 3)):
-            author = rng.choice([u for u in users if u.id != it.author_id])
-            c = Imagination(
-                author_id=author.id,
-                kind="comment",
-                body=rng.choice(COMMENTS),
-                domain_id=it.domain_id,
-                parent_id=it.id,
-                root_id=it.id,
-                created_at=_after(rng, it.created_at, now),
-            )
-            db.add(c)
-            comments.append((c, it))
-    db.flush()
-    for c, it in rng.sample(comments, 15):  # 상상 작성자의 답글
-        db.add(
-            Imagination(
-                author_id=it.author_id,
-                kind="comment",
-                body=rng.choice(REPLIES),
-                domain_id=it.domain_id,
-                parent_id=c.id,
-                root_id=it.id,
-                created_at=_after(rng, c.created_at, now),
-            )
-        )
-    for c, _ in rng.sample(comments, 12):  # 댓글에도 Thunder
-        u = rng.choice([u for u in users if u.id != c.author_id])
-        db.add(
-            Thunder(user_id=u.id, imagination_id=c.id, created_at=_after(rng, c.created_at, now))
-        )
-
-    for body, it in zip(QUOTES, rng.sample(items, len(QUOTES)), strict=True):
-        author = rng.choice([u for u in users if u.id != it.author_id])
-        db.add(
-            Imagination(
-                author_id=author.id,
-                kind="quote",
-                body=body,
-                domain_id=it.domain_id,
-                quoted_id=it.id,
-                created_at=_after(rng, it.created_at, now),
-            )
-        )
-    for u in users:  # Sprint 3: 서로 팔로우 (4명씩)
-        for other in rng.sample([o for o in users if o.id != u.id], 4):
-            db.add(
-                Follow(
-                    follower_id=u.id,
-                    followee_id=other.id,
-                    created_at=now - timedelta(days=rng.randint(1, 13)),
-                )
-            )
-    db.flush()
-    _seed_notifications(db, [u.id for u in users])
+def _recount(db, user_ids: list[int]) -> None:
+    """반응 · 댓글 · 인용 수 캐시를 실제 기록으로 다시 센다."""
     db.execute(
         text(
             """
@@ -205,6 +92,7 @@ def _seed_activity(db, rng: random.Random, users, items, now) -> None:
               bookmark_count = (SELECT count(*) FROM bookmarks b WHERE b.imagination_id = i.id),
               quote_count    = (SELECT count(*) FROM imaginations q
                                 WHERE q.quoted_id = i.id AND q.status = 'visible'),
+              child_count    = (SELECT count(*) FROM imagination_parents p WHERE p.parent_id = i.id),
               comment_count  = CASE WHEN i.kind = 'comment'
                 THEN (SELECT count(*) FROM imaginations r
                       WHERE r.parent_id = i.id AND r.status = 'visible')
@@ -213,7 +101,7 @@ def _seed_activity(db, rng: random.Random, users, items, now) -> None:
             WHERE i.author_id = ANY(:ids)
             """
         ),
-        {"ids": [u.id for u in users]},
+        {"ids": user_ids},
     )
 
 
@@ -340,7 +228,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--password", help="생략하면 입력 창으로 물어본다")
     p.set_defaults(func=create_admin)
 
-    p = sub.add_parser("seed-demo", help="샘플 Dreamer 10명 · 상상 50개 + 반응·댓글·인용 넣기")
+    p = sub.add_parser(
+        "seed-demo",
+        help="16주치 샘플 넣기 (Dreamer 72명 · 상상 · 이번 주 질문 · 반응 · Shake it · 접속)",
+    )
     p.add_argument("--reset", action="store_true", help="기존 샘플 데이터를 지우고 다시 넣기")
     p.set_defaults(func=seed_demo)
 

@@ -83,8 +83,18 @@
   font-size: var(--font-size-md);
 }
 
-.cardButton {
+
+/* 이번 주 질문 아래 줄: [자세히 보기] ······ [상상하기] */
+.cardFoot {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  justify-content: space-between;
   margin-top: var(--space-2);
+}
+
+.cardFoot .more {
+  margin-top: 0;
 }
 
 .empty {
@@ -257,4 +267,28 @@
   padding-left: 52px;
   font-size: var(--font-size-sm);
   color: var(--color-text-body);
+}
+
+/* 이번 주 질문 제목 = 질문 목록(/prompts) 링크 (2026-11-13) */
+.titleLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-text);
+}
+
+.titleLink svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-secondary);
+}
+
+.titleLink:hover .title {
+  text-decoration: underline;
+}
+
+/* 제목 옆 진행 중 질문 수 (2026-11-13) */
+.titleCount {
+  color: var(--color-text-secondary);
+  font-weight: 600;
 }

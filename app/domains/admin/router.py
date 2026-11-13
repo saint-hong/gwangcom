@@ -3,12 +3,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.domains.admin import policy_admin, service
+from app.domains.admin import policy_admin, service, user_summary
 from app.domains.admin.schemas import (
     AdminItemOut,
     AdminItemsOut,
     AdminUserDetail,
     AdminUsersOut,
+    ChangeLogsOut,
     ModerateIn,
     PolicyIn,
     PolicyOut,
@@ -16,6 +17,7 @@ from app.domains.admin.schemas import (
     TierPatch,
     UserPatch,
     UserPolicyIn,
+    UserSummaryOut,
 )
 from app.domains.auth.deps import admin_user
 from app.domains.imaginations.schemas import ImaginationOut
@@ -77,6 +79,18 @@ def get_policy(db: DB, _: Admin):
     return policy_admin.policy_view(db)
 
 
+@router.get("/policy/logs", response_model=ChangeLogsOut)
+def get_policy_logs(
+    db: DB,
+    _: Admin,
+    user_id: Annotated[int | None, Query()] = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query()] = 20,
+):
+    """변경 기록 페이지 (user_id 없으면 전체 기본값 · 등급, 있으면 그 사용자). 최신순."""
+    return policy_admin.log_page(db, user_id=user_id, page=page, size=size)
+
+
 @router.put("/policy", response_model=PolicyOut)
 def put_policy(data: PolicyIn, db: DB, admin: Admin):
     """전체 기본값 · 등급 값 하나를 바꾼다 (등급 값 null = 전체 기본값 따르기)."""
@@ -93,6 +107,12 @@ def patch_tier(tier_id: int, data: TierPatch, db: DB, admin: Admin):
     return policy_admin.update_tier(
         db, admin, tier_id, name=data.name, description=data.description, is_default=data.is_default
     )
+
+
+@router.post("/tiers/{tier_id}/reset", response_model=PolicyOut)
+def reset_tier(tier_id: int, db: DB, admin: Admin):
+    """등급의 모든 항목을 전체 기본값으로 (등급 값 지우기, 항목마다 기록)."""
+    return policy_admin.reset_tier(db, admin, tier_id)
 
 
 @router.delete("/tiers/{tier_id}", response_model=PolicyOut)
@@ -126,6 +146,12 @@ def list_users(
 def get_user(user_id: int, db: DB, _: Admin):
     """사용자 상세: 활동 요약 · 지금 적용되는 한도(어디서 왔는지) · 개인 예외 · 변경 기록."""
     return policy_admin.user_detail(db, user_id)
+
+
+@router.get("/users/{user_id}/summary", response_model=UserSummaryOut)
+def get_user_summary(user_id: int, db: DB, admin: Admin):
+    """ "AI가 분석했어요": 활동 요약 6칸을 바탕으로 한 2~3 문장 (같은 숫자면 다시 부르지 않음)."""
+    return user_summary.summarize(db, admin.id, user_id)
 
 
 @router.patch("/users/{user_id}", response_model=AdminUserDetail)

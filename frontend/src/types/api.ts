@@ -220,6 +220,10 @@ export type ChangeLog = {
   expires_at: string | null;
   at: string;
 };
+export type ChangeLogs = { items: ChangeLog[]; total: number; page: number; size: number };
+/** 사용자 상세 "AI가 분석했어요" (2026-11-13) */
+export type UserSummary = { summary: string | null; error: string | null; model: string | null; at: string | null };
+
 export type PolicyView = {
   keys: PolicyKey[];
   global_values: Record<string, PolicyValue>;
@@ -273,7 +277,20 @@ export type Prompt = {
   ends_at: string | null;
   open: boolean;
   answer_count: number;
+  answerer_count: number;
 };
+/** 질문에 답한 사용자 한 명 — 그 사람이 답한 상상들의 반응 합계 (2026-11-13) */
+export type Answerer = {
+  author: Author;
+  answers: number;
+  thunders: number;
+  waves: number;
+  comments: number;
+  total: number;
+  best_id: number;
+};
+export type PromptList = { open: Prompt[]; ended: Prompt[]; ended_total: number };
+export type PromptInsight = { prompt: Prompt; answerers: Answerer[] };
 export type PromptStatus = "open" | "scheduled" | "ended" | "off";
 export type AdminPrompt = {
   id: number;
@@ -283,8 +300,145 @@ export type AdminPrompt = {
   ends_at: string | null;
   is_active: boolean;
   status: PromptStatus;
+  phase: "scheduled" | "open" | "ended"; // 기간만 본 상태 (켜짐 · 꺼짐과 따로)
   answer_count: number;
+  answerer_count: number;
   created_by: string | null;
   created_at: string;
 };
 export type AdminPrompts = { items: AdminPrompt[]; total: number; page: number; size: number };
+
+// ---------------------------------------------------------------- 6-D 분석 대시보드 (/api/admin/analytics/*)
+export type PeriodKey = "7d" | "30d" | "90d" | "all";
+export type AnPeriod = { key: PeriodKey; start: string; end: string; unit: "day" | "week"; buckets: string[]; has_prev: boolean };
+export type AnEvent = { date: string; label: string; kind: "prompt" };
+export type Kpi = { key: string; label: string; value: number; prev: number | null; unit: string; series: number[] };
+export type DomainRow = { slug: string; name: string; count: number; prev: number | null; series: number[] };
+export type TechSignal = {
+  tag_id: number;
+  label: string;
+  count: number;
+  prev: number | null;
+  growth: number | null;
+  thunders: number;
+  thunder_avg: number;
+  authors: number;
+  first_seen: string;
+  signal: "new" | "rising" | "steady" | "cooling";
+  domain: string;
+  series: number[];
+  desires: string[];
+};
+export type AnOverview = {
+  period: AnPeriod;
+  kpis: Kpi[];
+  domains: DomainRow[];
+  activity: Record<"posts" | "thunders" | "waves" | "comments" | "blends", number[]>;
+  events: AnEvent[];
+  signals: TechSignal[];
+  tagged_ratio: number;
+};
+export type AnTech = { period: AnPeriod; techs: TechSignal[]; total_posts: number; events: AnEvent[] };
+export type AnCross = {
+  period: AnPeriod;
+  sankey_nodes: { id: string; label: string; column: number; value: number }[];
+  sankey_links: { source: string; target: string; value: number }[];
+  net_nodes: { id: string; label: string; type: "tech" | "desire"; count: number; thunders: number }[];
+  net_edges: { source: string; target: string; weight: number }[];
+  matrix_rows: string[];
+  matrix_cols: string[];
+  matrix: { count: number; thunders: number }[][];
+  pairs: { a: string; b: string; count: number; prev: number | null; thunders: number }[];
+  desires: { label: string; count: number; prev: number | null; thunders: number; thunder_avg: number; techs: string[] }[];
+};
+export type AnTopPost = {
+  id: number;
+  title: string;
+  author: string;
+  domain: string;
+  created_at: string;
+  thunders: number;
+  waves: number;
+  bookmarks: number;
+  quotes: number;
+  total: number;
+  prompt: boolean;
+};
+export type AnEngagement = {
+  period: AnPeriod;
+  top: AnTopPost[];
+  histogram: [string, number][];
+  punch_posts: number[][];
+  punch_reactions: number[][];
+  active_users: number[];
+  prompt_series: number[];
+  free_series: number[];
+  prompts: { id: number; title: string; starts_at: string; ends_at: string | null; answers: number; answerers: number; thunder_avg: number }[];
+  free_thunder_avg: number;
+  events: AnEvent[];
+};
+export type AnShake = {
+  period: AnPeriod;
+  attempts: Record<string, number>;
+  series: number[];
+  blends: number;
+  deleted: number;
+  blend_thunder_avg: number;
+  material_thunder_avg: number;
+  domain_pairs: [string, string, number][];
+  materials: [number, string, number][];
+  depths: [number, number][];
+  selection_ms_median: number | null;
+};
+export type AnAi = {
+  period: AnPeriod;
+  features: { feature: string; provider: string; model: string; calls: number; failed: number; input_tokens: number; output_tokens: number; cost_usd: number; latency_ms_avg: number }[];
+  series: Record<string, number[]>;
+  cost_series: number[];
+  today_calls: number;
+  daily_limit: number;
+};
+
+/** 신규 Dreamer 활성화 (반응 · 질문 · 활동 탭, 2026-11-13) */
+export type ActivationStepKey = "joined" | "returned" | "reacted" | "posted" | "got_thunder" | "kept";
+export type AnActivation = {
+  period: AnPeriod;
+  window_days: number;
+  keep_from: number;
+  keep_to: number;
+  new_users: number;
+  eligible: number;
+  joined_series: number[];
+  steps: { key: ActivationStepKey; label: string; users: number; base: number }[];
+  compare: { key: string; label: string; yes_label: string; no_label: string; yes_n: number; yes_kept: number; no_n: number; no_kept: number }[];
+  first_post_hours_median: number | null;
+  visits_since: string | null;
+  users: {
+    id: number;
+    nickname: string;
+    joined_at: string;
+    steps: Partial<Record<ActivationStepKey, boolean>>;
+    posts: number;
+    reactions: number;
+    thunders_got: number;
+    last_active_at: string | null;
+    idle_days: number | null;
+    status: "active" | "idle" | "not_started";
+  }[];
+};
+
+/** 전체 현황 (개요 맨 위, 기간과 상관없이 처음부터 지금까지, 2026-11-13) */
+export type AnSummary = {
+  imaginations: number;
+  comments: number;
+  quotes: number;
+  hidden: number;
+  thunders: number;
+  waves: number;
+  blends: number;
+  shake_attempts: number;
+  users: number;
+  admins: number;
+  withdrawn: number | null;
+  today: Record<"imaginations" | "comments" | "quotes" | "thunders" | "waves" | "blends" | "users", number>;
+};

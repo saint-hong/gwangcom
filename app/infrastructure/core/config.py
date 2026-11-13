@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     llm_note_model: str = ""
     llm_similar_provider: Literal["anthropic", "fake", ""] = ""  # 비슷한 상상 리랭킹 (5-C)
     llm_similar_model: str = ""
+    # 운영자 사용자 활동 요약 "AI가 분석했어요" (2026-11-13)
+    llm_summary_provider: Literal["anthropic", "fake", ""] = ""
+    llm_summary_model: str = ""
     anthropic_api_key: SecretStr | None = None
     llm_daily_call_limit: int = 300  # 서비스 전체 하루 AI 호출 상한 (한국 시간 자정 기준)
     llm_timeout_seconds: float = 30
@@ -89,6 +92,7 @@ class Settings(BaseSettings):
             self.llm_shake_provider,
             self.llm_note_provider,
             self.llm_similar_provider,
+            self.llm_summary_provider,
         }
         if uses_anthropic and not self.anthropic_api_key:
             raise ValueError(

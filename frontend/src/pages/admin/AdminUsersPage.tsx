@@ -113,7 +113,7 @@ export function AdminUsersPage() {
             <col className={styles.cId} />
             <col />
             <col />
-            <col className={styles.cKind} />
+            <col className={styles.cRole} />
             <col className={styles.cTierCol} />
             <col className={styles.cCount} />
             <col className={styles.cCount} />
