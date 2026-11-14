@@ -15,9 +15,22 @@ export type Point = {
   tip: ReactNode;
 };
 
+/** 보이는 구간 [lo, hi] 의 눈금 (확대하면 0 부터가 아니라 그 구간 안에서) */
+function rangeTicks(lo: number, hi: number, count = 4): number[] {
+  const base = niceTicks(Math.max(hi - lo, 1e-6), count);
+  const step = base[1] - base[0] || 1;
+  const out: number[] = [];
+  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 0.001; v += step) out.push(Number(v.toFixed(6)));
+  return out;
+}
+
+const SCATTER_ZOOM_MAX = 6;
+
 /**
  * 사분면 산점도 — 가로 = 얼마나 많이 상상되나, 세로 = 얼마나 원하나(Thunder 평균), 원 크기 = Dreamer 수
  *   가운데 점선 = 중앙값. 네 칸 이름은 읽는 방법일 뿐 판단이 아니다 (운영자가 해석)
+ *   2026-11-14: 오른쪽 위 [+ · − · 처음 크기로] 로 확대 · 축소, 확대하면 빈 곳을 끌어서 옮긴다 (축 눈금도 그 구간에 맞춤).
+ *   이름은 처음에 labelTop 개, 확대하면 보이는 점 모두.
  */
 export function Scatter({
   points,
@@ -37,104 +50,181 @@ export function Scatter({
   const [ref, width] = useWidth<HTMLDivElement>();
   const [t, setT] = useState<Tip>(null);
   const [hover, setHover] = useState<string | null>(null);
+  // 확대: k = 배율, (vx, vy) = 보이는 구간의 시작 (데이터 값)
+  const [view, setView] = useState({ k: 1, vx: 0, vy: 0 });
+  const drag = useRef<{ px: number; py: number; vx: number; vy: number } | null>(null);
   // 축 이름은 그림 밖(위 · 아래 여백), 네 칸 이름은 그림 안 위 · 아래 띠에 둔다.
   // 점은 띠 안쪽에만 찍어서 (가장 큰 원 반지름만큼 더 비움) 축 이름 · 칸 이름과 겹치지 않게 한다.
-  const M = { top: 26, right: 16, bottom: 36, left: 44 };
+  // 왼쪽 여백 = 세로축 이름(세워 쓴 글자) + 눈금 숫자 (2026-11-14 축 이름을 y축 바깥으로)
+  const M = { top: 12, right: 16, bottom: 44, left: 62 };
   const w = Math.max(0, width - M.left - M.right);
   const h = height - M.top - M.bottom;
   const maxR = Math.max(0, ...points.map((p) => p.r));
-  const padY = quadrants ? maxR + 18 : maxR + 2;
+  const padY = quadrants ? maxR + 22 : maxR + 2;
   const padX = maxR + 2;
-  const xt = niceTicks(Math.max(1, ...points.map((p) => p.x)));
-  const yt = niceTicks(Math.max(1, ...points.map((p) => p.y)));
-  const X = (v: number) => M.left + padX + (v / xt[xt.length - 1]) * Math.max(0, w - 2 * padX);
-  const Y = (v: number) => M.top + h - padY - (v / yt[yt.length - 1]) * Math.max(0, h - 2 * padY);
+  const xMax = niceTicks(Math.max(1, ...points.map((p) => p.x))).at(-1) || 1;
+  const yMax = niceTicks(Math.max(1, ...points.map((p) => p.y))).at(-1) || 1;
+  const xSpan = xMax / view.k;
+  const ySpan = yMax / view.k;
+  const iw = Math.max(1, w - 2 * padX);
+  const ih = Math.max(1, h - 2 * padY);
+  const X = (v: number) => M.left + padX + ((v - view.vx) / xSpan) * iw;
+  const Y = (v: number) => M.top + h - padY - ((v - view.vy) / ySpan) * ih;
+  const xt = rangeTicks(view.vx, view.vx + xSpan);
+  const yt = rangeTicks(view.vy, view.vy + ySpan);
   const med = (a: number[]) => {
     const s = [...a].sort((p, q) => p - q);
     return s.length ? s[Math.floor(s.length / 2)] : 0;
   };
   const mx = med(points.map((p) => p.x));
   const my = med(points.map((p) => p.y));
+  const zoomed = view.k > 1;
+  const inView = (p: Point) => X(p.x) >= M.left - p.r && X(p.x) <= M.left + w + p.r && Y(p.y) >= M.top - p.r && Y(p.y) <= M.top + h + p.r;
   const labelled = new Set(
-    [...points]
-      .sort((a, b) => b.x / (xt.at(-1) || 1) + b.y / (yt.at(-1) || 1) - (a.x / (xt.at(-1) || 1) + a.y / (yt.at(-1) || 1)))
-      .slice(0, labelTop)
-      .map((p) => p.id),
+    zoomed
+      ? points.filter(inView).map((p) => p.id)
+      : [...points]
+          .sort((a, b) => b.x / xMax + b.y / yMax - (a.x / xMax + a.y / yMax))
+          .slice(0, labelTop)
+          .map((p) => p.id),
   );
   const draw = [...points].sort((a, b) => b.r - a.r); // 큰 원 먼저 (작은 원이 위로)
 
+  const clamp = (k: number, vx: number, vy: number) => ({
+    k,
+    vx: Math.min(Math.max(0, vx), xMax - xMax / k),
+    vy: Math.min(Math.max(0, vy), yMax - yMax / k),
+  });
+  const zoom = (f: number) =>
+    setView((v) => {
+      const k = Math.min(SCATTER_ZOOM_MAX, Math.max(1, v.k * f));
+      // 지금 보이는 구간의 가운데를 기준으로
+      const cx = v.vx + xMax / v.k / 2;
+      const cy = v.vy + yMax / v.k / 2;
+      return clamp(k, cx - xMax / k / 2, cy - yMax / k / 2);
+    });
+  const onDown = (e: RPointerEvent<SVGSVGElement>) => {
+    if (!zoomed || (e.target as Element).tagName === "circle") return;
+    drag.current = { px: e.clientX, py: e.clientY, vx: view.vx, vy: view.vy };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e: RPointerEvent<SVGSVGElement>) => {
+    const d = drag.current;
+    if (d) setView((v) => clamp(v.k, d.vx - ((e.clientX - d.px) / iw) * xSpan, d.vy + ((e.clientY - d.py) / ih) * ySpan));
+  };
+  const clipId = `scatter-clip-${xLabel.length}-${yLabel.length}`;
+
   return (
-    <div ref={ref} className={styles.plot} style={{ height }} onMouseLeave={() => (setT(null), setHover(null))}>
-      {width > 0 ? (
-        <svg width={width} height={height} role="img" aria-label={`${xLabel} · ${yLabel} 산점도`}>
-          {yt.map((v) => (
-            <g key={`y${v}`}>
-              <line x1={M.left} x2={M.left + w} y1={Y(v)} y2={Y(v)} className={styles.grid} />
-              <text x={M.left - 6} y={Y(v)} className={styles.axisY}>
+    <div className={styles.chartBox}>
+      {/* 오른쪽 위 확대 · 축소 (그래프 위 한 줄, 칸 이름과 겹치지 않게) */}
+      <div className={styles.zoomRow}>
+        <div className={styles.zoomBarInline} role="group" aria-label="산점도 확대 · 축소">
+          <button type="button" onClick={() => zoom(ZOOM_STEP)} disabled={view.k >= SCATTER_ZOOM_MAX} aria-label="확대" title="확대">
+            <Plus />
+          </button>
+          <button type="button" onClick={() => zoom(1 / ZOOM_STEP)} disabled={!zoomed} aria-label="축소" title="축소">
+            <Minus />
+          </button>
+          <button type="button" onClick={() => setView({ k: 1, vx: 0, vy: 0 })} disabled={!zoomed} aria-label="처음 크기로" title="처음 크기로">
+            <RotateCcw />
+          </button>
+        </div>
+        {zoomed ? <span className={styles.zoomHint}>빈 곳을 끌어서 옮겨요 · {fmt(view.k, 1)}배</span> : null}
+      </div>
+      <div ref={ref} className={styles.plot} style={{ height }} onMouseLeave={() => (setT(null), setHover(null))}>
+        {width > 0 ? (
+          <svg
+            width={width}
+            height={height}
+            role="img"
+            aria-label={`${xLabel} · ${yLabel} 산점도`}
+            className={zoomed ? styles.scatterPan : undefined}
+            onPointerDown={onDown}
+            onPointerMove={onMove}
+            onPointerUp={() => (drag.current = null)}
+          >
+            <defs>
+              <clipPath id={clipId}>
+                <rect x={M.left} y={M.top} width={w} height={h} />
+              </clipPath>
+            </defs>
+            {/* 그림 영역 바탕 = 옅은 회색, 눈금선은 바탕색(흰색)으로 (2026-11-14 영역이 잘 보이게) */}
+            <rect x={M.left} y={M.top} width={w} height={h} rx={6} className={styles.plotBg} />
+            {yt.map((v) => (
+              <g key={`y${v}`}>
+                <line x1={M.left} x2={M.left + w} y1={Y(v)} y2={Y(v)} className={styles.plotBgGrid} />
+                <text x={M.left - 6} y={Y(v)} className={styles.axisY}>
+                  {fmt(v, 2)}
+                </text>
+              </g>
+            ))}
+            {xt.map((v) => (
+              <text key={`x${v}`} x={X(v)} y={M.top + h + 16} className={styles.axisX}>
                 {fmt(v, 1)}
               </text>
-            </g>
-          ))}
-          {xt.map((v) => (
-            <text key={`x${v}`} x={X(v)} y={M.top + h + 16} className={styles.axisX}>
-              {fmt(v)}
-            </text>
-          ))}
-          <text x={M.left + w} y={height - 4} className={styles.axisTitleX}>
-            {xLabel} →
-          </text>
-          <text x={M.left - 6} y={M.top - 12} className={styles.axisTitleY}>
-            ↑ {yLabel}
-          </text>
-          <line x1={X(mx)} x2={X(mx)} y1={M.top} y2={M.top + h} className={styles.medianLine} />
-          <line x1={M.left} x2={M.left + w} y1={Y(my)} y2={Y(my)} className={styles.medianLine} />
-          {quadrants ? (
-            <>
-              <text x={M.left + 6} y={M.top + 13} className={styles.quadLabel}>
-                {quadrants[0]}
-              </text>
-              <text x={M.left + w - 6} y={M.top + 13} className={styles.quadLabel} textAnchor="end">
-                {quadrants[1]}
-              </text>
-              <text x={M.left + 6} y={M.top + h - 6} className={styles.quadLabel}>
-                {quadrants[2]}
-              </text>
-              <text x={M.left + w - 6} y={M.top + h - 6} className={styles.quadLabel} textAnchor="end">
-                {quadrants[3]}
-              </text>
-            </>
-          ) : null}
-          {draw.map((p) => (
-            <circle
-              key={p.id}
-              cx={X(p.x)}
-              cy={Y(p.y)}
-              r={p.r}
-              fill={p.color}
-              className={styles.point}
-              opacity={hover && hover !== p.id ? 0.3 : 0.78}
-              onMouseMove={(e) => {
-                setHover(p.id);
-                setT({ ...localPoint(e, ref.current), content: p.tip });
-              }}
-            />
-          ))}
-          {points
-            .filter((p) => labelled.has(p.id) || hover === p.id)
-            .map((p) => (
-              <text
-                key={`l${p.id}`}
-                x={X(p.x) > M.left + w * 0.8 ? X(p.x) - p.r - 3 : X(p.x) + p.r + 3}
-                y={Y(p.y) + 4}
-                textAnchor={X(p.x) > M.left + w * 0.8 ? "end" : "start"}
-                className={styles.pointLabel}
-              >
-                {p.label}
-              </text>
             ))}
-        </svg>
-      ) : null}
-      <Tooltip tip={t} width={width} />
+            {/* 가로축 이름: x축 아래 가운데, 화살표 없이 (2026-11-14) */}
+            <text x={M.left + w / 2} y={height - 4} textAnchor="middle" className={styles.scatterAxisTitle}>
+              {xLabel}
+            </text>
+            {/* 세로축 이름: y축 바깥 왼쪽에 아래에서 위로 세워 씀 (일반 그래프 방식, 2026-11-14) */}
+            <text x={14} y={M.top + h / 2} transform={`rotate(-90 14 ${M.top + h / 2})`} textAnchor="middle" className={styles.scatterAxisTitle}>
+              {yLabel}
+            </text>
+            <g clipPath={`url(#${clipId})`}>
+              <line x1={X(mx)} x2={X(mx)} y1={M.top} y2={M.top + h} className={styles.medianLine} />
+              <line x1={M.left} x2={M.left + w} y1={Y(my)} y2={Y(my)} className={styles.medianLine} />
+            </g>
+            {quadrants ? (
+              <>
+                <text x={M.left + 6} y={M.top + 16} className={styles.quadLabel}>
+                  {quadrants[0]}
+                </text>
+                <text x={M.left + w - 6} y={M.top + 16} className={styles.quadLabel} textAnchor="end">
+                  {quadrants[1]}
+                </text>
+                <text x={M.left + 6} y={M.top + h - 7} className={styles.quadLabel}>
+                  {quadrants[2]}
+                </text>
+                <text x={M.left + w - 6} y={M.top + h - 7} className={styles.quadLabel} textAnchor="end">
+                  {quadrants[3]}
+                </text>
+              </>
+            ) : null}
+            <g clipPath={`url(#${clipId})`}>
+              {draw.map((p) => (
+                <circle
+                  key={p.id}
+                  cx={X(p.x)}
+                  cy={Y(p.y)}
+                  r={p.r}
+                  fill={p.color}
+                  className={styles.point}
+                  opacity={hover && hover !== p.id ? 0.3 : 0.78}
+                  onMouseMove={(e) => {
+                    setHover(p.id);
+                    setT({ ...localPoint(e, ref.current), content: p.tip });
+                  }}
+                />
+              ))}
+              {points
+                .filter((p) => labelled.has(p.id) || hover === p.id)
+                .map((p) => (
+                  <text
+                    key={`l${p.id}`}
+                    x={X(p.x) > M.left + w * 0.8 ? X(p.x) - p.r - 3 : X(p.x) + p.r + 3}
+                    y={Y(p.y) + 4}
+                    textAnchor={X(p.x) > M.left + w * 0.8 ? "end" : "start"}
+                    className={styles.pointLabel}
+                  >
+                    {p.label}
+                  </text>
+                ))}
+            </g>
+          </svg>
+        ) : null}
+        <Tooltip tip={t} width={width} />
+      </div>
     </div>
   );
 }

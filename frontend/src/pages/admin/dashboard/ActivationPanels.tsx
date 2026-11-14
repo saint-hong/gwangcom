@@ -12,9 +12,9 @@ import { CountSetting, PeriodSetting, PickSetting, periodOf, useSettings, type P
 const FEW = 5;
 
 const STATUS = {
-  active: { label: "활동 중", cls: styles.sigNew },
-  idle: { label: "멈춤", cls: styles.sigCooling },
-  not_started: { label: "시작 전", cls: styles.sigSteady },
+  active: { label: "활동 중", cls: styles.stActive },
+  idle: { label: "멈춤", cls: styles.stIdle },
+  not_started: { label: "시작 전", cls: styles.stWaiting },
 } as const;
 type Status = keyof typeof STATUS;
 

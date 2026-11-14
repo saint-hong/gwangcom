@@ -1,0 +1,162 @@
+/* 기술 고르기 (2026-11-14) — 설정 영역 안에서 펼쳐짐, 설정 폭 전체 사용 */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+}
+
+.help {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* 왼쪽 그룹 | 오른쪽 기술 목록 — 둘 다 넘치면 상하 스크롤 */
+.body {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  height: 300px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.groups,
+.techs {
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.groups {
+  border-right: 1px solid var(--color-border);
+}
+
+.group {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.group:hover {
+  background: var(--color-surface-hover);
+}
+
+.group[aria-selected="true"] {
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.groupName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 그래프 선과 같은 신호 색 (짧은 선 모양) */
+.groupSwatch {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.groupCount {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 기술 목록은 폭만큼 여러 칸으로 */
+.techs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  align-content: start;
+  gap: 0 var(--space-2);
+}
+
+.tech {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.tech:hover {
+  background: var(--color-surface-hover);
+}
+
+.tech input {
+  accent-color: var(--color-accent);
+}
+
+.techName {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.techCount {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 목록 맨 끝 "모두" — 한 줄 전체, 구분선 위 */
+.allRow {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-border);
+}
+
+.allRow .techName {
+  font-weight: 700;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  padding: var(--space-3);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.footCount {
+  margin-right: auto;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+@media (max-width: 560px) {
+  .body {
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
+}

@@ -69,7 +69,8 @@ export function TimeChart({
       return;
     }
     setHover(i);
-    const rows = [...series].reverse();
+    // 툴팁 순서: 선 그래프는 범례와 같은 순서, 쌓은 막대는 그림과 같게 위 칸부터 (2026-11-14)
+    const rows = stacked ? [...series].reverse() : series;
     setTip({
       x: x(i),
       y: p.y,

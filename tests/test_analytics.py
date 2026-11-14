@@ -68,6 +68,11 @@ def test_dashboard_numbers(client) -> None:
     assert tech["AI"]["count"] == 2 and tech["AI"]["authors"] == 1
     assert tech["AI"]["thunders"] == 2 and tech["AI"]["thunder_avg"] == 1.0
     assert tech["AI"]["desires"][0] == "안전"
+    # 기술 × 분야 · 칸별 전체 수 (2026-11-14)
+    assert tech["AI"]["domain_counts"] == {"mobility": 1, "ai": 1}
+    assert tech["AI"]["domain_thunders"] == {"mobility": 2, "ai": 0}
+    assert tech["AI"]["domain_top"]["mobility"] == "하늘을 나는 드론 택배"
+    assert sum(get("tech")["total_series"]) == 3
 
     cross = get("cross")
     assert [(x["a"], x["b"], x["count"]) for x in cross["pairs"]] == [("AI", "드론", 1)]

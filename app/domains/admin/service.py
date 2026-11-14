@@ -132,7 +132,11 @@ def list_items(
     ordered = col.asc() if order == "asc" else col.desc()
     if size not in PAGE_SIZES:
         raise bad_request("invalid_size", "한 페이지에 20 · 50 · 100개씩 볼 수 있어요.")
-    total = db.scalar(select(func.count()).select_from(query.subquery())) or 0
+    sub = query.subquery()
+    kind_counts = {
+        k: n for k, n in db.execute(select(sub.c.kind, func.count()).group_by(sub.c.kind)) if n
+    }
+    total = sum(kind_counts.values())
     last = max(1, -(-total // size))
     page = min(max(1, page), last)  # 범위를 넘으면 마지막 페이지
     rows = list(
@@ -142,7 +146,11 @@ def list_items(
     )
     logs = _last_logs(db, [r.id for r in rows])
     return AdminItemsOut(
-        items=[_row(r, logs.get(r.id)) for r in rows], total=total, page=page, size=size
+        items=[_row(r, logs.get(r.id)) for r in rows],
+        total=total,
+        page=page,
+        size=size,
+        kind_counts=kind_counts,
     )
 
 

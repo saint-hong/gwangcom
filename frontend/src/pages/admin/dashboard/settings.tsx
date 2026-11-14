@@ -40,7 +40,7 @@ export function usePeriodPanel<T>(path: string, page: PeriodKey) {
   };
 }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className={styles.setRow}>
       <span className={styles.setLabel}>{label}</span>

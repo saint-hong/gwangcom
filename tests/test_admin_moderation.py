@@ -78,6 +78,10 @@ def test_list_filters_and_search(client) -> None:
     page = client.get("/api/admin/imaginations?page=2&size=20", headers=auth(admin)).json()
     assert (page["total"], page["page"], page["size"], len(page["items"])) == (25, 2, 20, 5)
     assert client.get("/api/admin/imaginations?page=9", headers=auth(admin)).json()["page"] == 2
+    # 종류별 개수: 같은 조건에서 세고, 0 인 종류는 빠진다 (2026-11-14)
+    assert page["kind_counts"] == {"original": 24, "comment": 1}
+    only = client.get("/api/admin/imaginations?kind=comment", headers=auth(admin)).json()
+    assert (only["total"], only["kind_counts"]) == (1, {"comment": 1})
     bad = client.get("/api/admin/imaginations?size=7", headers=auth(admin))
     assert bad.status_code == 400 and bad.json()["detail"]["code"] == "invalid_size"
 

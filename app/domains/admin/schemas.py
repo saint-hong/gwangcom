@@ -41,6 +41,8 @@ class AdminItemsOut(BaseModel):
     total: int
     page: int
     size: int
+    # 같은 조건에서 종류별 개수 (0 은 뺀다, 2026-11-14 "전체 N개 (상상 · 댓글 · 인용 · 혼합)")
+    kind_counts: dict[str, int] = {}
 
 
 class ModerateIn(BaseModel):

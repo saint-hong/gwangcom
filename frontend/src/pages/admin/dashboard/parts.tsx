@@ -176,12 +176,15 @@ export function KpiTile({
   return (
     <div className={styles.kpi}>
       <span className={styles.kpiLabel}>{label}</span>
-      <span className={styles.kpiValue}>
-        {format(value)}
-        {unit ? <small>{unit}</small> : null}
+      {/* 숫자 옆에 증감율, 그 아래 줄에 "이전 N" (2026-11-14 사용자 요청: 카드마다 줄바꿈이 달라지던 것 통일) */}
+      <span className={styles.kpiMain}>
+        <span className={styles.kpiValue}>
+          {format(value)}
+          {unit ? <small>{unit}</small> : null}
+        </span>
+        {prev !== undefined ? <Delta cur={value} prev={prev} /> : null}
       </span>
       <span className={styles.kpiFoot}>
-        {prev !== undefined ? <Delta cur={value} prev={prev} /> : null}
         {prev !== undefined && prev !== null ? <span className={styles.kpiPrev}>이전 {format(prev)}</span> : null}
         {note ? <span className={styles.kpiPrev}>{note}</span> : null}
       </span>
@@ -194,17 +197,27 @@ export function KpiTile({
   );
 }
 
-export const SIGNAL: Record<TechSignal["signal"], { label: string; cls: string; hint: string }> = {
-  new: { label: "새로 등장", cls: "sigNew", hint: "이번 기간에 처음 나온 기술" },
-  rising: { label: "떠오름", cls: "sigRising", hint: "전체 상상 중 비중이 이전 기간의 1.5배 이상 (3개 이상)" },
-  steady: { label: "꾸준함", cls: "sigSteady", hint: "이전 기간과 비슷" },
-  cooling: { label: "식는 중", cls: "sigCooling", hint: "전체 상상 중 비중이 이전 기간의 2/3 미만" },
+export const SIGNAL: Record<TechSignal["signal"], { label: string; hint: string }> = {
+  new: { label: "새로 등장", hint: "이번 기간에 처음 나온 기술" },
+  rising: { label: "떠오름", hint: "전체 상상 중 비중이 이전 기간의 1.5배 이상 (3개 이상)" },
+  steady: { label: "꾸준함", hint: "이전 기간과 비슷" },
+  cooling: { label: "식는 중", hint: "전체 상상 중 비중이 이전 기간의 2/3 미만" },
 };
 
-export function SignalBadge({ signal }: { signal: TechSignal["signal"] }) {
+/** 신호 그룹 색 (기술 빈도 시계열 선 · 범례 · 기술 고르기 창, 2026-11-14) — 새로 등장 보라 · 떠오름 초록 · 꾸준함 파랑 · 식는 중 주황 (2026-11-14 사용자 결정).
+ *  뱃지는 글자로 읽게 회색 하나로 두고, 선이 많은 그래프에서만 색을 쓴다 */
+export const SIGNAL_COLOR: Record<TechSignal["signal"], string> = {
+  new: "var(--viz-7)",
+  rising: "var(--viz-6)",
+  steady: "var(--viz-1)",
+  cooling: "var(--viz-2)",
+};
+
+/** 신호 알약 — 기본은 회색 하나. colored = 기술 활동 테이블처럼 시계열과 함께 읽는 곳: 바탕만 신호 색(옅게), 글자는 그대로 검정 (2026-11-14) */
+export function SignalBadge({ signal, colored = false }: { signal: TechSignal["signal"]; colored?: boolean }) {
   const s = SIGNAL[signal];
   return (
-    <span className={`${styles.sig} ${styles[s.cls]}`} title={s.hint}>
+    <span className={styles.sig} style={colored ? { background: `color-mix(in srgb, ${SIGNAL_COLOR[signal]} 30%, transparent)` } : undefined} title={s.hint}>
       {s.label}
     </span>
   );

@@ -426,9 +426,25 @@ a.barLabel:hover {
   stroke-dasharray: 4 4;
 }
 
+/* 사분면 칸 이름 · 산점도 축 이름 — 11px 은 너무 작아 13px (2026-11-14 사용자 요청) */
 .quadLabel {
   fill: var(--color-text-tertiary);
-  font-size: 11px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.plotBg {
+  fill: var(--color-surface-muted);
+}
+
+.plotBgGrid {
+  stroke: var(--color-bg);
+  stroke-width: 1.5;
+}
+
+.scatterAxisTitle {
+  fill: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
   font-weight: 700;
 }
 
@@ -461,6 +477,30 @@ a.barLabel:hover {
   cursor: grabbing;
 }
 
+/* 산점도: 그래프 위 오른쪽 확대 · 축소 줄 (2026-11-14) */
+.zoomRow {
+  display: flex;
+  flex-direction: row-reverse; /* 버튼은 오른쪽 끝, 안내 글은 그 왼쪽 */
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 30px;
+}
+
+.zoomHint {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+}
+
+.scatterPan {
+  cursor: grab;
+  touch-action: none;
+}
+
+.scatterPan:active {
+  cursor: grabbing;
+}
+
+.zoomBarInline,
 .zoomBar {
   position: absolute;
   top: 0;
@@ -473,6 +513,12 @@ a.barLabel:hover {
   background: var(--color-surface);
 }
 
+/* 산점도의 확대 줄은 그래프 위 한 줄 안에 (네트워크는 그림 위 오른쪽에 떠 있음) */
+.zoomBarInline {
+  position: static;
+}
+
+.zoomBarInline button,
 .zoomBar button {
   display: inline-flex;
   align-items: center;
@@ -486,19 +532,23 @@ a.barLabel:hover {
   cursor: pointer;
 }
 
+.zoomBarInline button + button,
 .zoomBar button + button {
   border-left: 1px solid var(--color-border);
 }
 
+.zoomBarInline button:hover:not(:disabled),
 .zoomBar button:hover:not(:disabled) {
   background: var(--color-surface-hover);
 }
 
+.zoomBarInline button:disabled,
 .zoomBar button:disabled {
   color: var(--color-text-tertiary);
   cursor: default;
 }
 
+.zoomBarInline svg,
 .zoomBar svg {
   width: 15px;
   height: 15px;

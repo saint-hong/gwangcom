@@ -193,7 +193,14 @@ export type AdminItem = {
   created_at: string;
   last_moderation: ModerationLog | null;
 };
-export type AdminItems = { items: AdminItem[]; total: number; page: number; size: number };
+export type AdminItems = {
+  items: AdminItem[];
+  total: number;
+  page: number;
+  size: number;
+  /** 같은 조건의 종류별 개수 (0 은 없음) */
+  kind_counts: Partial<Record<AdminItem["kind"], number>>;
+};
 
 /** 운영자 A5 · A6 정책 · 사용자 관리 (Sprint 6-B) */
 export type PolicyValue = number | boolean;
@@ -322,12 +329,16 @@ export type TechSignal = {
   growth: number | null;
   thunders: number;
   thunder_avg: number;
+  waves: number;
   authors: number;
   first_seen: string;
   signal: "new" | "rising" | "steady" | "cooling";
   domain: string;
   series: number[];
   desires: string[];
+  domain_counts: Record<string, number>;
+  domain_thunders: Record<string, number>;
+  domain_top: Record<string, string>;
 };
 export type AnOverview = {
   period: AnPeriod;
@@ -338,7 +349,7 @@ export type AnOverview = {
   signals: TechSignal[];
   tagged_ratio: number;
 };
-export type AnTech = { period: AnPeriod; techs: TechSignal[]; total_posts: number; events: AnEvent[] };
+export type AnTech = { period: AnPeriod; techs: TechSignal[]; total_posts: number; total_series: number[]; events: AnEvent[] };
 export type AnCross = {
   period: AnPeriod;
   sankey_nodes: { id: string; label: string; column: number; value: number }[];

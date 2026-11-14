@@ -9,6 +9,8 @@ type Props = {
   sizes?: number[];
   onPage: (page: number) => void;
   onSize?: (size: number) => void;
+  /** 전체 N개 뒤 괄호에 넣을 내역 (예: "상상 550 · 댓글 539") */
+  totalDetail?: string;
 };
 
 /** 보여 줄 번호: 처음 · 끝 · 지금 앞뒤 2개, 사이는 … */
@@ -25,14 +27,14 @@ function pageList(page: number, last: number): (number | "gap")[] {
 
 /**
  * 페이지 번호 이동 (운영자 표, 2026-11-12 사용자 요청: [더 보기] 대신 번호)
- *   전체 N개 · [20개씩 ▾]        ‹ 1 … 4 5 [6] 7 8 … 20 ›
+ *   [20개씩 ▾] 전체 N개 (내역)        ‹ 1 … 4 5 [6] 7 8 … 20 ›
+ *   (2026-11-14 사용자 요청: 개수 선택을 앞으로, 전체 수 뒤에 종류 내역)
  */
-export function Pagination({ page, total, size, sizes = [20, 50, 100], onPage, onSize }: Props) {
+export function Pagination({ page, total, size, sizes = [20, 50, 100], onPage, onSize, totalDetail }: Props) {
   const last = Math.max(1, Math.ceil(total / size));
   return (
     <nav className={styles.bar} aria-label="페이지">
       <div className={styles.info}>
-        <span>전체 {total.toLocaleString()}개</span>
         {onSize ? (
           <SelectMenu
             value={size}
@@ -43,6 +45,9 @@ export function Pagination({ page, total, size, sizes = [20, 50, 100], onPage, o
             small
           />
         ) : null}
+        <span>
+          전체 {total.toLocaleString()}개{totalDetail ? ` (${totalDetail})` : ""}
+        </span>
       </div>
       <div className={styles.pages}>
         <button type="button" className={styles.arrow} onClick={() => onPage(page - 1)} disabled={page <= 1} aria-label="이전 페이지">

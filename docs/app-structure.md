@@ -1,6 +1,6 @@
 # 코드 구조
 
-> 갱신: 2026-11-13 (Sprint 6) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
+> 갱신: 2026-11-14 (Sprint 6) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
 
 ## 백엔드 `app/`
 
@@ -116,7 +116,7 @@ src/
     ├── profile/                # S11 ProfilePage(X, [상상|댓글|인용]) · EditProfileModal(커버·이미지·이름·소개) · FollowListPage(S17 팔로워·팔로잉)
     ├── notifications/          # S13 알림 [전체 | 댓글] (X)
     ├── settings/SettingsPage   # S14 비밀번호 변경
-    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeAiTabs, parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · CSV · 통계 캐시) · settings(그래프 설정: 기간 · 개수 · 항목 · 모양), Dashboard.module.css)
+    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab(기술 × 분야 · 사분면 · 기술 빈도 시계열 · 기술 활동 테이블) · TechPicker(공용 기술 고르기 `TechPickSetting`: 신호 그룹 → 기술) · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeAiTabs, parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · 신호 색 `SIGNAL_COLOR` · CSV · 통계 캐시) · settings(그래프 설정: 기간 · 개수 · 항목 · 모양), Dashboard.module.css)
     └── common/                 # PlaceholderPage(미구현 화면) · ProfileRoute(/@닉네임)
 ```
 

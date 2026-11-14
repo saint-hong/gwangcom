@@ -19,6 +19,20 @@ const STATUS = [
   { value: "visible", label: "보이는 글" },
   { value: "hidden", label: "숨긴 글" },
 ] as const;
+/** 아래 "전체 N개 (상상 550 · 댓글 539 · 인용 29 · 혼합 39)" — 대시보드 전체 현황과 같은 순서 · 이름 (2026-11-14) */
+const KIND_COUNT_ORDER: [Kind, string][] = [
+  ["original", "상상"],
+  ["comment", "댓글"],
+  ["quote", "인용"],
+  ["blend", "혼합"],
+];
+
+function kindBreakdown(counts: AdminItems["kind_counts"]): string {
+  return KIND_COUNT_ORDER.filter(([k]) => counts[k])
+    .map(([k, label]) => `${label} ${(counts[k] ?? 0).toLocaleString()}`)
+    .join(" · ");
+}
+
 const KINDS: { value: "all" | Kind; label: string }[] = [
   { value: "all", label: "모든 종류" },
   { value: "original", label: "원본" },
@@ -330,6 +344,7 @@ export function AdminImaginationsPage() {
         <Pagination
           page={data.page}
           total={data.total}
+          totalDetail={kindBreakdown(data.kind_counts)}
           size={data.size}
           onPage={(p) => {
             setPage(p);

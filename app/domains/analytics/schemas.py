@@ -50,12 +50,17 @@ class TechSignal(BaseModel):
     growth: float | None  # 비중 증감 (이번 비중 / 이전 비중 - 1), 이전에 없었으면 없음
     thunders: int  # 그 상상들이 받은 Thunder 합 (욕망의 표시)
     thunder_avg: float
+    waves: int = 0  # 그 상상들이 받은 Wave 합 (2026-11-14 카드에 추가)
     authors: int  # 서로 다른 Dreamer 수 (한 사람 쏠림 확인)
     first_seen: date
     signal: Literal["new", "rising", "steady", "cooling"]
     domain: str  # 가장 많이 함께 나온 분야 slug
     series: list[int]
     desires: list[str]  # 함께 나온 욕망 상위 3개
+    # 기술 × 분야 (2026-11-14): 분야 slug → 상상 수 · Thunder 합 · 대표 상상(Thunder 가장 많은) 제목
+    domain_counts: dict[str, int] = {}
+    domain_thunders: dict[str, int] = {}
+    domain_top: dict[str, str] = {}
 
 
 class OverviewOut(BaseModel):
@@ -72,6 +77,7 @@ class TechOut(BaseModel):
     period: PeriodOut
     techs: list[TechSignal]
     total_posts: int
+    total_series: list[int] = []  # 칸마다 대중 상상 수 (기술 비중 = 기술 수 / 이 값, 2026-11-14)
     events: list[EventMark]
 
 

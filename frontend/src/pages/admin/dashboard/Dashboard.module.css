@@ -117,14 +117,30 @@
   font-weight: 700;
 }
 
-.split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: var(--space-4);
+/* 그래프 아래 펼침 (분야별 비중, 2026-11-14) */
+.foldBox {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
 }
 
-.sideList {
-  min-width: 0;
+.foldBody {
+  max-width: 640px;
+  margin-top: var(--space-2);
+}
+
+/* 비중 % 는 앞 글자를 맞추고(왼쪽 정렬, 칸 폭 고정), 그 옆에 New */
+.shareNote {
+  display: inline-grid;
+  grid-template-columns: 3.2em 2.6em;
+  gap: 4px;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.shareNew {
+  color: var(--color-accent-text);
+  font-weight: 700;
 }
 
 /* 핵심 숫자 칸 */
@@ -170,6 +186,21 @@
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
   font-weight: 600;
+}
+
+.kpiMain {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* 숫자 옆 증감율은 한 단계 작게 (2026-11-14, 좁은 카드에서도 한 줄에 들어가게) */
+.kpiMain > :not(.kpiValue) {
+  font-size: var(--font-size-2xs);
+  letter-spacing: -0.2px;
 }
 
 .kpiFoot {
@@ -224,6 +255,12 @@
   border-radius: 10px;
 }
 
+/* 흐름선은 카드 맨 아래 — 줄 수가 달라도 같은 줄 카드끼리 흐름선 높이가 맞게 */
+.signalSpark {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
 .signalTop {
   display: flex;
   align-items: center;
@@ -260,35 +297,61 @@
   white-space: nowrap;
 }
 
-/* 신호 알약 — 색 + 글자 (색만으로 뜻을 전하지 않는다) */
+/* 신호 알약 — 4가지 모두 같은 모양: 옅은 회색 바탕 + 검은 글자 (2026-11-14 사용자 요청, 색으로 나누지 않고 글자로 읽는다) */
 .sig {
   display: inline-block;
   padding: 1px 8px;
-  border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: var(--font-size-2xs);
   font-weight: 700;
   white-space: nowrap;
 }
 
-.sigNew {
+/* 신규 Dreamer 상태 알약 — 예전 색 그대로 (기술 신호 알약과 따로) */
+.stActive,
+.stIdle,
+.stWaiting {
+  border: 1px solid var(--color-border);
+  background: transparent;
+}
+
+.stActive {
   border-color: var(--color-accent-border);
   background: var(--color-accent-soft);
   color: var(--color-accent-text);
 }
 
-.sigRising {
-  border-color: transparent;
-  background: var(--viz-up);
-  color: #fff;
+.stIdle {
+  color: var(--viz-down);
 }
 
-.sigSteady {
+.stWaiting {
   color: var(--color-text-secondary);
 }
 
-.sigCooling {
-  color: var(--viz-down);
+/* 설정 안 [기술 고르기 ▾] 줄 (2026-11-14) */
+.pickLine .pick svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pickLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pickNote {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+/* 개요 · 기술 신호 탭 줄 */
+.signalTabs {
+  margin-bottom: var(--space-3);
 }
 
 .domainDot {
@@ -363,10 +426,6 @@
 
 @media (max-width: 1100px) {
   .grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .split {
     grid-template-columns: minmax(0, 1fr);
   }
 }

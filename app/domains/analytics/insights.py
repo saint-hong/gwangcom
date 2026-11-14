@@ -81,7 +81,14 @@ def _share_growth(cur: int, total: int, prev: int | None, prev_total: int) -> fl
 # ---------------------------------------------------------------- 기술 흐름
 
 
-def tech_signals(f: Frame, limit: int = 60) -> list[TechSignal]:
+def _post_title(x: Post) -> str:
+    text = (x.title or x.body or "").strip().replace("\n", " ")
+    return text if len(text) <= 40 else text[:40] + "…"
+
+
+def tech_signals(
+    f: Frame, limit: int = 500
+) -> list[TechSignal]:  # 500: "모두" 보기 · 신호 개수가 잘리지 않게 (2026-11-14)
     p = f.period
     labels: dict[int, str] = {}
     posts_of: dict[int, list[Post]] = defaultdict(list)
@@ -113,6 +120,9 @@ def tech_signals(f: Frame, limit: int = 60) -> list[TechSignal]:
         thunders = sum(x.thunders for x in posts)
         domain = Counter(x.domain for x in posts).most_common(1)[0][0]
         desires = Counter(label for x in posts for _, label in x.desires)
+        by_domain: dict[str, list[Post]] = defaultdict(list)
+        for x in posts:
+            by_domain[x.domain].append(x)
         out.append(
             TechSignal(
                 tag_id=tid,
@@ -122,12 +132,19 @@ def tech_signals(f: Frame, limit: int = 60) -> list[TechSignal]:
                 growth=share_growth,
                 thunders=thunders,
                 thunder_avg=round(thunders / count, 2),
+                waves=sum(x.waves for x in posts),
                 authors=len({x.author_id for x in posts}),
                 first_seen=first_day,
                 signal=signal,  # type: ignore[arg-type]
                 domain=domain,
                 series=series(p, [x.created_at for x in posts]),
                 desires=[d for d, _ in desires.most_common(3)],
+                domain_counts={d: len(xs) for d, xs in by_domain.items()},
+                domain_thunders={d: sum(x.thunders for x in xs) for d, xs in by_domain.items()},
+                domain_top={
+                    d: _post_title(max(xs, key=lambda x: (x.thunders, x.id)))
+                    for d, xs in by_domain.items()
+                },
             )
         )
     out.sort(key=lambda t: (-t.count, -t.thunders, t.label))
@@ -140,6 +157,7 @@ def tech(db: Session, period: Period) -> TechOut:
         period=period_out(period),
         techs=tech_signals(f),
         total_posts=len(f.posts),
+        total_series=series(period, [x.created_at for x in f.posts]),
         events=events(db, period),
     )
 
@@ -274,7 +292,7 @@ def overview(db: Session, period: Period) -> OverviewOut:
             "blends": series(p, blends),
         },
         events=events(db, p),
-        signals=_rising_first(signals, limit=60),
+        signals=_rising_first(signals, limit=500),
         tagged_ratio=round(tagged / len(f.posts), 3) if f.posts else 0.0,
     )
 
