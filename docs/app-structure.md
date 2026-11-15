@@ -1,6 +1,6 @@
 # 코드 구조
 
-> 갱신: 2026-11-14 (Sprint 6) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
+> 갱신: 2026-11-15 (Sprint 6) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
 
 ## 백엔드 `app/`
 
@@ -19,7 +19,7 @@ app/
 │   ├── tags/                   # 분야·태그 ✅ models(Domain · Tag · ImaginationTag(+removed_at)) · router(/api/domains · 태그 편집 · /api/topics · /api/tags/{name}/imaginations) · tagging.py(태깅 호출) · service(정규화 · 저장 · tag_all · 화면용 기술 태그) · browse(작성자 편집 · 주제 · 태그별 상상, 5-D)
 │   ├── shake/                  # Shake it ✅ blend.py(혼합 호출 + 출력 검사) · models(ImaginationParent · ShakeAttempt) · service(선택 창 · 섞어서 게시) · router(/api/shake) · lineage(계보 그래프 노드 · 화살표)
 │   ├── prompts/                # 이번 주 질문 ✅ models(Prompt) · schemas · service(지금 질문 · 상태 · 답할 수 있는지 · 운영자 목록/만들기/고치기/지우기) · router(/api/prompts/* · /api/admin/prompts) · feed(질문 상세 답한 상상, 순환 import 피해 분리) — 6-C, 답한 사용자 · insight 2026-11-13
-│   ├── analytics/              # 분석 대시보드 ✅ (6-D, 2026-11-13) period(기간 · 시간 칸, 한국 시간) · frame(기간 안 대중 상상 + 태그 한 번에 읽기) · insights(개요 · 기술 흐름 · 교차: 생키 · 네트워크 · 욕망×기술 · 기술 조합) · engagement(반응 순위 · 질문형 비율 · 요일×시간 · Shake it · AI 사용량) · activation(신규 Dreamer 활성화) · summary(전체 현황, 기간 무관) · schemas · router(/api/admin/analytics/* : overview · tech · cross · engagement · activation · shake · ai · summary + export.csv)
+│   ├── analytics/              # 분석 대시보드 ✅ (6-D, 2026-11-13) period(기간 · 시간 칸, 한국 시간) · frame(기간 안 대중 상상 + 태그 한 번에 읽기) · insights(개요 · 기술 흐름 · 교차: 생키 · 네트워크 · 욕망×기술 · 기술 조합 2~N개 · 욕망 순위) · clusters(태그 네트워크 군집 찾기 Louvain 직접 구현, 이름 A · B · C, 2026-11-15) · engagement(반응 순위 · 질문형 비율 · 요일×시간 · Shake it · AI 사용량) · activation(신규 Dreamer 활성화) · summary(전체 현황, 기간 무관) · schemas · router(/api/admin/analytics/* : overview · tech · cross · engagement · activation · shake · ai · summary + export.csv)
 │   ├── notes/                  # Observe Note                      (Sprint 6)
 │   ├── notifications/          # 알림 ✅ models · service(notify · 목록 · 안 읽은 수 · 읽음) · router(/api/notifications)
 │   ├── policy/                 # 이용 한도 ✅ models(등급·설정) · service(최종 한도 계산) · router(/api/me/limits) — 관리 화면 Sprint 6
@@ -93,7 +93,7 @@ src/
 │   ├── similar/SimilarBlock    # 상세 오른쪽 컬럼 "비슷한 상상" (이유 한 줄, 5-C)
 │   ├── prompt/                 # usePromptList(/api/prompts) · leftLabel · PromptBanner(좁은 화면 홈 배너) · Prompt.module.css (오른쪽 블록 · 글쓰기 카드 · 상세 한 줄 공통)
 │   ├── common/                 # Pagination(페이지 번호 + 개수) · SelectMenu(작은 메뉴 선택) · DropMenu.module.css
-│   ├── charts/                 # 차트 (6-D, 라이브러리 없이 SVG · CSS) core(폭 · 눈금 · 툴팁 · 범례 · 분야 색) · TimeChart(선 · 쌓은 면적 · 쌓은 막대 + 사건 표시) · basic(Sparkline · Delta · Bars · Heatmap · PunchCard · Columns) · relations(Scatter 사분면 · Network 힘 배치 · Sankey) · Charts.module.css
+│   ├── charts/                 # 차트 (6-D, 라이브러리 없이 SVG · CSS) core(폭 · 눈금 · 툴팁 · 범례 · 분야 색) · TimeChart(선 · 쌓은 면적 · 쌓은 막대 + 사건 표시) · basic(Sparkline · Delta · Bars · Heatmap · PunchCard · Columns) · relations(Scatter 사분면 · Network 힘 배치 + 군집 영역 · 군집 칩 · Sankey) · Charts.module.css
 │   ├── tags/TagList            # 분류 줄 [분야] 회색 + #주제 보라 (카드 최대 3) · tagPath · domainsOf
 │   ├── tags/ItemTags           # 상세 분류 줄 + 작성자 기술 태그 편집 상자
 │   ├── comments/               # CommentSection(목록·무한 스크롤) · CommentItem(X 줄 + 같은 액션 바) · CommentComposer(접힘 → 펼침)
@@ -116,7 +116,7 @@ src/
     ├── profile/                # S11 ProfilePage(X, [상상|댓글|인용]) · EditProfileModal(커버·이미지·이름·소개) · FollowListPage(S17 팔로워·팔로잉)
     ├── notifications/          # S13 알림 [전체 | 댓글] (X)
     ├── settings/SettingsPage   # S14 비밀번호 변경
-    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab(기술 × 분야 · 사분면 · 기술 빈도 시계열 · 기술 활동 테이블) · TechPicker(공용 기술 고르기 `TechPickSetting`: 신호 그룹 → 기술) · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeAiTabs, parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · 신호 색 `SIGNAL_COLOR` · CSV · 통계 캐시) · settings(그래프 설정: 기간 · 개수 · 항목 · 모양), Dashboard.module.css)
+    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab(기술 × 분야 · 사분면 · 기술 빈도 시계열 · 기술 활동 테이블) · TechPicker(공용 고르기 `GroupPicker` 묶음 → 항목 · 설정 줄 `PickSetting`, 기술 고르기 `TechPickSetting` = 신호 그룹 → 기술, 2026-11-15 군집 고르기에도 씀) · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeAiTabs, parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · 신호 색 `SIGNAL_COLOR` · CSV · 통계 캐시) · settings(그래프 설정: 기간 · 개수 · 항목 · 모양), Dashboard.module.css)
     └── common/                 # PlaceholderPage(미구현 화면) · ProfileRoute(/@닉네임)
 ```
 

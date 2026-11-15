@@ -48,7 +48,7 @@ export const DOMAIN_COLORS: Record<string, string> = {
   mobility: "var(--viz-4)",
   bio: "var(--viz-5)",
   energy: "var(--viz-6)",
-  mobile: "var(--viz-7)",
+  mobile: "var(--viz-domain-mobile)", // 2026-11-15 보라 → 갈색 (기술 보라 · Shake it 보라와 겹쳐서)
   life: "var(--viz-8)",
 };
 

@@ -354,12 +354,12 @@ export type AnCross = {
   period: AnPeriod;
   sankey_nodes: { id: string; label: string; column: number; value: number }[];
   sankey_links: { source: string; target: string; value: number }[];
-  net_nodes: { id: string; label: string; type: "tech" | "desire"; count: number; thunders: number }[];
+  net_nodes: { id: string; label: string; type: "tech" | "desire"; count: number; thunders: number; cluster: string }[]; // cluster = 군집 A · B · C (2026-11-15)
   net_edges: { source: string; target: string; weight: number }[];
   matrix_rows: string[];
   matrix_cols: string[];
   matrix: { count: number; thunders: number }[][];
-  pairs: { a: string; b: string; count: number; prev: number | null; thunders: number }[];
+  combos: { techs: string[]; count: number; prev: number | null; thunders: number }[]; // 기술 2 · 3 · 4 … 개 조합 (2026-11-15), 크기 → 많은 순
   desires: { label: string; count: number; prev: number | null; thunders: number; thunder_avg: number; techs: string[] }[];
 };
 export type AnTopPost = {

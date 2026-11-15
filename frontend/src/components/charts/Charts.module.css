@@ -13,6 +13,8 @@
 .plot svg {
   display: block;
   overflow: visible;
+  user-select: none; /* 그림 안 글자(눈금 · 이름)는 선택되지 않게 — 끌어서 옮길 때 파랗게 잡히지 않도록 (2026-11-15) */
+  -webkit-user-select: none;
 }
 
 .grid {
@@ -277,14 +279,42 @@ a.barLabel:hover {
   overscroll-behavior: contain;
 }
 
-.heatWrap .heat > span:first-child,
+/* 가로로 스크롤할 때 줄 이름은 왼쪽에 붙어 있게 (2026-11-15) */
+.heatWrap .heatRow {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface);
+}
+
 .heatWrap .heatColSpan,
 .heatWrap .heatCol,
 .heatWrap .heatColRot {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 3;
   background: var(--color-surface);
+}
+
+/* 왼쪽 위 빈칸 = 열 이름 줄의 바탕 띠 (2026-11-15). 사선 열 이름은 바탕이 없어서(옆 이름을 가리지 않게),
+   세로 스크롤 때 아래 칸이 비쳐 보였다 → 빈칸에서 보이는 폭(--heat-w)만큼 오른쪽으로 바탕을 깔아
+   열 이름(z 3) 아래 · 표 칸 위(z 2)에 둔다. 빈칸은 왼쪽 · 위에 붙어 있어서 띠도 늘 보이는 자리에 있다 */
+.heatWrap .heat > span:first-child {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+
+.heatWrap .heat > span:first-child::after {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: var(--heat-w, 100%);
+  height: calc(100% + 2px); /* 줄 사이 틈(2px)까지 */
+  background: var(--color-surface);
+  content: "";
 }
 
 .heat {
@@ -449,14 +479,87 @@ a.barLabel:hover {
 }
 
 /* 네트워크 */
-.edge {
-  stroke: var(--viz-axis);
+/* 네트워크 (2026-11-15): 연결선 = 검정(다크 모드는 글자색), 점 테두리 얇게 */
+.netEdge {
+  stroke: var(--color-text);
   stroke-linecap: round;
 }
 
-.node {
+.netNode {
   stroke: var(--color-surface);
-  stroke-width: 2;
+  stroke-width: 0.75;
+}
+
+/* 네트워크 군집 (2026-11-15): 위 줄 = 범례 + 군집 칩, 그림 안 = 군집 영역 + 글자 */
+.netHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.clusterChips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.clusterChipsLabel {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  margin-right: 2px;
+}
+
+.clusterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clusterChip:hover {
+  background: var(--color-surface-muted);
+}
+
+.clusterChip[aria-pressed="true"] {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.clusterSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.clusterSize {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.clusterHull {
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.clusterName {
+  font-size: 14px;
+  font-weight: 800;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--color-surface-muted);
+  stroke-width: 3px;
 }
 
 .sankeyLabel {

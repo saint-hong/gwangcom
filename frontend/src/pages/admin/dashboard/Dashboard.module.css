@@ -777,3 +777,27 @@
 .wideInner {
   min-width: 680px;
 }
+
+/* 생키: 세로로 넉넉한 그림을 최대 680px 만 보이고 상하(좁으면 좌우도) 스크롤 (2026-11-15) */
+.sankeyScroll {
+  overflow: auto;
+  max-height: 680px;
+  border-radius: 8px;
+}
+
+.sankeyScroll:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 기술 조합 순위 오른쪽: Thunder 앞줄 맞춤 | 증감 (2026-11-15) */
+.comboNote {
+  display: inline-grid;
+  grid-template-columns: 84px 64px;
+  align-items: center;
+  text-align: left;
+}
+
+.comboDelta {
+  text-align: right;
+}

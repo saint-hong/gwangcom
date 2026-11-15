@@ -9,9 +9,11 @@ from itertools import combinations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.domains.analytics.clusters import cluster_name, louvain
 from app.domains.analytics.frame import Frame, Post, load_frame, series
 from app.domains.analytics.period import Period
 from app.domains.analytics.schemas import (
+    ComboRow,
     CrossOut,
     DesireRow,
     DomainRow,
@@ -21,7 +23,6 @@ from app.domains.analytics.schemas import (
     NetEdge,
     NetNode,
     OverviewOut,
-    PairRow,
     PeriodOut,
     SankeyLink,
     SankeyNode,
@@ -300,12 +301,17 @@ def overview(db: Session, period: Period) -> OverviewOut:
 # ---------------------------------------------------------------- 교차: 분야 × 기술 × 욕망
 
 # 화면 그래프 설정으로 고를 수 있는 최대값 (기본 표시 수는 화면이 정함, 2026-11-13)
-SANKEY_TECH = 20
-SANKEY_DESIRE = 15
-NET_TECH = 40
-NET_DESIRE = 20
-NET_EDGES = 600
-MATRIX = 15
+# 생키는 화면에서 기술 고르기로 아무 기술이나 고르고, 욕망은 그 기술에 이어진 것이 저절로 나온다 (2026-11-15)
+#   → 기술 · 욕망 모두 넉넉히 보낸다 (기술 신호 한도와 같은 500)
+SANKEY_TECH = 500
+SANKEY_DESIRE = 500
+# 네트워크는 기술 · 욕망을 모두 보이고 화면에서 기술 · 욕망 고르기로 줄인다 (2026-11-15)
+NET_TECH = 500
+NET_DESIRE = 500
+NET_EDGES = 20000
+COMBO_MAX = 8  # 기술 조합 크기 한도 (상상 하나에 기술이 아주 많아도 조합 수가 폭발하지 않게)
+DESIRE_ROWS = 500  # 욕망 순위 테이블: 화면에서 욕망 고르기로 줄인다 (2026-11-15, 기본 10개)
+MATRIX = 200  # 욕망 × 기술 표: 화면에서 기술 · 욕망 고르기로 줄인다 (2026-11-15, 기본 10 × 10)
 
 
 def cross(db: Session, period: Period) -> CrossOut:
@@ -324,11 +330,12 @@ def cross(db: Session, period: Period) -> CrossOut:
     # 생키: 분야 → 기술 → 욕망 (같은 상상에 함께 나온 수)
     top_t = [t for t, _ in tech_count.most_common(SANKEY_TECH)]
     top_d = [d for d, _ in desire_count.most_common(SANKEY_DESIRE)]
+    keep_t, keep_d = set(top_t), set(top_d)
     dt: Counter[tuple[str, str]] = Counter()
     td: Counter[tuple[str, str]] = Counter()
     for x in f.posts:
-        techs = {label for _, label in x.techs if label in top_t}
-        desires = {label for _, label in x.desires if label in top_d}
+        techs = {label for _, label in x.techs if label in keep_t}
+        desires = {label for _, label in x.desires if label in keep_d}
         for t in techs:
             dt[(x.domain, t)] += 1
             for d in desires:
@@ -369,12 +376,27 @@ def cross(db: Session, period: Period) -> CrossOut:
     net_edges = [
         NetEdge(source=a, target=b, weight=w) for (a, b), w in edges.most_common(NET_EDGES)
     ]
+    # 군집 (Louvain, 2026-11-15): 함께 나온 횟수로 촘촘히 이어진 태그 묶음. 이름은 A · B · C (큰 순)
+    ids = [f"t:{t}" for t in net_t] + [f"x:{d}" for d in net_d]
+    comm = louvain(dict(edges), ids)
     net_nodes = [
-        NetNode(id=f"t:{t}", label=t, type="tech", count=tech_count[t], thunders=tech_thunder[t])
+        NetNode(
+            id=f"t:{t}",
+            label=t,
+            type="tech",
+            count=tech_count[t],
+            thunders=tech_thunder[t],
+            cluster=cluster_name(comm[f"t:{t}"]),
+        )
         for t in net_t
     ] + [
         NetNode(
-            id=f"x:{d}", label=d, type="desire", count=desire_count[d], thunders=desire_thunder[d]
+            id=f"x:{d}",
+            label=d,
+            type="desire",
+            count=desire_count[d],
+            thunders=desire_thunder[d],
+            cluster=cluster_name(comm[f"x:{d}"]),
         )
         for d in net_d
     ]
@@ -394,27 +416,31 @@ def cross(db: Session, period: Period) -> CrossOut:
         [MatrixCell(count=cell[(d, t)][0], thunders=cell[(d, t)][1]) for t in cols] for d in rows
     ]
 
-    # 기술 조합 (같은 상상에 함께 붙은 기술 쌍)
-    def pair_counts(posts: list[Post]) -> tuple[Counter, Counter]:
-        n: Counter[tuple[str, str]] = Counter()
-        th: Counter[tuple[str, str]] = Counter()
+    # 기술 조합 (같은 상상에 함께 붙은 기술 k 개, 2026-11-15: 2개 쌍만 → 2 · 3 · 4 … 개)
+    #   기술이 4개인 상상은 그 안의 3개 조합 · 2개 쌍에도 들어간다. 화면에서 크기 · 개수를 고른다
+    def combo_counts(posts: list[Post]) -> tuple[Counter, Counter]:
+        n: Counter[tuple[str, ...]] = Counter()
+        th: Counter[tuple[str, ...]] = Counter()
         for x in posts:
-            for a, b in combinations(sorted({label for _, label in x.techs}), 2):
-                n[(a, b)] += 1
-                th[(a, b)] += x.thunders
+            techs = sorted({label for _, label in x.techs})
+            for k in range(2, min(len(techs), COMBO_MAX) + 1):
+                for c in combinations(techs, k):
+                    n[c] += 1
+                    th[c] += x.thunders
         return n, th
 
-    cur_pairs, pair_th = pair_counts(f.posts)
-    prev_pairs, _ = pair_counts(f.prev)
-    pairs = [
-        PairRow(
-            a=a,
-            b=b,
+    cur_combos, combo_th = combo_counts(f.posts)
+    prev_combos, _ = combo_counts(f.prev)
+    combos = [
+        ComboRow(
+            techs=list(c),
             count=n,
-            prev=prev_pairs.get((a, b), 0) if period.has_prev else None,
-            thunders=pair_th[(a, b)],
+            prev=prev_combos.get(c, 0) if period.has_prev else None,
+            thunders=combo_th[c],
         )
-        for (a, b), n in sorted(cur_pairs.items(), key=lambda kv: (-kv[1], -pair_th[kv[0]]))[:20]
+        for c, n in sorted(
+            cur_combos.items(), key=lambda kv: (len(kv[0]), -kv[1], -combo_th[kv[0]], kv[0])
+        )
     ]
 
     prev_desire = Counter(label for x in f.prev for _, label in set(x.desires))
@@ -432,7 +458,7 @@ def cross(db: Session, period: Period) -> CrossOut:
             thunder_avg=round(desire_thunder[d] / n, 2),
             techs=[t for t, _ in desire_techs[d].most_common(3)],
         )
-        for d, n in desire_count.most_common(30)
+        for d, n in desire_count.most_common(DESIRE_ROWS)
     ]
 
     return CrossOut(
@@ -444,6 +470,6 @@ def cross(db: Session, period: Period) -> CrossOut:
         matrix_rows=rows,
         matrix_cols=cols,
         matrix=matrix,
-        pairs=pairs,
+        combos=combos,
         desires=desires,
     )

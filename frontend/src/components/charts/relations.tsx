@@ -105,6 +105,7 @@ export function Scatter({
     });
   const onDown = (e: RPointerEvent<SVGSVGElement>) => {
     if (!zoomed || (e.target as Element).tagName === "circle") return;
+    e.preventDefault(); // 끄는 동안 바깥 글자(설명 · 축 이름)가 선택되지 않게
     drag.current = { px: e.clientX, py: e.clientY, vx: view.vx, vy: view.vy };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -241,25 +242,44 @@ export type NetNode = {
   type: "tech" | "desire";
   count: number;
   thunders: number;
+  cluster: string; // 군집 이름 A · B · C … (서버가 Louvain 으로 찾음, 뜻 없는 임의 이름)
 };
 export type NetEdge = { source: string; target: string; weight: number };
 
 type Pos = { x: number; y: number; vx: number; vy: number };
 
-/** 힘 배치 (같은 상상에 함께 나온 태그끼리 끌어당김, 모두 서로 밀어냄) — 결과가 늘 같도록 시작 위치는 고정 */
+/** 군집 색 — 기술(보라) · 욕망(주황) 점 색과 겹치지 않는 색만 돌려 쓴다 (2026-11-15). 이름 A=0, B=1 … 순서로 */
+const CLUSTER_PALETTE = ["var(--viz-1)", "var(--viz-3)", "var(--viz-4)", "var(--viz-5)", "var(--viz-8)", "var(--viz-domain-mobile)", "var(--viz-6)"];
+export function clusterColor(name: string): string {
+  const k = name.charCodeAt(0) - 65 + (name.length > 1 ? 26 * (Number(name.slice(1)) - 1) : 0);
+  return CLUSTER_PALETTE[((k % CLUSTER_PALETTE.length) + CLUSTER_PALETTE.length) % CLUSTER_PALETTE.length];
+}
+
+/**
+ * 힘 배치 (같은 상상에 함께 나온 태그끼리 끌어당김, 모두 서로 밀어냄) — 결과가 늘 같도록 시작 위치는 고정
+ *   2026-11-15: 군집마다 둥글게 떨어진 자리에서 출발하고, 같은 군집끼리 가운데로 조금 더 끌어당겨 군집이 덩어리로 보이게
+ */
 function layout(nodes: NetNode[], edges: NetEdge[], w: number, h: number): Map<string, Pos> {
   const pos = new Map<string, Pos>();
-  nodes.forEach((n, i) => {
-    const a = (i / Math.max(1, nodes.length)) * Math.PI * 2 * 3.1;
-    const r = 0.15 + (0.3 * ((i * 7) % 11)) / 11;
+  const clusters = [...new Set(nodes.map((n) => n.cluster))].sort();
+  const seen = new Map<string, number>();
+  nodes.forEach((n) => {
+    const c = clusters.indexOf(n.cluster);
+    const j = seen.get(n.cluster) ?? 0;
+    seen.set(n.cluster, j + 1);
+    const ca = (c / Math.max(1, clusters.length)) * Math.PI * 2;
+    const cr = clusters.length > 1 ? 0.3 : 0;
+    const a = j * 2.4;
+    const r = 8 + 7 * Math.sqrt(j);
     pos.set(n.id, {
-      x: w / 2 + Math.cos(a) * w * r,
-      y: h / 2 + Math.sin(a) * h * r,
+      x: w / 2 + Math.cos(ca) * w * cr + Math.cos(a) * r,
+      y: h / 2 + Math.sin(ca) * h * cr + Math.sin(a) * r,
       vx: 0,
       vy: 0,
     });
   });
   const list = nodes.map((n) => pos.get(n.id)!);
+  const groupOf = nodes.map((n) => n.cluster);
   const k = Math.sqrt((w * h) / Math.max(1, nodes.length)) * 0.55;
   for (let it = 0; it < 320; it++) {
     const cool = 1 - it / 320;
@@ -275,7 +295,7 @@ function layout(nodes: NetNode[], edges: NetEdge[], w: number, h: number): Map<s
           dy = 0.1;
           d2 = 0.02;
         }
-        const f = (k * k) / d2;
+        const f = ((k * k) / d2) * (groupOf[i] === groupOf[j] ? 1 : 1.6); // 다른 군집끼리는 조금 더 밀어냄
         a.vx += dx * f * 0.02;
         a.vy += dy * f * 0.02;
         b.vx -= dx * f * 0.02;
@@ -295,6 +315,17 @@ function layout(nodes: NetNode[], edges: NetEdge[], w: number, h: number): Map<s
       b.vx -= dx * f;
       b.vy -= dy * f;
     }
+    // 같은 군집의 가운데로 끌어당김
+    const cen = new Map<string, { x: number; y: number; n: number }>();
+    list.forEach((p, i) => {
+      const c = cen.get(groupOf[i]) ?? { x: 0, y: 0, n: 0 };
+      cen.set(groupOf[i], { x: c.x + p.x, y: c.y + p.y, n: c.n + 1 });
+    });
+    list.forEach((p, i) => {
+      const c = cen.get(groupOf[i])!;
+      p.vx += (c.x / c.n - p.x) * 0.03;
+      p.vy += (c.y / c.n - p.y) * 0.03;
+    });
     for (const p of list) {
       p.vx += (w / 2 - p.x) * 0.006;
       p.vy += (h / 2 - p.y) * 0.006;
@@ -308,22 +339,69 @@ function layout(nodes: NetNode[], edges: NetEdge[], w: number, h: number): Map<s
       p.y = Math.min(h - 16, Math.max(16, p.y));
     }
   }
+  // 처음 배율을 크게 (2026-11-15 사용자 요청): 배치가 끝난 무리를 그림 영역에 꽉 차게 펼친다.
+  //   가로 · 세로를 따로 늘리되 한쪽이 다른 쪽의 1.8배를 넘지 않게 해서 군집 모양이 크게 찌그러지지 않게 한다.
+  //   여백: 좌우 44px · 위 40px(점 위 이름 · 군집 글자) · 아래 24px
+  if (list.length > 1) {
+    const xs = list.map((p) => p.x);
+    const ys = list.map((p) => p.y);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const FIT = { side: 44, top: 40, bottom: 24, ratio: 1.8 };
+    let sx = (w - 2 * FIT.side) / Math.max(1, x1 - x0);
+    let sy = (h - FIT.top - FIT.bottom) / Math.max(1, y1 - y0);
+    sx = Math.min(sx, sy * FIT.ratio);
+    sy = Math.min(sy, sx * FIT.ratio);
+    const cx = (x0 + x1) / 2;
+    const cy = (y0 + y1) / 2;
+    const my = FIT.top + (h - FIT.top - FIT.bottom) / 2;
+    for (const p of list) {
+      p.x = w / 2 + (p.x - cx) * sx;
+      p.y = my + (p.y - cy) * sy;
+    }
+  }
   return pos;
+}
+
+/** 볼록 껍질 (모노톤 체인) — 군집 영역을 그릴 때 */
+function convexHull(pts: [number, number][]): [number, number][] {
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (p.length < 3) return p;
+  const cross = (o: [number, number], a: [number, number], b: [number, number]) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower: [number, number][] = [];
+  for (const q of p) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop();
+    lower.push(q);
+  }
+  const upper: [number, number][] = [];
+  for (const q of [...p].reverse()) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop();
+    upper.push(q);
+  }
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
 const NODE_COLOR = { tech: "var(--viz-tech)", desire: "var(--viz-desire)" };
 
 /**
- * 기술 · 욕망 네트워크 — 원 = 태그(크기 = 상상 수), 선 = 같은 상상에 함께 나옴(굵기 = 횟수)
- *   원에 올리면 이어진 태그만 진하게 · 나머지는 흐리게 (어떤 욕망이 어떤 기술과 만나는지)
+ * 기술 × 욕망 네트워크 — 원 = 태그(크기 = 상상 수), 선 = 같은 상상에 함께 나옴(굵기 · 진하기 = 횟수)
+ *   2026-11-15: 군집(A · B · C …)마다 옅은 영역 + 글자. 위 [군집] 칩을 누르면 그 군집만 진하게,
+ *   그 군집과 이어진 다른 태그는 반쯤, 나머지는 흐리게 → 군집이 어떤 기술 · 욕망과 이어지는지 한눈에
+ *   원에 올리면 이어진 태그만 진하게 (군집 칩보다 우선)
  */
 export function Network({ nodes, edges, height = 460 }: { nodes: NetNode[]; edges: NetEdge[]; height?: number }) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [t, setT] = useState<Tip>(null);
   const [hover, setHover] = useState<string | null>(null);
+  const [focus, setFocus] = useState<string | null>(null);
   const pos = useMemo(() => (width > 0 ? layout(nodes, edges, width, height) : new Map<string, Pos>()), [nodes, edges, width, height]);
   const maxCount = Math.max(1, ...nodes.map((n) => n.count));
   const radius = (c: number) => 4 + Math.sqrt(c / maxCount) * 16;
+  const clusterOf = useMemo(() => new Map(nodes.map((n) => [n.id, n.cluster])), [nodes]);
+  const clusters = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const n of nodes) m.set(n.cluster, (m.get(n.cluster) ?? 0) + 1);
+    return [...m.entries()].sort((a, b) => a[0].length - b[0].length || a[0].localeCompare(b[0]));
+  }, [nodes]);
   const neighbors = useMemo(() => {
     const m = new Map<string, Set<string>>();
     for (const e of edges) {
@@ -335,8 +413,41 @@ export function Network({ nodes, edges, height = 460 }: { nodes: NetNode[]; edge
     return m;
   }, [edges]);
   const near = hover ? (neighbors.get(hover) ?? new Set<string>()) : null;
+  const active = focus && clusters.some(([c]) => c === focus) ? focus : null;
+  // 군집과 이어진 바깥 태그
+  const focusNear = useMemo(() => {
+    const s = new Set<string>();
+    if (!active) return s;
+    for (const e of edges) {
+      const ca = clusterOf.get(e.source) === active;
+      const cb = clusterOf.get(e.target) === active;
+      if (ca && !cb) s.add(e.target);
+      if (cb && !ca) s.add(e.source);
+    }
+    return s;
+  }, [active, edges, clusterOf]);
   const maxW = Math.max(1, ...edges.map((e) => e.weight));
   const labelMin = [...nodes].sort((a, b) => b.count - a.count)[Math.min(nodes.length - 1, 14)]?.count ?? 0;
+
+  // 군집 영역: 원 둘레 점들의 볼록 껍질 (여백 10px), 글자는 영역 맨 위
+  const hulls = useMemo(() => {
+    const out: { name: string; d: string; top: [number, number] }[] = [];
+    for (const [name, size] of clusters) {
+      if (size < 2) continue;
+      const pts: [number, number][] = [];
+      for (const n of nodes) {
+        const p = pos.get(n.id);
+        if (!p || n.cluster !== name) continue;
+        const r = radius(n.count) + 10;
+        for (let i = 0; i < 12; i++) pts.push([p.x + Math.cos((i / 12) * Math.PI * 2) * r, p.y + Math.sin((i / 12) * Math.PI * 2) * r]);
+      }
+      const hull = convexHull(pts);
+      if (hull.length < 3) continue;
+      const top = hull.reduce((m, q) => (q[1] < m[1] ? q : m), hull[0]);
+      out.push({ name, d: `M${hull.map((q) => `${q[0]},${q[1]}`).join("L")}Z`, top });
+    }
+    return out;
+  }, [clusters, nodes, pos]);
 
   // 확대 · 축소 (+ · − · 처음 크기) — 가운데를 기준으로. 확대한 뒤에는 빈 곳을 끌어서 옮긴다
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
@@ -351,7 +462,8 @@ export function Network({ nodes, edges, height = 460 }: { nodes: NetNode[]; edge
     });
   const reset = () => setView({ k: 1, x: 0, y: 0 });
   const onDown = (e: RPointerEvent<SVGSVGElement>) => {
-    if (e.target !== e.currentTarget) return; // 원 위에서는 끌지 않음 (툴팁)
+    if ((e.target as Element).closest("[data-node]")) return; // 원 위에서는 끌지 않음 (툴팁)
+    e.preventDefault(); // 끄는 동안 바깥 글자가 선택되지 않게
     drag.current = { px: e.clientX, py: e.clientY, x: view.x, y: view.y };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -369,33 +481,80 @@ export function Network({ nodes, edges, height = 460 }: { nodes: NetNode[]; edge
   };
   const changed = view.k !== 1 || view.x !== 0 || view.y !== 0;
 
+  const nodeOpacity = (n: NetNode) => {
+    if (hover) return hover === n.id || near?.has(n.id) ? 1 : 0.18;
+    if (active) return n.cluster === active ? 1 : focusNear.has(n.id) ? 0.5 : 0.1;
+    return 1;
+  };
+  const edgeOpacity = (e: NetEdge) => {
+    const base = 0.12 + (e.weight / maxW) * 0.5; // 많이 함께 나올수록 진하게
+    if (hover) return e.source === hover || e.target === hover ? 0.9 : 0.04;
+    if (active) return clusterOf.get(e.source) === active || clusterOf.get(e.target) === active ? Math.min(0.9, base + 0.2) : 0.03;
+    return base;
+  };
+
   return (
     <div className={styles.chartBox}>
-      <Legend
-        items={[
-          { label: "기술", color: NODE_COLOR.tech },
-          { label: "욕망", color: NODE_COLOR.desire },
-        ]}
-      />
+      <div className={styles.netHead}>
+        <Legend
+          items={[
+            { label: "기술", color: NODE_COLOR.tech },
+            { label: "욕망", color: NODE_COLOR.desire },
+          ]}
+        />
+        {/* 군집 칩 — 누르면 그 군집이 활성화 (다시 누르면 전체) */}
+        <div className={styles.clusterChips} role="group" aria-label="군집 고르기">
+          <span className={styles.clusterChipsLabel}>군집</span>
+          <button type="button" className={styles.clusterChip} aria-pressed={!active} onClick={() => setFocus(null)}>
+            전체
+          </button>
+          {clusters.map(([name, size]) => (
+            <button
+              key={name}
+              type="button"
+              className={styles.clusterChip}
+              aria-pressed={active === name}
+              onClick={() => setFocus((f) => (f === name ? null : name))}
+              title={`군집 ${name} · 태그 ${size}개`}
+            >
+              <span className={styles.clusterSwatch} style={{ background: clusterColor(name) }} aria-hidden="true" />
+              {name}
+              <span className={styles.clusterSize}>{size}</span>
+            </button>
+          ))}
+        </div>
+      </div>
       <div ref={ref} className={styles.plot} style={{ height }} onMouseLeave={() => (setT(null), setHover(null))}>
         {width > 0 ? (
           <svg
             width={width}
             height={height}
             role="img"
-            aria-label="기술 · 욕망 태그 네트워크"
+            aria-label="기술 × 욕망 네트워크"
             className={styles.netSvg}
             onPointerDown={onDown}
             onPointerMove={onMove}
             onPointerUp={onUp}
             onPointerCancel={onUp}
           >
+            {/* 바탕 = 사분면(상상 빈도 × 욕망 강도)과 같은 옅은 회색 (2026-11-15). 확대해도 바탕은 그대로 */}
+            <rect x={0} y={0} width={width} height={height} rx={6} className={styles.plotBg} />
             <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
+              {hulls.map((hl) => {
+                const on = !active || active === hl.name;
+                return (
+                  <g key={`h${hl.name}`} opacity={hover ? 0.35 : on ? 1 : 0.25}>
+                    <path d={hl.d} fill={clusterColor(hl.name)} fillOpacity={active === hl.name ? 0.14 : 0.07} stroke={clusterColor(hl.name)} strokeOpacity={0.55} className={styles.clusterHull} />
+                    <text x={hl.top[0]} y={hl.top[1] - 4} fill={clusterColor(hl.name)} className={styles.clusterName}>
+                      {hl.name}
+                    </text>
+                  </g>
+                );
+              })}
               {edges.map((e) => {
                 const a = pos.get(e.source);
                 const b = pos.get(e.target);
                 if (!a || !b) return null;
-                const on = hover ? e.source === hover || e.target === hover : false;
                 return (
                   <line
                     key={`${e.source}|${e.target}`}
@@ -403,21 +562,21 @@ export function Network({ nodes, edges, height = 460 }: { nodes: NetNode[]; edge
                     y1={a.y}
                     x2={b.x}
                     y2={b.y}
-                    className={styles.edge}
-                    strokeWidth={1 + (e.weight / maxW) * 3}
-                    opacity={hover ? (on ? 0.9 : 0.06) : 0.35}
+                    className={styles.netEdge}
+                    strokeWidth={0.5 + (e.weight / maxW) * 4.5}
+                    opacity={edgeOpacity(e)}
                   />
                 );
               })}
               {nodes.map((n) => {
                 const p = pos.get(n.id);
                 if (!p) return null;
-                const dim = hover && hover !== n.id && !near?.has(n.id);
-                const show = n.count >= labelMin || hover === n.id || near?.has(n.id);
+                const show = hover ? hover === n.id || near?.has(n.id) : active ? n.cluster === active : n.count >= labelMin;
                 return (
                   <g
                     key={n.id}
-                    opacity={dim ? 0.18 : 1}
+                    data-node=""
+                    opacity={nodeOpacity(n)}
                     onMouseMove={(e) => {
                       setHover(n.id);
                       setT({
@@ -429,6 +588,7 @@ export function Network({ nodes, edges, height = 460 }: { nodes: NetNode[]; edge
                               {n.label}
                             </span>
                             <TipRow color={NODE_COLOR[n.type]} label={n.type === "tech" ? "기술" : "욕망"} value={`상상 ${n.count}개`} />
+                            <TipRow color={clusterColor(n.cluster)} label="군집" value={n.cluster} />
                             <TipRow label="Thunder" value={n.thunders} />
                             <TipRow label="함께 나온 태그" value={`${neighbors.get(n.id)?.size ?? 0}개`} />
                           </>
@@ -436,7 +596,7 @@ export function Network({ nodes, edges, height = 460 }: { nodes: NetNode[]; edge
                       });
                     }}
                   >
-                    <circle cx={p.x} cy={p.y} r={radius(n.count)} fill={NODE_COLOR[n.type]} className={styles.node} />
+                    <circle cx={p.x} cy={p.y} r={radius(n.count)} fill={NODE_COLOR[n.type]} className={styles.netNode} />
                     {show ? (
                       <text x={p.x} y={p.y - radius(n.count) - 4} className={styles.nodeLabel}>
                         {n.label}
@@ -479,7 +639,21 @@ export type SankeyLink = { source: string; target: string; value: number };
  * 생키 — 왼쪽 분야 · 가운데 기술 · 오른쪽 욕망. 띠 굵기 = 같은 상상에 함께 나온 수
  *   띠 · 상자에 올리면 그 흐름만 진하게. 상상의 형태(분야) → 수단(기술) → 이유(욕망)가 어떻게 이어지는지
  */
-export function Sankey({ nodes, links, colorOf, height = 420 }: { nodes: SankeyNode[]; links: SankeyLink[]; colorOf: (n: SankeyNode) => string; height?: number }) {
+export function Sankey({
+  nodes,
+  links,
+  colorOf,
+  height = 420,
+  valueText = (n) => `상상 ${n.value}개`,
+  bandColor,
+}: {
+  nodes: SankeyNode[];
+  links: SankeyLink[];
+  colorOf: (n: SankeyNode) => string;
+  height?: number;
+  valueText?: (n: SankeyNode) => string; // 상자 툴팁 숫자 (2026-11-15)
+  bandColor?: (source: SankeyNode) => string; // 띠 색 (없으면 출발 상자 색, 2026-11-15)
+}) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [t, setT] = useState<Tip>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -545,7 +719,7 @@ export function Sankey({ nodes, links, colorOf, height = 420 }: { nodes: SankeyN
               <path
                 key={`${l.source}>${l.target}`}
                 d={`M${x0},${sy}C${xm},${sy} ${xm},${dy} ${x1},${dy}L${x1},${dy + th}C${xm},${dy + th} ${xm},${sy + th} ${x0},${sy + th}Z`}
-                fill={colorOf(s.n)}
+                fill={bandColor ? bandColor(s.n) : colorOf(s.n)}
                 opacity={on ? (hover ? 0.6 : 0.32) : 0.06}
                 onMouseMove={(e) => {
                   setHover(`${l.source}>${l.target}`);
@@ -564,7 +738,7 @@ export function Sankey({ nodes, links, colorOf, height = 420 }: { nodes: SankeyN
                 setHover(n.id);
                 setT({
                   ...localPoint(e, ref.current),
-                  content: <TipRow color={colorOf(n)} label={n.label} value={`상상 ${n.value}개`} />,
+                  content: <TipRow color={colorOf(n)} label={n.label} value={valueText(n)} />,
                 });
               }}
             >

@@ -80,6 +80,9 @@
   --viz-8: #e34948;
   --viz-tech: #6250d6;
   --viz-desire: #eb6834;
+  --viz-domain-mobile: #8a5a2b; /* 분야 Mobile = 갈색 (2026-11-15, 기술 보라와 겹치지 않게) */
+  --viz-flow-tech: #4b5563; /* 생키 가운데 기술 막대 = 옅은 검정 */
+  --viz-flow-band: #9aa0a6; /* 생키 기술 → 욕망 띠 = 회색 (띠 투명도로 옅게) */
   --viz-seq-0: #f3f4f6;
   --viz-seq-1: #cde2fb;
   --viz-seq-2: #9ec5f4;
@@ -179,6 +182,9 @@
   --viz-8: #e66767;
   --viz-tech: #9085e9;
   --viz-desire: #d95926;
+  --viz-domain-mobile: #b98552;
+  --viz-flow-tech: #b4bac2;
+  --viz-flow-band: #6b7178;
   --viz-seq-0: #1a1c20;
   --viz-seq-1: #0d366b;
   --viz-seq-2: #104281;

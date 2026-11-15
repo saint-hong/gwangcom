@@ -75,11 +75,13 @@ def test_dashboard_numbers(client) -> None:
     assert sum(get("tech")["total_series"]) == 3
 
     cross = get("cross")
-    assert [(x["a"], x["b"], x["count"]) for x in cross["pairs"]] == [("AI", "드론", 1)]
+    assert [(x["techs"], x["count"]) for x in cross["combos"]] == [(["AI", "드론"], 1)]
     r, col = cross["matrix_rows"].index("안전"), cross["matrix_cols"].index("AI")
     assert cross["matrix"][r][col] == {"count": 2, "thunders": 2}
     assert {"d:mobility", "t:AI", "x:안전"} <= {n["id"] for n in cross["sankey_nodes"]}
     assert {"source": "t:AI", "target": "x:안전", "weight": 2} in cross["net_edges"]
+    clusters = {n["id"]: n["cluster"] for n in cross["net_nodes"]}
+    assert clusters["t:AI"] == clusters["x:안전"]  # 함께 나온 기술 · 욕망은 같은 군집 (2026-11-15)
 
     eng = get("engagement")
     assert eng["top"][0]["id"] == a["id"] and eng["top"][0]["thunders"] == 2

@@ -100,6 +100,7 @@ class NetNode(BaseModel):
     type: Literal["tech", "desire"]
     count: int
     thunders: int
+    cluster: str  # 군집 이름 A · B · C … (큰 순, 뜻 없는 임의 이름, 2026-11-15)
 
 
 class NetEdge(BaseModel):
@@ -113,9 +114,10 @@ class MatrixCell(BaseModel):
     thunders: int
 
 
-class PairRow(BaseModel):
-    a: str
-    b: str
+class ComboRow(BaseModel):
+    """기술 조합 (2026-11-15: 2개 쌍만 → 2개 · 3개 · 4개 … 조합). techs 는 이름순"""
+
+    techs: list[str]
     count: int
     prev: int | None
     thunders: int
@@ -139,7 +141,7 @@ class CrossOut(BaseModel):
     matrix_rows: list[str]  # 욕망
     matrix_cols: list[str]  # 기술
     matrix: list[list[MatrixCell]]
-    pairs: list[PairRow]
+    combos: list[ComboRow]  # 크기(기술 수) 2 이상 모든 조합, 크기 → 상상 수 많은 순
     desires: list[DesireRow]
 
 

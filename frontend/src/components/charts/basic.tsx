@@ -18,9 +18,9 @@ export function Sparkline({ values, color = "var(--viz-1)", width = 96, height =
 }
 
 /** 바뀐 비율 (↑ 초록 · ↓ 빨강 · 같으면 회색). 이전이 0 이면 "새로" */
-export function Delta({ cur, prev }: { cur: number; prev: number | null | undefined }) {
+export function Delta({ cur, prev, newLabel = "새로" }: { cur: number; prev: number | null | undefined; newLabel?: string }) {
   if (prev === null || prev === undefined) return null;
-  if (prev === 0) return cur > 0 ? <span className={styles.deltaNew}>새로</span> : <span className={styles.deltaFlat}>—</span>;
+  if (prev === 0) return cur > 0 ? <span className={styles.deltaNew}>{newLabel}</span> : <span className={styles.deltaFlat}>—</span>;
   const r = (cur - prev) / prev;
   if (Math.abs(r) < 0.005) return <span className={styles.deltaFlat}>0%</span>;
   return (
@@ -112,7 +112,7 @@ export function Heatmap({
   const every = autoLabels ? Math.max(1, Math.ceil(26 / cw)) : 1; // 8px 글자로 "10.15" ≈ 25px
   const fs = Math.max(8, Math.min(11, (cw * every) / 3.1));
   return (
-    <div ref={ref} className={styles.heatWrap} style={maxHeight ? { maxHeight } : undefined} onMouseLeave={() => setT(null)}>
+    <div ref={ref} className={styles.heatWrap} style={{ ...(maxHeight ? { maxHeight } : {}), ["--heat-w" as string]: `${width}px` }} onMouseLeave={() => setT(null)}>
       <div className={styles.heat} style={{ gridTemplateColumns: `${rowWidth}px repeat(${cols.length}, minmax(${cell}px, 1fr))`, paddingRight: rotateCols ? ROT_PAD : undefined }} role="table">
         <span />
         {autoLabels
