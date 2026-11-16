@@ -5,7 +5,7 @@ import styles from "./PageHeader.module.css";
 
 type Props = { title: string; sub?: string; right?: ReactNode };
 
-/** 하위 화면의 상단 바 [←] 제목 (+ 보조 정보) — 하이젠버그 서재·프로필 구조 (기획안 v9 4장) */
+/** 하위 화면의 상단 바 [←] 제목 (+ 보조 정보) — h사 서재·프로필 구조 (기획안 v9 4장) */
 export function PageHeader({ title, sub, right }: Props) {
   const navigate = useNavigate();
   return (

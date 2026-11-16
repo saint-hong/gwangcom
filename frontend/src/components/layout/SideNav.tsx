@@ -16,7 +16,7 @@ import styles from "./SideNav.module.css";
 type Props = { theme: Theme; onToggleTheme: () => void };
 
 /**
- * 왼쪽 사이드바 (하이젠버그 구조, 기획안 v9 4장)
+ * 왼쪽 사이드바 (h사 구조, 기획안 v9 4장)
  *   로그인 전: 로고 → 메뉴 → 더 보기 → [가입하기] [로그인]
  *   로그인 후: 로고 → 메뉴 → 더 보기 → [상상하기] …… 맨 아래 계정 칩
  */

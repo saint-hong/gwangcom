@@ -14,7 +14,7 @@ function maskEmail(email: string): string {
 }
 
 /**
- * 사이드바 맨 아래 계정 칩 + 계정 메뉴 (하이젠버그 구조, 기획안 v9 4장)
+ * 사이드바 맨 아래 계정 칩 + 계정 메뉴 (h사 구조, 기획안 v9 4장)
  *   프로필 보기 / 설정 · 내 활동 · (운영자) 운영자 화면 / 로그아웃 + 이메일
  */
 export function AccountChip({ user }: { user: Me }) {

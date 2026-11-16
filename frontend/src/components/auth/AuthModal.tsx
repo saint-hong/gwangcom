@@ -9,7 +9,7 @@ import styles from "./AuthModal.module.css";
 
 type Props = { mode: AuthMode; onModeChange: (m: AuthMode) => void; onClose: () => void };
 
-/** 로그인 · 가입 모달 (하이젠버그 로그인 모달 구조, 문구는 Imagine 자체 문구) */
+/** 로그인 · 가입 모달 (h사 로그인 모달 구조, 문구는 Imagine 자체 문구) */
 export function AuthModal({ mode, onModeChange, onClose }: Props) {
   const { login, signup } = useAuth();
   const navigate = useNavigate();

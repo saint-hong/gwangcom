@@ -117,7 +117,7 @@
   padding: 0 var(--space-4);
 }
 
-/* 추천 주제 (하이젠버그: 알약 + "+") */
+/* 추천 주제 (h사: 알약 + "+") */
 .topics {
   display: flex;
   flex-wrap: wrap;

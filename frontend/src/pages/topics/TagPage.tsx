@@ -9,7 +9,7 @@ import type { Imagination, TagFeed } from "../../types/api";
 import styles from "./TopicsPage.module.css";
 
 /**
- * S9 태그별 상상 (하이젠버그 주제 상세 구조, 기획안 v10 F12)
+ * S9 태그별 상상 (h사 주제 상세 구조, 기획안 v10 F12)
  *   [←] #태그 · 상상 N개 → 그 기술 태그가 붙은 상상 최신순 (원본 · 인용 · 혼합 모두, 2026-11-12 사용자 결정), 무한 스크롤.
  */
 export function TagPage() {

@@ -4,7 +4,7 @@ import { Bell, Bookmark, Home, Mail, NotebookPen, User, Zap } from "lucide-react
 export type NavItem = { to: string; label: string; icon: LucideIcon; end?: boolean };
 
 /**
- * 왼쪽 사이드바 메뉴 (하이젠버그 로그인 전·후 구조, 기획안 v9 4장)
+ * 왼쪽 사이드바 메뉴 (h사 로그인 전·후 구조, 기획안 v9 4장)
  * - 앱 다운로드는 없다(앱 없음). 주제는 오른쪽 컬럼 "추천 주제"에서 들어간다.
  * - 내 활동은 계정 메뉴로 옮겼다.
  */

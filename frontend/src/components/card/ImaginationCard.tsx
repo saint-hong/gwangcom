@@ -14,7 +14,7 @@ import { SourceChips } from "./SourceChips";
 import { domainsOf, TagList } from "../tags/TagList";
 
 /**
- * 피드 카드 — 하이젠버그 카드 구성 (기획안 v9 F3)
+ * 피드 카드 — h사 카드 구성 (기획안 v9 F3)
  *   아바타 | 닉네임 · (운영자) · 날짜                                ⋯   (분야 뱃지는 ⋯ > 뱃지 보기)
  *          | 제목 (제목이 없으면 본문 첫 줄)
  *          | 요약 2줄

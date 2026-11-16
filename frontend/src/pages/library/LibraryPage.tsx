@@ -38,7 +38,7 @@ const EMPTY = {
 } as const;
 
 /**
- * S12 내 서재 (하이젠버그 내 서재 구조, 기획안 v9 F7)
+ * S12 내 서재 (h사 내 서재 구조, 기획안 v9 F7)
  *   [←] 서재 + 탭 [Thunder | Wave | Shake it | 북마크 | 최근 본 상상] (고른 폭)
  * Thunder = 상상만, Wave · 북마크 = 상상 + 댓글, Shake it = 내가 섞어 만든 혼합 글(Sprint 5 전에는 빈 목록). 본인만 볼 수 있다.
  */
