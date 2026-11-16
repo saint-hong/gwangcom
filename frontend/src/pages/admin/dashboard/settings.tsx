@@ -101,6 +101,7 @@ export function CountSetting({
   onChange,
   unit = "개",
   why = "이름이 겹치거나 읽기 어려울 수 있어요",
+  note,
 }: {
   label: string;
   value: number;
@@ -109,6 +110,8 @@ export function CountSetting({
   onChange: (v: number) => void;
   unit?: string;
   why?: string;
+  /** 버튼 아래 안내 (한 상자에 그래프가 여럿일 때 어느 쪽 개수인지 등, 2026-11-16) */
+  note?: string;
 }) {
   return (
     <Row label={label}>
@@ -120,6 +123,7 @@ export function CountSetting({
           </button>
         ))}
       </div>
+      {note ? <p className={styles.setNote}>{note}</p> : null}
       {value > recommend ? (
         <Warn>
           {recommend}

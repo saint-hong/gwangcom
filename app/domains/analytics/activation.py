@@ -6,6 +6,8 @@
 - 대상: 선택한 기간에 가입한 Dreamer (운영자 제외). 전체 기간은 처음부터.
 - 첫 7일 = 가입 시각부터 7일. 그 안에 해 본 일:
     다시 들어옴(가입한 다음 날 이후 접속 또는 활동) · 반응 남김 · 첫 상상(원본 · 인용) · Thunder 받음(남이 준 것)
+    + 2026-11-16: 가입한 날 활동 · 댓글 · 팔로우 · 질문에 답함 · 상상 2개 이상 · Shake it ·
+      3일 이상 활동(한국 시간 날짜 기준, 접속 포함)
 - 계속 활동 = 가입 후 8~28일째에 접속 또는 활동. 가입 후 8일이 안 지난 사람은 아직 판정하지 않는다(분모에서 뺌).
 - 활동 = 글(상상 · 인용 · 댓글 · 혼합) · 반응 켜고 끄기 · 팔로우 · Shake it 시도. 접속 = user_visits.
 """
@@ -133,13 +135,22 @@ def activation(db: Session, p: Period) -> ActivationOut:
     for u in users.values():
         seen = u.acts + u.visits
         joined_day = _kst_day(u.joined)
+        week_posts = [t for t, _ in u.posts if u.first_week([t])]
+        active_days = {_kst_day(t) for t in seen if u.first_week([t])}
         f = {
+            "first_day": any(_kst_day(t) == joined_day for t in u.acts),
             "returned": any(
                 _kst_day(t) > joined_day and t < u.joined + timedelta(days=WINDOW) for t in seen
             ),
             "reacted": u.first_week(u.reactions),
-            "posted": u.first_week([t for t, _ in u.posts]),
+            "commented": u.first_week(u.comments),
+            "followed": u.first_week(u.follows),
+            "posted": bool(week_posts),
+            "answered": any(pid is not None and u.first_week([t]) for t, pid in u.posts),
+            "posted_multi": len(week_posts) >= 2,
+            "shook": u.first_week(u.shakes),
             "got_thunder": u.first_week(u.thunders_got),
+            "active_3days": len(active_days) >= 3,
         }
         if u.joined <= eligible_cut:
             f["kept"] = u.within(seen, KEEP_FROM - 1, KEEP_TO)
@@ -151,11 +162,20 @@ def activation(db: Session, p: Period) -> ActivationOut:
         ActivationStep(key="joined", label="가입", users=n, base=n),
         *[
             ActivationStep(key=k, label=label, users=sum(f[k] for f in flags.values()), base=n)
+            # 2026-11-16 사용자 요청으로 단계 추가 (첫날 활동 · 댓글 · 팔로우 · 질문 답 · 상상 2개 이상 ·
+            # Shake it · 3일 이상 활동). 모두 첫 7일 안, 이미 모으는 활동 기록으로 센다
             for k, label in (
+                ("first_day", "가입한 날 활동함"),
                 ("returned", "다시 들어옴 (2~7일째)"),
                 ("reacted", "반응을 남김"),
+                ("commented", "댓글을 씀"),
+                ("followed", "팔로우를 함"),
                 ("posted", "첫 상상을 씀"),
+                ("answered", "질문에 답함"),
+                ("posted_multi", "상상을 2개 이상 씀"),
+                ("shook", "Shake it 을 해 봄"),
                 ("got_thunder", "Thunder 를 받음"),
+                ("active_3days", "3일 이상 활동함"),
             )
         ],
         ActivationStep(

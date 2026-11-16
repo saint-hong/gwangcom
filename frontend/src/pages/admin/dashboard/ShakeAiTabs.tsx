@@ -113,6 +113,7 @@ const FEATURE: Record<string, string> = {
   shake: "Shake it 혼합",
   similar_rerank: "비슷한 상상 리랭킹",
   user_summary: "사용자 요약 (AI 비서)",
+  reaction_summary: "반응 쏠림 요약 (AI 비서)",
   note_draft: "Observe Note 초안",
   embedding: "임베딩",
 };

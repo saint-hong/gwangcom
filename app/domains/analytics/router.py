@@ -14,13 +14,14 @@ from sqlalchemy.orm import Session
 
 from app.domains.analytics import activation as act
 from app.domains.analytics import engagement as eng
-from app.domains.analytics import insights
+from app.domains.analytics import insights, reaction_summary
 from app.domains.analytics import summary as summ
 from app.domains.analytics.frame import first_post_at, load_posts
 from app.domains.analytics.period import Period, PeriodKey, make_period
 from app.domains.analytics.schemas import (
     ActivationOut,
     AiOut,
+    AiSummaryOut,
     CrossOut,
     EngagementOut,
     OverviewOut,
@@ -68,6 +69,12 @@ def get_cross(db: DB, _: Admin, period: PeriodQ = "30d"):
 @router.get("/engagement", response_model=EngagementOut)
 def get_engagement(db: DB, _: Admin, period: PeriodQ = "30d"):
     return eng.engagement(db, _period(db, period))
+
+
+@router.get("/engagement/summary", response_model=AiSummaryOut)
+def get_engagement_summary(db: DB, admin: Admin, period: PeriodQ = "30d"):
+    """ "AI가 분석했어요": 반응이 어떤 상상에 쏠렸는지 2~3 문장 (같은 숫자면 다시 부르지 않음)."""
+    return reaction_summary.summarize(db, admin.id, _period(db, period))
 
 
 @router.get("/activation", response_model=ActivationOut)

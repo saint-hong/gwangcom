@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import styles from "./Charts.module.css";
-import { TipRow, Tooltip, fmt, localPoint, seqColor, useWidth, type Tip } from "./core";
+import { Legend, TipRow, Tooltip, fmt, localPoint, niceTicks, seqColor, useWidth, type Tip } from "./core";
 
 /** 작은 흐름선 (KPI 칸 · 표 안) — 글자가 값을 말하고, 선은 모양만 (aria-hidden) */
 export function Sparkline({ values, color = "var(--viz-1)", width = 96, height = 28 }: { values: number[]; color?: string; width?: number; height?: number }) {
@@ -17,8 +17,8 @@ export function Sparkline({ values, color = "var(--viz-1)", width = 96, height =
   );
 }
 
-/** 바뀐 비율 (↑ 초록 · ↓ 빨강 · 같으면 회색). 이전이 0 이면 "새로" */
-export function Delta({ cur, prev, newLabel = "새로" }: { cur: number; prev: number | null | undefined; newLabel?: string }) {
+/** 바뀐 비율 (↑ 초록 · ↓ 빨강 · 같으면 회색). 이전이 0 이면 "New" (2026-11-16: 모든 대시보드 탭 같은 기준) */
+export function Delta({ cur, prev, newLabel = "New" }: { cur: number; prev: number | null | undefined; newLabel?: string }) {
   if (prev === null || prev === undefined) return null;
   if (prev === 0) return cur > 0 ? <span className={styles.deltaNew}>{newLabel}</span> : <span className={styles.deltaFlat}>—</span>;
   const r = (cur - prev) / prev;
@@ -225,6 +225,139 @@ export function Columns({ items, color = "var(--viz-1)", height = 160, unit = ""
           <span className={styles.colLabel}>{label}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** 점들을 지나는 부드러운 곡선 (Catmull-Rom → 베지어). 아래로 내려가지 않게 y 는 바닥에서 자른다 */
+function smoothPath(pts: [number, number][], floor: number): string {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const c1y = Math.min(floor, p1[1] + (p2[1] - p0[1]) / 6);
+    const c2y = Math.min(floor, p2[1] - (p3[1] - p1[1]) / 6);
+    d += ` C${p1[0] + (p2[0] - p0[0]) / 6},${c1y} ${p2[0] - (p3[0] - p1[0]) / 6},${c2y} ${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
+
+/**
+ * 분포 막대 + 정규분포 기준선 (2026-11-16 사용자 요청: Thunder 분포가 정규분포인지 눈으로 보게)
+ *   막대 = 실제 개수, 선 = 같은 평균 · 표준편차의 정규분포라면 있을 개수(서버 계산)
+ *   막대가 선보다 왼쪽에 몰리고 오른쪽 꼬리가 길면 → 소수에 몰림(오른쪽으로 치우침)
+ */
+export function Histogram({
+  items,
+  normal,
+  color,
+  xTitle,
+  yTitle,
+  itemLabel,
+  height = 220,
+}: {
+  items: [string, number][];
+  normal: number[];
+  color: string;
+  xTitle: string;
+  yTitle: string;
+  /** 툴팁 제목: 칸 이름 → 글 */
+  itemLabel: (label: string) => string;
+  height?: number;
+}) {
+  const [ref, width] = useWidth<HTMLDivElement>();
+  const [t, setT] = useState<Tip>(null);
+  const [hover, setHover] = useState<number | null>(null);
+  const M = { top: 22, right: 8, bottom: 40, left: 36 };
+  const w = Math.max(0, width - M.left - M.right);
+  const h = height - M.top - M.bottom;
+  const ticks = niceTicks(Math.max(1, ...items.map(([, v]) => v), ...normal));
+  const max = ticks[ticks.length - 1];
+  const cw = items.length ? w / items.length : 0;
+  const bw = Math.min(44, cw * 0.7);
+  const y = (v: number) => M.top + h - (v / max) * h;
+  const cx = (i: number) => M.left + cw * i + cw / 2;
+  const line = smoothPath(
+    normal.map((v, i) => [cx(i), y(v)]),
+    M.top + h,
+  );
+  const LINE = "var(--viz-hist-line)";
+  return (
+    <div>
+      <div ref={ref} className={styles.plot} style={{ height }} onMouseLeave={() => (setT(null), setHover(null))}>
+        {width > 0 ? (
+          <svg width={width} height={height} role="img" aria-label={`${xTitle}별 ${yTitle} 분포와 정규분포 기준선`}>
+            {ticks.map((v) => (
+              <g key={v}>
+                <line x1={M.left} x2={M.left + w} y1={y(v)} y2={y(v)} className={styles.grid} />
+                <text x={M.left - 6} y={y(v)} className={styles.axisY}>
+                  {fmt(v)}
+                </text>
+              </g>
+            ))}
+            <text x={0} y={10} className={styles.axisTitleY}>
+              {yTitle}
+            </text>
+            {items.map(([label, v], i) => (
+              <g key={label}>
+                <rect
+                  x={cx(i) - bw / 2}
+                  y={y(v)}
+                  width={bw}
+                  height={Math.max(v > 0 ? 2 : 0, M.top + h - y(v))}
+                  rx={4}
+                  fill={color}
+                  opacity={hover === null || hover === i ? 1 : 0.55}
+                />
+                <text x={cx(i)} y={y(v) - 5} textAnchor="middle" className={styles.histValue}>
+                  {v}
+                </text>
+                <text x={cx(i)} y={M.top + h + 16} className={styles.axisX}>
+                  {label}
+                </text>
+                {/* 칸 전체를 툴팁 영역으로 */}
+                <rect
+                  x={M.left + cw * i}
+                  y={M.top}
+                  width={cw}
+                  height={h}
+                  fill="transparent"
+                  onMouseMove={(e) => {
+                    setHover(i);
+                    setT({
+                      ...localPoint(e, ref.current),
+                      content: (
+                        <>
+                          <span className={styles.tipTitle}>{itemLabel(label)}</span>
+                          <TipRow color={color} label="실제" value={`${fmt(v)}개`} />
+                          <TipRow label="예상 정규분포" value={`${fmt(normal[i] ?? 0, 1)}개`} />
+                        </>
+                      ),
+                    });
+                  }}
+                />
+              </g>
+            ))}
+            <path d={line} fill="none" stroke={LINE} strokeWidth={1.25} strokeDasharray="4 3" pointerEvents="none" />
+            {normal.map((v, i) => (
+              <circle key={i} cx={cx(i)} cy={y(v)} r={hover === i ? 3.5 : 2} fill={LINE} pointerEvents="none" />
+            ))}
+            <text x={M.left + w} y={height - 4} className={styles.axisTitleX}>
+              {xTitle}
+            </text>
+          </svg>
+        ) : null}
+        <Tooltip tip={t} width={width} />
+      </div>
+      <Legend
+        items={[
+          { label: "실제", color },
+          { label: "예상 정규분포 (같은 평균 · 표준편차)", color: LINE, shape: "line" },
+        ]}
+      />
     </div>
   );
 }

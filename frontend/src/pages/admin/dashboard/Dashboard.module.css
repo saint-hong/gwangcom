@@ -469,31 +469,25 @@
   opacity: 0.45;
 }
 
-.stepDots {
-  display: inline-flex;
-  gap: 5px;
+/* 신규 Dreamer 활동 현황 — 첫 7일 단계 칸 (2026-11-16: 점 5개 → 단계마다 칸, ✓ 함 · ✕ 안 함 · - 판정 전) */
+.stepYes,
+.stepNo {
+  width: 16px;
+  height: 16px;
   vertical-align: middle;
 }
 
-.dotOn,
-.dotOff,
-.dotWait {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.stepYes {
+  color: var(--viz-up);
+  stroke-width: 2.5;
 }
 
-.dotOn {
-  background: var(--viz-1);
+.stepNo {
+  color: var(--color-text-tertiary);
 }
 
-.dotOff {
-  border: 1.5px solid var(--color-text-tertiary);
-}
-
-.dotWait {
-  border: 1.5px dashed var(--color-border);
+.stepWait {
+  color: var(--color-text-tertiary);
 }
 
 /* 그래프 설정 (2026-11-13) — 패널 오른쪽 아래 [설정 ▾], 펼치면 회색 칸에 재료 고르기 */
@@ -619,6 +613,13 @@
 .setActions {
   display: flex;
   justify-content: flex-end;
+}
+
+/* 설정 칸 안내 (2026-11-16) */
+.setNote {
+  margin: 6px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
 }
 
 .setWarn {
@@ -800,4 +801,50 @@
 
 .comboDelta {
   text-align: right;
+}
+
+/* Thunder 분포 아래 평균 · 중앙값 · 표준편차 (2026-11-16) */
+.histStats {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 한 상자 안의 작은 제목 (반응 순위 · Thunder 분포, 2026-11-16) */
+.subTitle {
+  margin: 0 0 2px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.subTitleGap {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.subHint {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* 대시보드 안 "AI가 분석했어요" — 사용자 상세 aiBox 의 바깥 여백만 바꿈 */
+.aiBoxDash {
+  margin: 0 0 var(--space-4);
+}
+
+/* 한 상자 안에 그래프 두 개를 나란히 (Dreamer 활동량, 2026-11-16) — 좁은 화면에서는 위아래 */
+.subPair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+@media (max-width: 760px) {
+  .subPair {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

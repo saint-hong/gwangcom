@@ -1,6 +1,7 @@
 """analytics.engagement — 반응 순위 · 질문형 비율 · 활동 시간 패턴 · Shake it · AI 사용량."""
 
 from collections import Counter, defaultdict
+from math import erf, sqrt
 from statistics import median
 
 from sqlalchemy import func, select
@@ -21,7 +22,7 @@ from app.domains.imaginations.models import Imagination
 from app.domains.prompts.models import Prompt
 from app.domains.reactions.models import Bookmark, ReactionEvent, Thunder, Wave
 from app.domains.shake.models import ImaginationParent, ShakeAttempt
-from app.domains.tags.models import Domain
+from app.domains.tags.models import Domain, ImaginationTag, Tag
 from app.domains.users.models import User
 from app.infrastructure.core.config import get_settings
 from app.infrastructure.llm.models import LlmCall
@@ -29,11 +30,55 @@ from app.infrastructure.llm.router import calls_today, route
 from app.shared.time import KST
 
 TOP = 30
-BINS = [("0", 0, 0), ("1", 1, 1), ("2", 2, 2), ("3~4", 3, 4), ("5~9", 5, 9), ("10+", 10, 10**9)]
+# Thunder 분포 칸 (2026-11-16): 0 부터 실제 최댓값까지 하나씩(최소 0~5), 최댓값이 BIN_LAST 를 넘으면 마지막 칸 = "BIN_LAST+"
+BIN_LAST = 15
+
+
+def thunder_histogram(
+    values: list[int],
+) -> tuple[list[tuple[str, int]], list[float], float, float, float]:
+    """받은 Thunder 수별 상상 수 + 같은 평균 · 표준편차의 정규분포라면 칸마다 있을 상상 수 + 평균 · 중앙값 · 표준편차.
+    정수 k 칸 = k-0.5 ~ k+0.5 넓이 × 상상 수. 0 칸은 왼쪽 끝까지, 마지막 칸은 오른쪽 끝까지 포함한다.
+    분포 모양을 보는 기준선일 뿐 판단이 아니다 (원칙 4)."""
+    top = min(BIN_LAST, max([5, *values]))
+    bins = [(str(k), k, k) for k in range(top)]
+    bins.append(
+        (f"{top}+" if top == BIN_LAST and max(values, default=0) > top else str(top), top, 10**9)
+    )
+    hist = [(label, sum(1 for v in values if lo <= v <= hi)) for label, lo, hi in bins]
+    n = len(values)
+    if n == 0:
+        return hist, [0.0] * len(bins), 0.0, 0.0, 0.0
+    mean = sum(values) / n
+    sd = (sum((v - mean) ** 2 for v in values) / n) ** 0.5
+    if sd == 0:
+        exp = [float(n) if lo <= mean <= hi else 0.0 for _, lo, hi in bins]
+    else:
+
+        def cdf(x: float) -> float:
+            return 0.5 * (1 + erf((x - mean) / (sd * sqrt(2))))
+
+        exp = []
+        for i, (_, lo, hi) in enumerate(bins):
+            a = 0.0 if i == 0 else cdf(lo - 0.5)
+            b = 1.0 if i == len(bins) - 1 else cdf(hi + 0.5)
+            exp.append(round(n * (b - a), 2))
+    return hist, exp, round(mean, 2), float(median(values)), round(sd, 2)
 
 
 def _title(title: str | None, body: str) -> str:
     return title or (body[:40] + ("…" if len(body) > 40 else ""))
+
+
+def _top_union(top: list[TopPost]) -> list[TopPost]:
+    """반응 순위: 기준(합계 · Thunder · Wave · 북마크 · 인용)마다 상위 TOP 개를 모아 보낸다.
+    화면에서 머리글로 기준을 바꿔 정렬해도 그 기준의 진짜 상위가 빠지지 않게 (2026-11-16)."""
+    keep: dict[int, TopPost] = {}
+    for key in ("total", "thunders", "waves", "bookmarks", "quotes"):
+        for t in sorted(top, key=lambda t: (-getattr(t, key), -t.total, -t.id))[:TOP]:
+            if getattr(t, key) > 0 or key == "total":
+                keep[t.id] = t
+    return sorted(keep.values(), key=lambda t: (-t.total, -t.thunders, -t.id))
 
 
 def engagement(db: Session, p: Period) -> EngagementOut:
@@ -63,6 +108,7 @@ def engagement(db: Session, p: Period) -> EngagementOut:
         if iid is not None:
             got[iid]["quotes"] = n
     top: list[TopPost] = []
+    desires_of: dict[int, list[str]] = defaultdict(list)
     if got:
         info = {
             r[0]: r
@@ -104,9 +150,23 @@ def engagement(db: Session, p: Period) -> EngagementOut:
                     prompt=prompt_id is not None,
                 )
             )
-        top.sort(key=lambda t: (-t.total, -t.thunders, -t.id))
+        top = _top_union(top)
+        # 욕망 태그 (태그 id 순, 지운 태그 제외)
+        for iid, label in db.execute(
+            select(ImaginationTag.imagination_id, Tag.label)
+            .join(Tag, Tag.id == ImaginationTag.tag_id)
+            .where(
+                ImaginationTag.imagination_id.in_([t.id for t in top]),
+                ImaginationTag.removed_at.is_(None),
+                Tag.type == "desire",
+            )
+            .order_by(ImaginationTag.imagination_id, Tag.id)
+        ).all():
+            desires_of[iid].append(label)
+        for t in top:
+            t.desires = desires_of.get(t.id, [])
 
-    histogram = [(label, sum(1 for x in posts if lo <= x.thunders <= hi)) for label, lo, hi in BINS]
+    histogram, normal, t_mean, t_median, t_sd = thunder_histogram([x.thunders for x in posts])
 
     # 요일 × 시간 (한국 시간): 글 쓰기 · 반응 켜기
     punch_posts = [[0] * 24 for _ in range(7)]
@@ -177,8 +237,12 @@ def engagement(db: Session, p: Period) -> EngagementOut:
 
     return EngagementOut(
         period=period_out(p),
-        top=top[:TOP],
+        top=top,
         histogram=histogram,
+        histogram_normal=normal,
+        thunder_mean=t_mean,
+        thunder_median=t_median,
+        thunder_sd=t_sd,
         punch_posts=punch_posts,
         punch_reactions=punch_reactions,
         active_users=[len(s) for s in active],
@@ -290,7 +354,15 @@ def shake(db: Session, p: Period) -> ShakeOut:
 
 # ---------------------------------------------------------------- AI 사용량
 
-FEATURES = ["tagging", "shake", "similar_rerank", "user_summary", "note_draft", "embedding"]
+FEATURES = [
+    "tagging",
+    "shake",
+    "similar_rerank",
+    "user_summary",
+    "reaction_summary",
+    "note_draft",
+    "embedding",
+]
 
 
 def ai(db: Session, p: Period) -> AiOut:
@@ -345,7 +417,14 @@ def ai(db: Session, p: Period) -> AiOut:
         a = agg.get(f)
         if f == "embedding":
             prov, model = s.embedding_provider, s.embedding_model
-        elif f in ("tagging", "shake", "note_draft", "similar_rerank", "user_summary"):
+        elif f in (
+            "tagging",
+            "shake",
+            "note_draft",
+            "similar_rerank",
+            "user_summary",
+            "reaction_summary",
+        ):
             prov, model = route(f)  # type: ignore[arg-type]
         else:
             prov, model = (a["prov"], a["model"]) if a else ("", "")

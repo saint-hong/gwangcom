@@ -142,7 +142,8 @@ function NetworkPanel({ page }: { page: PeriodKey }) {
   const nodes = all.filter((n) => (n.type === "tech" ? !keepT.size || keepT.has(n.id) : !keepX.size || keepX.has(n.id)));
   const shown = new Set(nodes.map((n) => n.id));
   const edges = data.net_edges.filter((e) => shown.has(e.source) && shown.has(e.target));
-  const height = Math.max(600, Math.min(900, 380 + nodes.length * 7));
+  // 세로 440~620px (2026-11-16 사용자 요청: 모니터에서 너무 커서 600~900 → 줄임). 배치는 이 높이에 맞춰 다시 펼쳐진다
+  const height = Math.max(440, Math.min(620, 300 + nodes.length * 5));
   const clusterOf = new Map(all.map((n) => [n.id, n.cluster]));
   const picker = (type: "tech" | "desire", picked: string[], key: "techs" | "desires") => (close: () => void) => (
     <GroupPicker
@@ -337,7 +338,7 @@ function PairsPanel({ page }: { page: PeriodKey }) {
               <span className={styles.comboNote}>
                 <span>Thunder {x.thunders}</span>
                 <span className={styles.comboDelta}>
-                  <Delta cur={x.count} prev={x.prev} newLabel="New" />
+                  <Delta cur={x.count} prev={x.prev} />
                 </span>
               </span>
             ),
@@ -462,7 +463,7 @@ function DesiresPanel({ page }: { page: PeriodKey }) {
                   {d.label}
                 </td>
                 <td className={styles.num}>{d.count}</td>
-                <td className={styles.num}>{d.prev === null ? <span className={styles.muted}>—</span> : <Delta cur={d.count} prev={d.prev} newLabel="New" />}</td>
+                <td className={styles.num}>{d.prev === null ? <span className={styles.muted}>—</span> : <Delta cur={d.count} prev={d.prev} />}</td>
                 <td className={styles.num}>{fmt(d.thunder_avg, 1)}</td>
                 <td className={`${styles.left} ${styles.muted}`} title={d.techs.map((t) => `#${t}`).join(" ")}>
                   {d.techs.map((t) => `#${t}`).join(" ") || "—"}

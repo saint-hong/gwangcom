@@ -395,7 +395,8 @@ export function Network({ nodes, edges, height = 460 }: { nodes: NetNode[]; edge
   const [focus, setFocus] = useState<string | null>(null);
   const pos = useMemo(() => (width > 0 ? layout(nodes, edges, width, height) : new Map<string, Pos>()), [nodes, edges, width, height]);
   const maxCount = Math.max(1, ...nodes.map((n) => n.count));
-  const radius = (c: number) => 4 + Math.sqrt(c / maxCount) * 16;
+  // 원 크기도 그림 높이에 맞춰 줄인다 (620px 기준 최대 반지름 18)
+  const radius = (c: number) => (3 + Math.sqrt(c / maxCount) * 15) * Math.min(1, height / 620);
   const clusterOf = useMemo(() => new Map(nodes.map((n) => [n.id, n.cluster])), [nodes]);
   const clusters = useMemo(() => {
     const m = new Map<string, number>();

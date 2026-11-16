@@ -374,11 +374,18 @@ export type AnTopPost = {
   quotes: number;
   total: number;
   prompt: boolean;
+  desires: string[];
 };
+/** 대시보드 "AI가 분석했어요" (반응 순위 · Thunder 분포, 2026-11-16) */
+export type AiSummary = { summary: string | null; error: string | null; model: string | null; at: string | null };
 export type AnEngagement = {
   period: AnPeriod;
   top: AnTopPost[];
   histogram: [string, number][];
+  histogram_normal: number[];
+  thunder_mean: number;
+  thunder_median: number;
+  thunder_sd: number;
   punch_posts: number[][];
   punch_reactions: number[][];
   active_users: number[];
@@ -411,7 +418,20 @@ export type AnAi = {
 };
 
 /** 신규 Dreamer 활성화 (반응 · 질문 · 활동 탭, 2026-11-13) */
-export type ActivationStepKey = "joined" | "returned" | "reacted" | "posted" | "got_thunder" | "kept";
+export type ActivationStepKey =
+  | "joined"
+  | "first_day"
+  | "returned"
+  | "reacted"
+  | "commented"
+  | "followed"
+  | "posted"
+  | "answered"
+  | "posted_multi"
+  | "shook"
+  | "got_thunder"
+  | "active_3days"
+  | "kept";
 export type AnActivation = {
   period: AnPeriod;
   window_days: number;

@@ -87,6 +87,11 @@ def test_dashboard_numbers(client) -> None:
     assert eng["top"][0]["id"] == a["id"] and eng["top"][0]["thunders"] == 2
     assert sum(sum(row) for row in eng["punch_reactions"]) == 2
     assert sum(eng["free_series"]) == 3 and sum(eng["prompt_series"]) == 0
+    assert eng["top"][0]["desires"] == ["안전"] and sum(eng["histogram_normal"]) > 0
+    # 반응 쏠림 "AI가 분석했어요" (2026-11-16) — 테스트는 fake 제공자, llm_calls 에 남는다
+    res = client.get("/api/admin/analytics/engagement/summary?period=30d", headers=auth(admin))
+    assert res.status_code == 200 and res.json()["summary"]
+    assert "reaction_summary" in {f["feature"] for f in get("ai")["features"]}
 
     assert get("shake")["blends"] == 0
     ai = get("ai")
@@ -137,6 +142,9 @@ def test_visits_and_activation(client) -> None:
     steps = {s["key"]: (s["users"], s["base"]) for s in d["steps"]}
     assert steps["posted"] == (1, 3) and steps["got_thunder"] == (1, 3)
     assert steps["kept"] == (1, 2)  # early 은 오늘(20일째) 접속 · 활동, idle 은 없음
+    # 2026-11-16 추가 단계: early 의 첫 상상은 가입 다음 날 (가입한 날 활동은 아님), 하나뿐
+    assert steps["first_day"] == (0, 3) and steps["posted_multi"] == (0, 3)
+    assert steps["answered"] == (0, 3) and steps["commented"] == (0, 3)
     posted = next(c for c in d["compare"] if c["key"] == "posted")
     assert (posted["yes_n"], posted["yes_kept"], posted["no_n"], posted["no_kept"]) == (1, 1, 1, 0)
     status = {u["nickname"]: u["status"] for u in d["users"]}
@@ -166,3 +174,18 @@ def test_summary_totals(client) -> None:
     d = client.get("/api/admin/analytics/summary", headers=auth(admin)).json()
     assert (d["imaginations"], d["thunders"], d["users"], d["admins"]) == (2, 1, 2, 1)
     assert d["withdrawn"] is None and d["today"]["imaginations"] == 2
+
+
+def test_thunder_histogram_normal_line() -> None:
+    """Thunder 분포: 칸은 실제 최댓값까지(최소 0~5), 정규분포 기준선 합 = 상상 수 (2026-11-16)."""
+    from app.domains.analytics.engagement import thunder_histogram
+
+    hist, normal, mean, med, sd = thunder_histogram([0, 1, 1, 2, 2, 2, 3, 3, 4, 8])
+    assert [label for label, _ in hist] == [str(k) for k in range(9)]
+    assert sum(n for _, n in hist) == 10 and dict(hist)["2"] == 3
+    assert abs(sum(normal) - 10) < 0.05 and len(normal) == len(hist)
+    assert mean == 2.6 and med == 2.0 and sd > 0
+    hist, normal, *_ = thunder_histogram([0, 30])
+    assert hist[-1] == ("15+", 1) and len(hist) == 16
+    hist, normal, mean, med, sd = thunder_histogram([])
+    assert len(hist) == 6 and sum(normal) == 0 and sd == 0

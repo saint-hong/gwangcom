@@ -426,6 +426,14 @@ a.barLabel:hover {
   font-size: var(--font-size-xs);
 }
 
+/* 분포 막대 위 숫자 (Histogram) */
+.histValue {
+  fill: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 /* 산점도 */
 .point {
   stroke: var(--color-surface);

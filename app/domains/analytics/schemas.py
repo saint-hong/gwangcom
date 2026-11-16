@@ -157,6 +157,7 @@ class TopPost(BaseModel):
     quotes: int
     total: int
     prompt: bool
+    desires: list[str] = []  # 상상에 붙은 욕망 태그 (2026-11-16 반응 순위 욕망 칸)
 
 
 class PromptRow(BaseModel):
@@ -172,7 +173,13 @@ class PromptRow(BaseModel):
 class EngagementOut(BaseModel):
     period: PeriodOut
     top: list[TopPost]
-    histogram: list[tuple[str, int]]  # Thunder 수 구간 → 상상 수
+    histogram: list[tuple[str, int]]  # 받은 Thunder 수(0 · 1 · … · 9 · 10+) → 상상 수
+    histogram_normal: list[
+        float
+    ]  # 같은 평균 · 표준편차의 정규분포라면 구간마다 있을 상상 수 (2026-11-16)
+    thunder_mean: float
+    thunder_median: float
+    thunder_sd: float
     punch_posts: list[list[int]]  # 요일(월=0) × 시(0~23), 한국 시간
     punch_reactions: list[list[int]]
     active_users: list[int]  # 칸마다 활동한 Dreamer 수
@@ -285,3 +292,12 @@ class SummaryOut(BaseModel):
     today: dict[
         str, int
     ]  # 오늘(한국 날짜) 늘어난 수: imaginations · comments · quotes · thunders · waves · blends · users
+
+
+class AiSummaryOut(BaseModel):
+    """대시보드 "AI가 분석했어요" — 반응 순위 · Thunder 분포를 바탕으로 한 짧은 설명 (판단 아님, 2026-11-16)."""
+
+    summary: str | None  # AI 를 쓸 수 없으면 null
+    error: str | None = None  # 그때 보여 줄 안내
+    model: str | None = None
+    at: datetime | None = None
