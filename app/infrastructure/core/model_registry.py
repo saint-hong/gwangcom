@@ -2,6 +2,7 @@
 
 from app.domains.admin import models as admin_models  # noqa: F401
 from app.domains.imaginations import models as imaginations_models  # noqa: F401
+from app.domains.notes import models as notes_models  # noqa: F401
 from app.domains.notifications import models as notifications_models  # noqa: F401
 from app.domains.policy import models as policy_models  # noqa: F401
 from app.domains.prompts import models as prompts_models  # noqa: F401

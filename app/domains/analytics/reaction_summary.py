@@ -31,6 +31,13 @@ FAIL = "지금은 AI 분석을 불러오지 못했어요."
 _cache: dict[tuple, AiSummaryOut] = {}
 
 
+def _compare(actual: int, expected: float) -> str:
+    """실제 vs 예상 비교는 서버가 정해서 넘긴다 — 모델이 직접 빼기를 하다 틀린 일이 있었다 (2026-11-17 실측)."""
+    if abs(actual - expected) < max(1.0, expected * 0.15):
+        return "비슷"
+    return "예상보다 많음" if actual > expected else "예상보다 적음"
+
+
 def summarize(db: Session, admin_id: int, p: Period) -> AiSummaryOut:
     e = engagement(db, p)
     count = sum(n for _, n in e.histogram)
@@ -52,7 +59,7 @@ def summarize(db: Session, admin_id: int, p: Period) -> AiSummaryOut:
         period=f"{p.start} ~ {p.end} ({p.days}일)",
         count=str(count),
         histogram="\n".join(
-            f"  {label}개: {n} / {exp:.1f}"
+            f"  {label}개: {n} / {exp:.1f} → {_compare(n, exp)}"
             for (label, n), exp in zip(e.histogram, e.histogram_normal, strict=True)
         ),
         mean=f"{e.thunder_mean:.1f}",

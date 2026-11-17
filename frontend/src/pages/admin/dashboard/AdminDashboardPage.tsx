@@ -5,12 +5,14 @@ import { useToast } from "../../../components/feedback/Toast";
 import { Button } from "../../../design-system";
 import type { PeriodKey } from "../../../types/api";
 import adminStyles from "../Admin.module.css";
+import { AiTab } from "./AiTab";
 import { CrossTab } from "./CrossTab";
 import styles from "./Dashboard.module.css";
 import { EngagementTab } from "./EngagementTab";
 import { OverviewTab } from "./OverviewTab";
 import { downloadRaw } from "./parts";
-import { AiTab, ShakeTab } from "./ShakeAiTabs";
+import { PeriodPicker, isPeriodKey } from "./settings";
+import { ShakeTab } from "./ShakeTab";
 import { TechTab } from "./TechTab";
 
 const TABS = [
@@ -23,16 +25,10 @@ const TABS = [
 ] as const;
 type TabKey = (typeof TABS)[number]["value"];
 
-const PERIODS: { value: PeriodKey; label: string }[] = [
-  { value: "7d", label: "7일" },
-  { value: "30d", label: "30일" },
-  { value: "90d", label: "90일" },
-  { value: "all", label: "전체" },
-];
 
 /**
  * A1 분석 대시보드 (Sprint 6-D, 2026-11-13) — 상상 · 욕망 · 기술이 만나는 지점에서 기술 변화의 신호를 찾는다
- *   [개요 · 기술 흐름 · 교차 분석 · 반응 · 질문 · 활동 · Shake it · AI 사용량]   [7일 · 30일 · 90일 · 전체]  [원자료 CSV]
+ *   [개요 · 기술 흐름 · 교차 분석 · 반응 · 질문 · 활동 · Shake it · AI 사용량]   [📅 기간 (빠른 선택 · 달력)]  [원자료 CSV]
  *   탭 · 기간은 주소(?tab= &period=)에 남아 같은 화면을 다시 열 수 있다
  *   신호는 모두 계산 규칙으로 정하고, 해석과 판단은 운영자가 한다 (원칙 4)
  */
@@ -41,7 +37,8 @@ export function AdminDashboardPage() {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const tab = (TABS.find((t) => t.value === params.get("tab"))?.value ?? "overview") as TabKey;
-  const period = (PERIODS.find((p) => p.value === params.get("period"))?.value ?? "30d") as PeriodKey;
+  const raw = params.get("period");
+  const period: PeriodKey = isPeriodKey(raw) ? raw : "30d";
   const set = (k: string, v: string) => {
     const next = new URLSearchParams(params);
     next.set(k, v);
@@ -59,13 +56,8 @@ export function AdminDashboardPage() {
           ))}
         </div>
         <div className={styles.toolbarRight}>
-          <div className={adminStyles.seg} role="group" aria-label="기간">
-            {PERIODS.map((p) => (
-              <button key={p.value} type="button" aria-pressed={period === p.value} onClick={() => set("period", p.value)}>
-                {p.label}
-              </button>
-            ))}
-          </div>
+          {/* 기간: 달력 버튼 (2026-11-17 사용자 요청 — 그래프 설정과 같은 방식) */}
+          <PeriodPicker value={period} onChange={(v) => set("period", v)} floating />
           <Button
             size="sm"
             variant="outline"

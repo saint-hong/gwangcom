@@ -52,6 +52,7 @@ def db_clean(database_ready: bool):
         conn.execute(text("DELETE FROM llm_calls"))
         conn.execute(text("DELETE FROM imaginations"))
         conn.execute(text("DELETE FROM prompts"))
+        conn.execute(text("DELETE FROM notes"))  # 작성자는 SET NULL 이라 따로 지움 (6-E)
         conn.execute(text("DELETE FROM tags"))
         conn.execute(text("DELETE FROM policy_settings WHERE scope <> 'global'"))
         conn.execute(text("DELETE FROM users"))  # 팔로우·알림·반응도 함께 지워진다

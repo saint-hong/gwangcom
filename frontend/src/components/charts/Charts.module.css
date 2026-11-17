@@ -10,6 +10,13 @@
   width: 100%;
 }
 
+/* 칸이 많을 때 좌우 스크롤 (TimeChart minBand, 2026-11-17) */
+.plotScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: var(--space-1);
+}
+
 .plot svg {
   display: block;
   overflow: visible;

@@ -1,0 +1,282 @@
+/* A2 Observe Note 쓰기 · 고치기 (Sprint 6-E, 2026-11-17) */
+.page {
+  padding-bottom: var(--space-8);
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+}
+
+.back svg {
+  width: 16px;
+  height: 16px;
+}
+
+.back:hover {
+  color: var(--color-text);
+}
+
+.unsaved {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-2xs);
+}
+
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.viewLink {
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  text-decoration: none;
+}
+
+.viewLink:hover {
+  text-decoration: underline;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 860px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
+}
+
+.titleInput,
+.leadInput,
+.bodyInput {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.titleInput:focus,
+.leadInput:focus,
+.bodyInput:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.titleInput {
+  height: 52px;
+  padding: 0 var(--space-4);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.leadInput {
+  height: 40px;
+  padding: 0 var(--space-4);
+  font-size: var(--font-size-md);
+}
+
+.bodyBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.imageBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.imageBtn:hover:not(:disabled) {
+  border-color: var(--color-text-tertiary);
+}
+
+.imageBtn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hint {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-2xs);
+}
+
+.bodyInput {
+  min-height: 560px;
+  padding: var(--space-4);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-size-sm);
+  line-height: 1.8;
+  resize: vertical;
+}
+
+.preview {
+  min-height: 560px;
+  padding: var(--space-6) var(--space-6) var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.previewTitle {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.previewLead {
+  margin: 12px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.previewToc {
+  margin: 16px 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.preview > div {
+  margin-top: 32px;
+}
+
+/* 대표 이미지 · AI 요약 · 출처 칸 (2026-11-17) */
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.blockHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.coverBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.coverBox img {
+  width: 280px;
+  max-width: 100%;
+  height: 158px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.coverActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.coverEmpty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 280px;
+  max-width: 100%;
+  height: 120px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.coverEmpty svg {
+  width: 16px;
+  height: 16px;
+}
+
+.aiBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.aiBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.aiBtn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.smallInput {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.smallInput:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}

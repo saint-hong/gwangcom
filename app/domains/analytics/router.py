@@ -17,7 +17,7 @@ from app.domains.analytics import engagement as eng
 from app.domains.analytics import insights, reaction_summary
 from app.domains.analytics import summary as summ
 from app.domains.analytics.frame import first_post_at, load_posts
-from app.domains.analytics.period import Period, PeriodKey, make_period
+from app.domains.analytics.period import PERIOD_PATTERN, Period, PeriodError, make_period
 from app.domains.analytics.schemas import (
     ActivationOut,
     AiOut,
@@ -32,17 +32,21 @@ from app.domains.analytics.schemas import (
 from app.domains.auth.deps import admin_user
 from app.domains.users.models import User
 from app.infrastructure.core.database import get_db
+from app.shared.errors import AppError
 from app.shared.time import KST
 
 router = APIRouter(prefix="/api/admin/analytics", tags=["analytics"])
 
 DB = Annotated[Session, Depends(get_db)]
 Admin = Annotated[User, Depends(admin_user)]
-PeriodQ = Annotated[PeriodKey, Query()]
+PeriodQ = Annotated[str, Query(pattern=PERIOD_PATTERN)]
 
 
 def _period(db: Session, key: str) -> Period:
-    return make_period(key, first_post_at(db) if key == "all" else None)
+    try:
+        return make_period(key, first_post_at(db) if key == "all" else None)
+    except PeriodError as e:
+        raise AppError(422, "invalid_period", str(e)) from e
 
 
 @router.get("/summary", response_model=SummaryOut)

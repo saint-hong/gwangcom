@@ -163,6 +163,7 @@ export function KpiTile({
   color = "var(--viz-1)",
   format = (n: number) => fmt(n),
   note,
+  title,
 }: {
   label: string;
   value: number;
@@ -172,9 +173,11 @@ export function KpiTile({
   color?: string;
   format?: (n: number) => string;
   note?: ReactNode;
+  /** 카드에 마우스를 올리면 보이는 설명 (계산 방식 등) */
+  title?: string;
 }) {
   return (
-    <div className={styles.kpi}>
+    <div className={styles.kpi} title={title}>
       <span className={styles.kpiLabel}>{label}</span>
       {/* 숫자 옆에 증감율, 그 아래 줄에 "이전 N" (2026-11-14 사용자 요청: 카드마다 줄바꿈이 달라지던 것 통일) */}
       <span className={styles.kpiMain}>

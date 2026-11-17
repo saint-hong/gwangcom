@@ -15,6 +15,8 @@ from app.domains.imaginations.models import Imagination
 from app.domains.imaginations.schemas import (
     Counts,
     DomainRef,
+    FeedNote,
+    FeedNotesOut,
     FeedOut,
     ImaginationOut,
     My,
@@ -22,6 +24,7 @@ from app.domains.imaginations.schemas import (
     QuotedOut,
     TagOut,
 )
+from app.domains.notes import service as notes_service
 from app.domains.policy.service import EffectivePolicy, get_effective_policy
 from app.domains.reactions.models import Bookmark, Thunder, Wave
 from app.domains.shake.models import ImaginationParent
@@ -381,8 +384,9 @@ def _recommended(
     return FeedOut(items=present(db, rows, user), next_cursor=next_cursor)
 
 
-def _following(db: Session, user: User, domain_id: int | None, cursor: str | None) -> FeedOut:
+def _following(db: Session, user: User, domain_id: int | None, cursor: str | None) -> FeedNotesOut:
     """팔로잉 탭 (F3): 내가 팔로우한 Dreamer 의 상상 + 그 사람들이 Wave 한 글 (시간 순).
+    + 그 사람들이 Wave 한 Observe Note 는 notes 로 (상상 바로 뒤 자리, 2026-11-17).
 
     같은 글이 여러 번 나오면 가장 최근 것 하나만. Wave 로 들어온 글에는 waved_by 를 붙인다.
     """
@@ -432,7 +436,19 @@ def _following(db: Session, user: User, domain_id: int | None, cursor: str | Non
     waved_by = {r.iid: wavers[r.waver] for r in rows if r.waver in wavers}
     ordered = [items[i] for i in ids if i in items]
     next_cursor = encode_cursor(rows[-1].at, rows[-1].iid) if has_more and rows else None
-    return FeedOut(items=present(db, ordered, user, waved_by=waved_by), next_cursor=next_cursor)
+    out = FeedNotesOut(items=present(db, ordered, user, waved_by=waved_by), next_cursor=next_cursor)
+    # 팔로우한 사람이 Wave 한 Observe Note 를 같은 시간 순서에 섞는다 (2026-11-17, 분야를 고르면 넣지 않음)
+    if domain_id is None:
+        hi = decode_cursor(cursor)[0] if cursor else None
+        lo = rows[-1].at if has_more and rows else None
+        times = [(r.iid, r.at) for r in rows]
+        out.notes = [
+            FeedNote(
+                after_id=notes_service.place_after(times, at), note=card, waved_by=author_out(waver)
+            )
+            for at, card, waver in notes_service.waved_between(db, user, lo, hi)
+        ]
+    return out
 
 
 def trending(db: Session, user: User | None, limit: int = TRENDING_LIMIT) -> FeedOut:

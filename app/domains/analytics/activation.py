@@ -248,6 +248,23 @@ def activation(db: Session, p: Period) -> ActivationOut:
             None,
             lambda u: u.first_week(u.shakes),
         ),
+        # 2026-11-17 사용자 결정: ① 단계표와 같은 기준으로 비교 항목 추가
+        (
+            "posted_multi",
+            "첫 주에 상상을 2개 이상 썼나",
+            "2개 이상",
+            "1개 이하",
+            None,
+            lambda u: flags[u.id]["posted_multi"],
+        ),
+        (
+            "active_3days",
+            "첫 주에 3일 이상 활동했나",
+            "3일 이상",
+            "2일 이하",
+            None,
+            lambda u: flags[u.id]["active_3days"],
+        ),
     ]
     compare = []
     for key, label, yes, no, among, test in experiences:

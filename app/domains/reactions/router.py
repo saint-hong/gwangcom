@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.domains.auth.deps import current_user
-from app.domains.imaginations.schemas import FeedOut, ReactionOut
+from app.domains.imaginations.schemas import FeedNotesOut, ReactionOut
 from app.domains.reactions import service
 from app.domains.users.models import User
 from app.infrastructure.core.database import get_db
@@ -53,7 +53,7 @@ def bookmark_off(item_id: int, db: DB, user: Me):
     return service.toggle(db, user, item_id, "bookmark", False)
 
 
-@router.get("/me/library", response_model=FeedOut)
+@router.get("/me/library", response_model=FeedNotesOut)
 def library(
     db: DB,
     user: Me,

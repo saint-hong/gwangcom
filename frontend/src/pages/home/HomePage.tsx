@@ -9,6 +9,8 @@ import { ImaginePrompt } from "../../components/feed/ImaginePrompt";
 import { Button, ButtonLink, Tabs } from "../../design-system";
 import { useAuth } from "../../hooks/useAuth";
 import { useFeed, type FeedTab } from "../../hooks/useFeed";
+import { mixNotes, placeNotes, useFeedNotes } from "../../hooks/useFeedNotes";
+import { NoteFeedCard } from "../../components/note/NoteFeedCard";
 import type { Imagination } from "../../types/api";
 import styles from "./HomePage.module.css";
 
@@ -24,6 +26,7 @@ const MEMBER_TABS = [
  *   로그인 전: 분야 탭 한 줄 [추천|AI|Semiconductor|…]
  *   로그인 후: [추천|팔로잉|최신] + 분야 칩 줄 + 상상하기 유도 영역 (X)
  *   추천 = 최근 7일 인기 점수 순, 팔로잉 = 팔로우한 사람의 상상 + Wave (Sprint 3)
+ *   추천 · 최신 탭(분야 없음)은 11 · 21 · 31 … 번째에 Observe Note 카드 (2026-11-17, 섞어서 겹치지 않게)
  * 탭·분야는 주소(?tab=&domain=)에 남겨서 오른쪽 "추천 주제"에서도 들어올 수 있게 한다.
  */
 export function HomePage() {
@@ -37,6 +40,11 @@ export function HomePage() {
   const shaken = (useLocation().state as { shaken?: Imagination } | null)?.shaken;
   const fresh = shaken && tab === "latest" && !domain ? shaken : null;
   const items = fresh ? feed.items.filter((i) => i.id !== fresh.id) : feed.items;
+  // Observe Note 끼우기 (2026-11-17 사용자 요청): 추천 · 최신 탭(분야를 고르지 않았을 때) 11 · 21 · 31 … 번째, 섞어서 겹치지 않게
+  const withNotes = (tab === "recommended" || tab === "latest") && !domain;
+  const notes = useFeedNotes(withNotes, `${tab}|${user?.id ?? "guest"}`);
+  // 팔로잉 탭: 팔로우한 사람이 Wave 한 노트를 서버가 정한 시간 순서 자리에 (2026-11-17)
+  const rows = tab === "following" ? placeNotes(items, feed.extra) : mixNotes(items, withNotes ? notes : []);
 
   const update = (next: { tab?: string | null; domain?: string | null }) => {
     const p = new URLSearchParams(params);
@@ -75,7 +83,7 @@ export function HomePage() {
       <PromptBanner />
       {user ? <ImaginePrompt user={user} /> : null}
 
-      {tab === "following" && feed.done && feed.items.length === 0 && !feed.error ? (
+      {tab === "following" && feed.done && feed.items.length === 0 && feed.extra.length === 0 && !feed.error ? (
         <section className={styles.empty}>
           <UsersRound className={styles.emptyIcon} aria-hidden="true" strokeWidth={1.6} />
           <h1 className={styles.emptyTitle}>아직 팔로우한 Dreamer 가 없어요</h1>
@@ -91,9 +99,13 @@ export function HomePage() {
               fresh
               onDeleted={() => navigate("/?tab=latest", { replace: true, state: null })}
             /> : null}
-          {items.map((item) => (
-            <ImaginationCard key={item.id} data={item} onDeleted={feed.remove} />
-          ))}
+          {rows.map((r) =>
+            r.kind === "note" ? (
+              <NoteFeedCard key={`note-${r.note.id}`} note={r.note} wavedBy={r.wavedBy} />
+            ) : (
+              <ImaginationCard key={r.item.id} data={r.item} onDeleted={feed.remove} />
+            ),
+          )}
 
           {feed.error ? (
             <div className={styles.status}>

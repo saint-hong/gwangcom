@@ -1,6 +1,6 @@
 # 코드 구조
 
-> 갱신: 2026-11-16 (Sprint 6) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
+> 갱신: 2026-11-17 (Sprint 6) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
 
 ## 백엔드 `app/`
 
@@ -20,7 +20,7 @@ app/
 │   ├── shake/                  # Shake it ✅ blend.py(혼합 호출 + 출력 검사) · models(ImaginationParent · ShakeAttempt) · service(선택 창 · 섞어서 게시) · router(/api/shake) · lineage(계보 그래프 노드 · 화살표)
 │   ├── prompts/                # 이번 주 질문 ✅ models(Prompt) · schemas · service(지금 질문 · 상태 · 답할 수 있는지 · 운영자 목록/만들기/고치기/지우기) · router(/api/prompts/* · /api/admin/prompts) · feed(질문 상세 답한 상상, 순환 import 피해 분리) — 6-C, 답한 사용자 · insight 2026-11-13
 │   ├── analytics/              # 분석 대시보드 ✅ (6-D, 2026-11-13) period(기간 · 시간 칸, 한국 시간) · frame(기간 안 대중 상상 + 태그 한 번에 읽기) · insights(개요 · 기술 흐름 · 교차: 생키 · 네트워크 · 욕망×기술 · 기술 조합 2~N개 · 욕망 순위) · clusters(태그 네트워크 군집 찾기 Louvain 직접 구현, 이름 A · B · C, 2026-11-15) · engagement(반응 순위 · Thunder 분포 + 예상 정규분포 · 질문형 비율 · 요일×시간 · Shake it · AI 사용량) · reaction_summary(반응 쏠림 "AI가 분석했어요", 2026-11-16) · activation(신규 Dreamer 활성화, 첫 7일 13단계) · summary(전체 현황, 기간 무관) · schemas · router(/api/admin/analytics/* : overview · tech · cross · engagement(+ /summary AI) · activation · shake · ai · summary + export.csv)
-│   ├── notes/                  # Observe Note                      (Sprint 6)
+│   ├── notes/                  # Observe Note ✅ (6-E, 2026-11-17) models(Note · NoteReaction) · schemas · service(공개 목록 · 상세 + 조회수 · 운영자 만들기/고치기/지우기 · 이미지 · AI 요약 초안 note_summary · 반응 · 서재/팔로잉에 섞을 노트 reacted_between · waved_between · place_after) · router(/api/notes/* · /api/admin/notes/*)
 │   ├── notifications/          # 알림 ✅ models · service(notify · 목록 · 안 읽은 수 · 읽음) · router(/api/notifications)
 │   ├── policy/                 # 이용 한도 ✅ models(등급·설정) · service(최종 한도 계산) · router(/api/me/limits) — 관리 화면 Sprint 6
 │   ├── activity/               # 내 활동                        (Sprint 8)
@@ -77,7 +77,7 @@ src/
 │   │   ├── AccountChip         # 로그인 후 맨 아래 계정 칩 + 계정 메뉴 (프로필 보기 · 설정 · 내 활동 · 운영자 · 로그아웃)
 │   │   ├── PageHeader          # 하위 화면 상단 바 [←] 제목
 │   │   ├── ImagineLogo         # 글자 로고(첫 글자 I = SVG) · 접힌 사이드바용 마크(보라 정사각형 + I)
-│   │   ├── RightRail           # 검색창 · 이번 주 질문 · 인기 상상 · 추천 Dreamer · 추천 주제 · 푸터
+│   │   ├── RightRail           # 검색창 · (노트 상세) 목차 · 이번 주 질문 · 인기 상상 · 추천 Dreamer · 추천 주제 · 푸터
 │   │   ├── SiteFooter          # 링크 · 회사 정보 · (개발 중) 서버 연결 상태
 │   │   ├── MobileTopBar        # 700px 미만 상단 바
 │   │   └── BottomTabBar        # 700px 미만 하단 탭바 (아이콘 5개)
@@ -90,10 +90,11 @@ src/
 │   ├── card/QuoteEmbed         # 인용 글 아래 원본 카드 (삭제되면 "삭제된 상상이에요")
 │   ├── card/ItemMenu           # ⋯ 메뉴 — 링크 복사 · (내 글·댓글) 삭제 (뱃지 보기는 2026-11-12 제거)
 │   ├── card/SourceChips        # 혼합 글 카드 재료 줄 알약 (한 줄 고정, 넘치면 …)
+│   ├── note/                   # Observe Note (6-E) NoteBody(Markdown → 소제목 · 그림 + 캡션 · 목차 noteToc) · NoteToc(오른쪽 패널 목차, 지금 읽는 곳) · NoteActions(Thunder · Wave · 북마크 · 공유) · NoteFeedCard(홈 · 서재 · 팔로잉 노트 카드)
 │   ├── similar/SimilarBlock    # 상세 오른쪽 컬럼 "비슷한 상상" (이유 한 줄, 5-C)
 │   ├── prompt/                 # usePromptList(/api/prompts) · leftLabel · PromptBanner(좁은 화면 홈 배너) · Prompt.module.css (오른쪽 블록 · 글쓰기 카드 · 상세 한 줄 공통)
 │   ├── common/                 # Pagination(페이지 번호 + 개수) · SelectMenu(작은 메뉴 선택) · DropMenu.module.css
-│   ├── charts/                 # 차트 (6-D, 라이브러리 없이 SVG · CSS) core(폭 · 눈금 · 툴팁 · 범례 · 분야 색) · TimeChart(선 · 쌓은 면적 · 쌓은 막대 + 사건 표시) · basic(Sparkline · Delta · Bars · Heatmap · PunchCard · Columns · Histogram 분포 + 정규분포 곡선) · relations(Scatter 사분면 · Network 힘 배치 + 군집 영역 · 군집 칩 · Sankey) · Charts.module.css
+│   ├── charts/                 # 차트 (6-D, 라이브러리 없이 SVG · CSS) core(폭 · 눈금 · 툴팁 · 범례 · 분야 색) · TimeChart(선 · 쌓은 면적 · 쌓은 막대 + 사건 표시, `minBand` = 칸 최소 폭 · 넘치면 좌우 스크롤 2026-11-17) · basic(Sparkline · Delta · Bars · Heatmap · PunchCard · Columns · Histogram 분포 + 정규분포 곡선) · relations(Scatter 사분면 · Network 힘 배치 + 군집 영역 · 군집 칩 · Sankey) · Charts.module.css
 │   ├── tags/TagList            # 분류 줄 [분야] 회색 + #주제 보라 (카드 최대 3) · tagPath · domainsOf
 │   ├── tags/ItemTags           # 상세 분류 줄 + 작성자 기술 태그 편집 상자
 │   ├── comments/               # CommentSection(목록·무한 스크롤) · CommentItem(X 줄 + 같은 액션 바) · CommentComposer(접힘 → 펼침)
@@ -105,18 +106,19 @@ src/
 │       ├── ShakeButton         # Shake it 버튼 (선 아이콘, 숟가락·젓가락 들썩 + 별 깜빡)
 │       └── ShakeIcon           # 비빔밥 그릇 + 숟가락 · 젓가락 + 별 (SVG)
 └── pages/
-    ├── home/HomePage           # S1 로그인 전 분야 탭 / 후 [추천|팔로잉|최신] + 분야 칩 + 피드
+    ├── home/HomePage           # S1 로그인 전 분야 탭 / 후 [추천|팔로잉|최신] + 분야 칩 + 피드 (추천 · 최신 11 · 21 … 번째 노트 = hooks/useFeedNotes, 팔로잉은 노트 Wave)
     ├── write/WritePage         # S3 상상하기 (+ 이번 주 질문 카드 ?prompt=)
     ├── imagination/ImaginationPage  # S4 상상 상세 (X 구조) + 댓글 · 재료 상상 · 시간 줄 [Shake it] · 계보 · 분류 줄(태그 편집) · (좁은 화면) 비슷한 상상
     ├── lineage/LineagePage     # S15 계보 (층 배치 · 화살표 · 확대/축소/이동 · 미리보기 · 크게 보기 팝업)
     ├── topics/                 # S8 TopicsPage(분야별 주제) · S9 TagPage(태그별 상상)
     ├── prompt/                 # PromptListPage(질문 목록 /prompts: 진행 중 · 끝난 질문) · PromptPage(질문 상세 /prompts/:id: 질문 머리 · 반응 그래프 · 답한 상상) — 2026-11-13
-    ├── library/LibraryPage     # S12 서재 [Thunder | Wave | Shake it | 북마크 | 최근 본 상상]
+    ├── library/LibraryPage     # S12 서재 [Thunder | Wave | Shake it | 북마크 | 최근 본 상상] — Thunder · Wave · 북마크에 Observe Note 도 함께 (2026-11-17)
+    ├── notes/                  # S10 NoteListPage(/notes) · NotePage(/notes/:id) · noteFormat
     ├── trending/TrendingPage   # S7 인기 상상 (순위 + 액션 바, 오른쪽 컬럼 있음)
     ├── profile/                # S11 ProfilePage(X, [상상|댓글|인용]) · EditProfileModal(커버·이미지·이름·소개) · FollowListPage(S17 팔로워·팔로잉)
     ├── notifications/          # S13 알림 [전체 | 댓글] (X)
     ├── settings/SettingsPage   # S14 비밀번호 변경
-    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab(기술 × 분야 · 사분면 · 기술 빈도 시계열 · 기술 활동 테이블) · TechPicker(공용 고르기 `GroupPicker` 묶음 → 항목 · 설정 줄 `PickSetting`, 기술 고르기 `TechPickSetting` = 신호 그룹 → 기술, 2026-11-15 군집 고르기에도 씀) · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeAiTabs, parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · 신호 색 `SIGNAL_COLOR` · CSV · 통계 캐시) · settings(그래프 설정: 기간 · 개수 · 항목 · 모양), Dashboard.module.css)
+    ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminNotesPage · AdminNoteEditPage(A2, 6-E) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab(기술 × 분야 · 사분면 · 기술 빈도 시계열 · 기술 활동 테이블) · TechPicker(공용 고르기 `GroupPicker` 묶음 → 항목 · 설정 줄 `PickSetting`, 기술 고르기 `TechPickSetting` = 신호 그룹 → 기술, 2026-11-15 군집 고르기에도 씀) · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeTab · AiTab(2026-11-17 한 파일 ShakeAiTabs 에서 탭마다 한 파일로 나눔), parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · 신호 색 `SIGNAL_COLOR` · CSV · 통계 캐시) · settings(그래프 설정: 기간 = `PeriodPicker` 달력 버튼(맨 위 기간도 같이 씀, 2026-11-17) · 개수 · 항목 · 모양), Dashboard.module.css)
     └── common/                 # PlaceholderPage(미구현 화면) · ProfileRoute(/@닉네임)
 ```
 

@@ -15,6 +15,7 @@ from app.domains.analytics.router import router as analytics_router
 from app.domains.auth.router import router as auth_router
 from app.domains.comments.router import router as comments_router
 from app.domains.imaginations.router import router as imaginations_router
+from app.domains.notes.router import router as notes_router
 from app.domains.notifications.router import router as notifications_router
 from app.domains.policy.router import router as policy_router
 from app.domains.prompts.router import router as prompts_router
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
         shake_router,
         admin_router,
         prompts_router,
+        notes_router,
         analytics_router,
     ):
         app.include_router(router)

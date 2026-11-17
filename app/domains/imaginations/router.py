@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.domains.auth.deps import current_user, optional_user
 from app.domains.imaginations import ai_jobs, service
-from app.domains.imaginations.schemas import FeedOut, ImaginationOut, QuoteIn
+from app.domains.imaginations.schemas import FeedNotesOut, FeedOut, ImaginationOut, QuoteIn
 from app.domains.shake.lineage import LineageOut, lineage
 from app.domains.similar.rerank import similar_for
 from app.domains.similar.schemas import SimilarOut
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api", tags=["imaginations"])
 DB = Annotated[Session, Depends(get_db)]
 
 
-@router.get("/feed", response_model=FeedOut)
+@router.get("/feed", response_model=FeedNotesOut)
 def feed(
     db: DB,
     user: Annotated[User | None, Depends(optional_user)],

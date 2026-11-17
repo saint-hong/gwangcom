@@ -24,7 +24,13 @@ from app.infrastructure.llm.providers.fake import FakeProvider
 from app.shared.time import kst_day_start
 
 Feature = Literal[
-    "tagging", "shake", "note_draft", "similar_rerank", "user_summary", "reaction_summary"
+    "tagging",
+    "shake",
+    "note_draft",
+    "note_summary",
+    "similar_rerank",
+    "user_summary",
+    "reaction_summary",
 ]
 
 _providers: dict[str, LlmProvider] = {}
@@ -37,6 +43,7 @@ def route(feature: Feature, settings: Settings | None = None) -> tuple[str, str]
         "tagging": "tagging",
         "shake": "shake",
         "note_draft": "note",
+        "note_summary": "note",  # Observe Note AI 요약 초안 (2026-11-17)
         "similar_rerank": "similar",
         "user_summary": "summary",
         "reaction_summary": "summary",  # 대시보드 반응 쏠림 요약 (2026-11-16) — 사용자 요약과 같은 설정

@@ -1,6 +1,8 @@
 """analytics.engagement — 반응 순위 · 질문형 비율 · 활동 시간 패턴 · Shake it · AI 사용량."""
 
 from collections import Counter, defaultdict
+from dataclasses import replace
+from datetime import datetime, timedelta
 from math import erf, sqrt
 from statistics import median
 
@@ -14,6 +16,7 @@ from app.domains.analytics.schemas import (
     AiFeatureRow,
     AiOut,
     EngagementOut,
+    MaterialRow,
     PromptRow,
     ShakeOut,
     TopPost,
@@ -27,7 +30,7 @@ from app.domains.users.models import User
 from app.infrastructure.core.config import get_settings
 from app.infrastructure.llm.models import LlmCall
 from app.infrastructure.llm.router import calls_today, route
-from app.shared.time import KST
+from app.shared.time import KST, now_utc
 
 TOP = 30
 # Thunder 분포 칸 (2026-11-16): 0 부터 실제 최댓값까지 하나씩(최소 0~5), 최댓값이 BIN_LAST 를 넘으면 마지막 칸 = "BIN_LAST+"
@@ -256,6 +259,43 @@ def engagement(db: Session, p: Period) -> EngagementOut:
 
 # ---------------------------------------------------------------- Shake it (놀이 영역 — 대중 상상 지표와 따로)
 
+SYNERGY_DAYS = 7  # 조합 시너지: 게시 후 같은 기간(최대 7일) 동안 받은 Thunder 로 비교
+
+
+def _synergy(
+    db: Session, blends: list, parents: dict, mat_info: dict
+) -> tuple[float | None, int, int]:
+    """조합 시너지 (2026-11-17 사용자 결정) — 혼합 글마다 자기 재료와 비교한 Thunder 차이의 평균.
+
+    - 차이 = 혼합 글이 받은 Thunder − 재료 글(평균)이 받은 Thunder
+    - 둘 다 "게시 후 같은 기간" 동안 받은 수: 기간 = min(7일, 혼합 글이 올라온 뒤 지난 시간).
+      재료가 먼저 올라와 Thunder 를 받을 시간이 더 길었던 치우침을 없앤다
+    - 비율이 아니라 차이: 재료 Thunder 0 으로 나누는 문제가 없고, 늘고 준 것이 공평하게 상쇄된다
+    - 돌려줌: (평균 차이, 재료보다 많이 받은 혼합 글 수, 비교한 혼합 글 수)
+    """
+    now = now_utc()
+    pairs = [(b, [m for m in parents.get(b.id, []) if m in mat_info]) for b in blends]
+    pairs = [(b, mats) for b, mats in pairs if mats]
+    if not pairs:
+        return None, 0, 0
+    ids = {b.id for b, _ in pairs} | {m for _, mats in pairs for m in mats}
+    got: dict[int, list[datetime]] = defaultdict(list)
+    for iid, at in db.execute(
+        select(Thunder.imagination_id, Thunder.created_at).where(Thunder.imagination_id.in_(ids))
+    ):
+        got[iid].append(at)
+
+    def within(iid: int, start: datetime, span: timedelta) -> int:
+        return sum(1 for t in got[iid] if start <= t < start + span)
+
+    diffs = []
+    for b, mats in pairs:
+        span = min(timedelta(days=SYNERGY_DAYS), now - b.created_at)
+        mine = within(b.id, b.created_at, span)
+        base = sum(within(m, mat_info[m][7], span) for m in mats) / len(mats)
+        diffs.append(mine - base)
+    return round(sum(diffs) / len(diffs), 2), sum(1 for d in diffs if d > 0), len(diffs)
+
 
 def shake(db: Session, p: Period) -> ShakeOut:
     start, end = p.start_utc, p.end_utc
@@ -316,14 +356,27 @@ def shake(db: Session, p: Period) -> ShakeOut:
                 Imagination.body,
                 Imagination.thunder_count,
                 Domain.name,
+                Domain.slug,
+                User.nickname,
+                Imagination.created_at,
             )
             .join(Domain, Domain.id == Imagination.domain_id)
+            .join(User, User.id == Imagination.author_id)
             .where(Imagination.id.in_(set(material_ids) or {0}))
         ).all()
     }
     used = Counter(material_ids)
+    # 재료 상상 표 (2026-11-17): 분야 · 작성자 · 게시일 · Thunder(지금까지) 칸
     materials = [
-        (mid, _title(mat_info[mid][1], mat_info[mid][2]), n)
+        MaterialRow(
+            id=mid,
+            title=_title(mat_info[mid][1], mat_info[mid][2]),
+            domain=mat_info[mid][5],
+            author=mat_info[mid][6],
+            created_at=mat_info[mid][7].astimezone(KST).date(),
+            uses=n,
+            thunders=mat_info[mid][3],
+        )
         for mid, n in used.most_common(20)
         if mid in mat_info
     ]
@@ -333,6 +386,7 @@ def shake(db: Session, p: Period) -> ShakeOut:
         if len(doms) == 2:
             pair_counter[(doms[0], doms[1])] += 1
     mat_thunders = [mat_info[m][3] for m in material_ids if m in mat_info]
+    synergy_diff, synergy_beat, synergy_n = _synergy(db, visible, parents, mat_info)
     return ShakeOut(
         period=period_out(p),
         attempts=attempts,
@@ -348,6 +402,9 @@ def shake(db: Session, p: Period) -> ShakeOut:
         domain_pairs=[(a, b, n) for (a, b), n in pair_counter.most_common(20)],
         materials=materials,
         depths=sorted(depths.items()),
+        synergy_diff=synergy_diff,
+        synergy_beat=synergy_beat,
+        synergy_n=synergy_n,
         selection_ms_median=int(median(ms)) if ms else None,
     )
 
@@ -360,6 +417,7 @@ FEATURES = [
     "similar_rerank",
     "user_summary",
     "reaction_summary",
+    "note_summary",
     "note_draft",
     "embedding",
 ]
@@ -424,6 +482,7 @@ def ai(db: Session, p: Period) -> AiOut:
             "similar_rerank",
             "user_summary",
             "reaction_summary",
+            "note_summary",
         ):
             prov, model = route(f)  # type: ignore[arg-type]
         else:
@@ -441,10 +500,18 @@ def ai(db: Session, p: Period) -> AiOut:
                 latency_ms_avg=int(a["lat"] / a["calls"]) if a and a["calls"] else 0,
             )
         )
+    # 기능별 호출 흐름은 긴 기간도 하루 칸으로 (2026-11-17 사용자 요청: 90일에서도 모든 날짜, 화면은 좌우 스크롤)
+    daily = replace(
+        p,
+        unit="day",
+        buckets=tuple(p.start + timedelta(days=i) for i in range(p.days)),
+    )
     return AiOut(
         period=period_out(p),
         features=features,
         series={f: series(p, by_feature_times[f]) for f in names},
+        daily_buckets=list(daily.buckets),
+        daily_series={f: series(daily, by_feature_times[f]) for f in names},
         cost_series=[round(c, 4) for c in cost],
         today_calls=calls_today(db),
         daily_limit=s.llm_daily_call_limit,

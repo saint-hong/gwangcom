@@ -947,3 +947,18 @@
   color: var(--color-text-tertiary);
   cursor: default;
 }
+
+/* A2 Observe Note 목록 (2026-11-17) */
+.toolbarEnd {
+  margin-left: auto;
+}
+
+.textLink {
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  text-decoration: none;
+}
+
+.textLink:hover {
+  text-decoration: underline;
+}

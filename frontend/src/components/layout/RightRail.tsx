@@ -5,6 +5,8 @@ import { api } from "../../api/client";
 import { Avatar, Button, ButtonLink } from "../../design-system";
 import { useAuth } from "../../hooks/useAuth";
 import { useDreamerCard } from "../../hooks/useDreamerCard";
+import { useNoteToc } from "../../hooks/useNoteToc";
+import { NoteToc } from "../note/NoteToc";
 import type { Dreamer, Imagination, Page, Topics } from "../../types/api";
 import { ShakeIcon } from "../actions/ShakeIcon";
 import { WaveIcon } from "../actions/WaveIcon";
@@ -18,7 +20,7 @@ import { SiteFooter } from "./SiteFooter";
 
 /**
  * 오른쪽 컬럼 (로그인 전·후 같음, 기획안 v9 4장)
- *   검색창 → (상세 화면) 이 상상의 Dreamer → 비슷한 상상(F23) → 이번 주 질문 → 인기 상상 1~5 → 추천 Dreamer 3명 → 추천 주제 → 푸터
+ *   검색창 → (Observe Note 상세) 목차 → (상세 화면) 이 상상의 Dreamer → 비슷한 상상(F23) → 이번 주 질문 → 인기 상상 1~5 → 추천 Dreamer 3명 → 추천 주제 → 푸터
  * 이번 주 질문은 /api/prompts 진행 중 첫 번째 (제목 옆 "(N개)" = 진행 중 수, 2026-11-13). 좁은 화면은 홈 피드 위 배너(PromptBanner)가 대신한다.
  */
 export function RightRail() {
@@ -42,6 +44,8 @@ export function RightRail() {
 
   const showCard = pathname.startsWith("/i/") && dreamer.card;
   const detailId = /^\/i\/(\d+)$/.exec(pathname)?.[1];
+  const toc = useNoteToc();
+  const showToc = /^\/notes\/\d+$/.test(pathname) && toc.length > 0;
   return (
     <div className={styles.rail}>
       <div className={styles.searchWrap}>
@@ -53,6 +57,8 @@ export function RightRail() {
       </div>
 
       <div className={styles.scroll}>
+        {/* Observe Note 상세: 목차를 맨 위에 (2026-11-17 사용자 결정, 다른 블록은 아래로) */}
+        {showToc ? <NoteToc items={toc} /> : null}
         {showCard && dreamer.card ? (
           <section className={styles.card}>
             <h2 className={styles.title}>이 상상의 Dreamer</h2>

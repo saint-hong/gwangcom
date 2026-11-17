@@ -1,0 +1,349 @@
+/* Observe Note 목록 · 상세 (Sprint 6-E, 2026-11-17) */
+.status {
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.eyebrow svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* 목록 카드 */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  color: inherit;
+  text-decoration: none;
+}
+
+.card:hover {
+  background: var(--color-surface-muted);
+}
+
+.cardTitle {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.cardLead {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.meta {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+/* 상세 */
+.article {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) 80px;
+}
+
+.draftBanner {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.title {
+  margin: 24px 0 0;
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.lead {
+  margin: 14px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.byline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.byline div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.byline strong {
+  font-size: var(--font-size-sm);
+}
+
+.byline span {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+
+.editLink {
+  color: var(--color-accent-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* 2026-11-17 X · h사 긴 글 검토 뒤 — 대표 이미지 · 반응 줄 · AI 요약 · 출처 · 다른 노트 */
+.cover {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  margin-top: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+.actionBar {
+  margin-top: 20px;
+  padding: 2px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.views {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.views svg,
+.iconBtn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.iconBtn {
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+}
+
+.summary {
+  margin-top: 20px;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+}
+
+.summaryHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.summaryHead svg {
+  width: 16px;
+  height: 16px;
+}
+
+.summaryHead svg:last-child {
+  margin-left: auto;
+}
+
+.summary ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  font-size: var(--font-size-md);
+  line-height: 1.75;
+}
+
+.summary li + li {
+  margin-top: 6px;
+}
+
+.inlineToc {
+  display: none;
+  margin-top: 24px;
+}
+
+@media (max-width: 1099px) {
+  .inlineToc {
+    display: block;
+  }
+}
+
+.bodyWrap {
+  margin-top: 36px;
+}
+
+.sources {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.sources h2,
+.others h2 {
+  margin: 0 0 12px;
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+.sources ol {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.sources a {
+  color: var(--color-accent-text);
+}
+
+.others {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.otherCard {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  color: inherit;
+  text-decoration: none;
+}
+
+.otherCard:hover strong {
+  color: var(--color-accent-text);
+}
+
+.otherCard img,
+.otherIcon {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.otherIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-muted);
+  color: var(--color-text-tertiary);
+}
+
+.otherText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.otherText strong {
+  font-size: var(--font-size-md);
+  line-height: 1.4;
+}
+
+.otherText span {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.otherText small {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-2xs);
+}
+
+.allLink {
+  display: inline-block;
+  margin-top: var(--space-3);
+  color: var(--color-accent-text);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+}
+
+/* 목록 카드 썸네일 */
+.cardRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.cardText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.thumb {
+  flex: 0 0 auto;
+  width: 132px;
+  height: 88px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}

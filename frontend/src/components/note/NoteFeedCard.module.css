@@ -1,0 +1,85 @@
+/* 홈 피드 속 Observe Note 카드 (2026-11-17) — 상상 카드와 같은 줄 · 여백, 운영자 노트임을 보라 표시로 */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.card:hover {
+  background: var(--color-surface-hover);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.waveLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: -2px 0 2px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.waveLine:hover {
+  text-decoration: underline;
+}
+
+.waveLine svg {
+  width: 16px;
+  height: 16px;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-accent-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.badge svg {
+  width: 15px;
+  height: 15px;
+}
+
+.date {
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.lead {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cover {
+  width: 100%;
+  max-height: 280px;
+  margin-top: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+}

@@ -11,7 +11,8 @@
 | Shake it 혼합 (F8) | anthropic | **Claude Haiku 5.5** | effort `low` | 10/10 성공 · 출력 검사 10/10 통과, 두 상상의 흔적이 살아 있고 엉뚱함 |
 | Observe Note 초안 (F14) | anthropic | Claude Haiku 5.5 (임시) | — | Sprint 6 에서 실측. 품질이 부족하면 상위 모델(Sonnet 5.5)을 기능별로 지정 |
 | 운영자 사용자 활동 요약 (A5, 2026-11-13) | anthropic | Claude Haiku 5.5 | effort `low`, 구조화 출력, `LLM_SUMMARY_*` | 활동 6칸 숫자 설명이라 가벼운 모델로 충분. 개발 서버 실측 3.6초. 같은 숫자면 다시 부르지 않음 |
-| 대시보드 반응 쏠림 요약 (A1, 2026-11-16) | anthropic | Claude Haiku 5.5 | `user_summary` 와 같은 설정(`LLM_SUMMARY_*`), 구조화 출력 | Thunder 분포 + 반응 상위 10개 설명이라 가벼운 모델로 충분. 같은 숫자면 다시 부르지 않음. 실측 전 (화면에서 확인) |
+| 대시보드 반응 쏠림 요약 (A1, 2026-11-16) | anthropic | Claude Haiku 5.5 | `user_summary` 와 같은 설정(`LLM_SUMMARY_*`), 구조화 출력 | Thunder 분포 + 반응 상위 10개 설명이라 가벼운 모델로 충분. 같은 숫자면 다시 부르지 않음. (2026-11-17 실측) 1번 입력 약 1,760 · 출력 약 200 토큰 · 약 $0.0003 · 3~4초. 모델이 실제 vs 예상 비교를 틀려서 서버가 칸마다 "많음 · 적음 · 비슷"을 계산해 넘김. 문장 길이 · 표현은 프롬프트 고도화 때 (v12 6-7) |
+| Observe Note AI 요약 (A2, 2026-11-17) | anthropic | Claude Haiku 5.5 | 노트 설정(`LLM_NOTE_*`), 구조화 출력(items 배열) · `prompts/v1/note_summary.md` | 운영자가 [AI로 요약 만들기]를 누를 때만 · 저장 안 함(운영자가 고쳐 노트와 함께 저장). 글에 없는 사실 · 평가 금지. 실측 전 |
 | 임베딩 · 비슷한 상상 (F23) | gemini | **gemini-embedding-001**, 768 차원 | taskType `SEMANTIC_SIMILARITY`, 직접 정규화 | 사용자 결정 (Gemini). 비슷한 쌍이 의미에 맞게 잡힘 |
 | 비슷한 상상 기준값 | — | `SIMILAR_THRESHOLD=0.85` 유지 | — | 아래 3장 분포 참고 |
 

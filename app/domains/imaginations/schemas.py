@@ -116,9 +116,24 @@ class ImaginationOut(BaseModel):
     prompt: PromptRef | None = None
 
 
+class FeedNote(BaseModel):
+    """목록에 섞는 Observe Note — after_id 상상 바로 뒤에 둔다 (None = 맨 앞). 2026-11-17
+    서재 북마크 탭(북마크한 노트) · 팔로잉 탭(팔로우한 사람이 Wave 한 노트 — waved_by)."""
+
+    after_id: int | None
+    note: "NoteCard"
+    waved_by: AuthorOut | None = None
+
+
 class FeedOut(BaseModel):
     items: list[ImaginationOut]
     next_cursor: str | None
+
+
+class FeedNotesOut(FeedOut):
+    """홈 피드 · 내 서재 — 팔로잉 탭 · 북마크 탭에서만 notes 를 채운다 (2026-11-17)."""
+
+    notes: list[FeedNote] = []
 
 
 class ReactionOut(BaseModel):
@@ -151,3 +166,8 @@ class CommentThreadOut(BaseModel):
 class CommentsOut(BaseModel):
     items: list[CommentThreadOut]
     next_cursor: str | None
+
+
+from app.domains.notes.schemas import NoteCard  # noqa: E402 — FeedNote 앞 참조 (순환 import 피함)
+
+FeedNote.model_rebuild()

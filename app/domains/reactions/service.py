@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session
 
 from app.domains.imaginations import crud as imagination_crud
 from app.domains.imaginations.models import Imagination, ImaginationView
-from app.domains.imaginations.schemas import FeedOut, ReactionOut
+from app.domains.imaginations.schemas import FeedNote, FeedNotesOut, FeedOut, ReactionOut
 from app.domains.imaginations.service import bump, counts_of, my_states, present
+from app.domains.notes import service as notes_service
 from app.domains.notifications.service import notify
 from app.domains.policy.service import get_effective_policy
 from app.domains.reactions.models import Bookmark, ReactionEvent, Thunder, Wave
@@ -93,7 +94,10 @@ def _my_blends(db: Session, user: User, cursor: str | None) -> FeedOut:
     return FeedOut(items=present(db, rows, user), next_cursor=next_cursor)
 
 
-def library(db: Session, user: User, tab: LibraryTab, cursor: str | None) -> FeedOut:
+NOTE_KIND = {"thunders": "thunder", "waves": "wave", "bookmarks": "bookmark"}
+
+
+def library(db: Session, user: User, tab: LibraryTab, cursor: str | None) -> FeedOut | FeedNotesOut:
     """서재 (F7). Thunder = 상상만, Wave · 북마크 = 상상 + 댓글, 최근 본 상상 = 최대 100개. 누른·본 순서.
 
     Wave 탭(2026-11-10 추가) — 프로필에서 Wave 탭을 빼고 서재로 옮겼다.
@@ -133,4 +137,22 @@ def library(db: Session, user: User, tab: LibraryTab, cursor: str | None) -> Fee
     has_more = len(rows) > LIBRARY_PAGE_SIZE
     rows = rows[:LIBRARY_PAGE_SIZE]
     next_cursor = encode_cursor(rows[-1][1], rows[-1][0].id) if has_more and rows else None
-    return FeedOut(items=present(db, [r[0] for r in rows], user), next_cursor=next_cursor)
+    out = FeedNotesOut(items=present(db, [r[0] for r in rows], user), next_cursor=next_cursor)
+    # Thunder · Wave · 북마크 탭에는 같은 반응을 한 Observe Note 도 함께 (2026-11-17)
+    if tab in NOTE_KIND:
+        out.notes = _reacted_notes(db, user, NOTE_KIND[tab], rows, cursor, has_more)
+    return out
+
+
+def _reacted_notes(
+    db: Session, user: User, kind: str, rows, cursor: str | None, has_more: bool
+) -> list[FeedNote]:
+    """반응한 Observe Note 를 상상 사이에 누른 시간 순서대로 섞는다 (2026-11-17 사용자 결정).
+    이 페이지가 덮는 시간 구간: 위 = 이전 페이지 끝(커서), 아래 = 이 페이지 마지막(다음 페이지가 있을 때만)."""
+    hi = decode_cursor(cursor)[0] if cursor else None
+    lo = rows[-1][1] if has_more and rows else None
+    times = [(img.id, t) for img, t in rows]
+    return [
+        FeedNote(after_id=notes_service.place_after(times, at), note=card)
+        for at, card in notes_service.reacted_between(db, user, kind, lo, hi)
+    ]

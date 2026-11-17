@@ -1,11 +1,15 @@
 """Sprint 6-D — 분석 대시보드 API (기획안 v11 F18 · A1)."""
 
+from datetime import timedelta
+
+import pytest
 from sqlalchemy import text
 
 from app.domains.analytics.period import make_period
 from app.domains.imaginations.models import Imagination
 from app.domains.tags.service import save_ai_tags
 from app.infrastructure.core.database import get_engine, get_sessionmaker
+from app.shared.time import KST, now_utc
 from tests.conftest import auth, signup
 from tests.test_admin_moderation import make_admin
 from tests.test_tags import write
@@ -97,6 +101,10 @@ def test_dashboard_numbers(client) -> None:
     ai = get("ai")
     assert {f["feature"] for f in ai["features"]} >= {"tagging", "shake", "embedding"}
     assert ai["daily_limit"] > 0
+    # 기능별 호출 흐름 (2026-11-17): 90일(주 칸)이어도 하루 칸 90개, 합계는 주 칸과 같음
+    ai90 = get("ai", "90d")
+    assert ai90["period"]["unit"] == "week" and len(ai90["daily_buckets"]) == 90
+    assert sum(ai90["daily_series"]["tagging"]) == sum(ai90["series"]["tagging"])
 
     # 전체 기간 · CSV 원자료
     assert get("overview", "all")["period"]["has_prev"] is False
@@ -147,6 +155,10 @@ def test_visits_and_activation(client) -> None:
     assert steps["answered"] == (0, 3) and steps["commented"] == (0, 3)
     posted = next(c for c in d["compare"] if c["key"] == "posted")
     assert (posted["yes_n"], posted["yes_kept"], posted["no_n"], posted["no_kept"]) == (1, 1, 1, 0)
+    # 2026-11-17 추가 비교: 상상 2개 이상 쓴 사람은 없음 → 판정 가능한 2명 모두 "1개 이하"
+    multi = next(c for c in d["compare"] if c["key"] == "posted_multi")
+    assert (multi["yes_n"], multi["no_n"], multi["no_kept"]) == (0, 2, 1)
+    assert any(c["key"] == "active_3days" for c in d["compare"])
     status = {u["nickname"]: u["status"] for u in d["users"]}
     assert status == {"early": "active", "idle": "not_started", "newbie": "not_started"}
     assert d["first_post_hours_median"] == 24.0
@@ -189,3 +201,43 @@ def test_thunder_histogram_normal_line() -> None:
     assert hist[-1] == ("15+", 1) and len(hist) == 16
     hist, normal, mean, med, sd = thunder_histogram([])
     assert len(hist) == 6 and sum(normal) == 0 and sd == 0
+
+
+def test_period_quick_and_custom_range() -> None:
+    """그래프 설정 달력 (2026-11-17): 빠른 선택 · 직접 고른 날짜 범위 · 잘못된 기간."""
+    from app.domains.analytics.period import PeriodError
+
+    today = now_utc().astimezone(KST).date()
+    p = make_period("10d", None)
+    assert (p.start, p.end, len(p.buckets), p.has_prev) == (
+        today - timedelta(days=9),
+        today,
+        10,
+        True,
+    )
+    assert make_period("180d", None).unit == "week"
+
+    s, e = today - timedelta(days=40), today - timedelta(days=11)
+    c = make_period(f"{s}~{e}", None)
+    assert (c.start, c.end, c.unit, len(c.buckets), c.has_prev) == (s, e, "day", 30, True)
+    assert make_period(f"{s}~{today + timedelta(days=5)}", None).end == today  # 미래 끝은 오늘로
+    for bad in (
+        f"{e}~{s}",
+        "2026-02-30~2026-03-01",
+        f"{today + timedelta(days=1)}~{today + timedelta(days=2)}",
+        "5d",
+    ):
+        with pytest.raises(PeriodError):
+            make_period(bad, None)
+
+
+def test_period_api_validation(client) -> None:
+    admin = signup(client, "boss")
+    make_admin(admin)
+    ok = client.get("/api/admin/analytics/shake?period=2026-01-01~2026-01-31", headers=auth(admin))
+    assert ok.status_code == 200 and ok.json()["period"]["end"] == "2026-01-31"
+    for bad in ("5d", "2026-01-31~2026-01-01"):
+        assert (
+            client.get(f"/api/admin/analytics/shake?period={bad}", headers=auth(admin)).status_code
+            == 422
+        )

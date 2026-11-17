@@ -4,10 +4,13 @@ import { WaveIcon } from "../../components/actions/WaveIcon";
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ImaginationCard } from "../../components/card/ImaginationCard";
+import { NoteFeedCard } from "../../components/note/NoteFeedCard";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { Button, Tabs } from "../../design-system";
 import { useAuth } from "../../hooks/useAuth";
 import { usePaged } from "../../hooks/usePaged";
+import { placeNotes } from "../../hooks/useFeedNotes";
+import type { FeedNote, Imagination, Page } from "../../types/api";
 import styles from "../home/HomePage.module.css";
 
 type LibraryTab = "thunders" | "waves" | "shakes" | "bookmarks" | "recent";
@@ -22,7 +25,7 @@ const TABS: { value: LibraryTab; label: string }[] = [
 ];
 
 const EMPTY = {
-  bookmarks: { icon: Bookmark, title: "아직 북마크한 상상이 없어요", text: "다시 보고 싶은 상상과 댓글에서 북마크를 눌러 보세요." },
+  bookmarks: { icon: Bookmark, title: "아직 북마크한 글이 없어요", text: "다시 보고 싶은 상상 · 댓글 · Observe Note 에서 북마크를 눌러 보세요." },
   thunders: { icon: Zap, title: "아직 Thunder 를 누른 상상이 없어요", text: "번뜩이는 상상을 만나면 번개를 눌러 보세요." },
   waves: {
     icon: WaveIcon,
@@ -39,7 +42,7 @@ const EMPTY = {
 
 /**
  * S12 내 서재 (h사 내 서재 구조, 기획안 v9 F7)
- *   [←] 서재 + 탭 [Thunder | Wave | Shake it | 북마크 | 최근 본 상상] (고른 폭)
+ *   [←] 서재 + 탭 [Thunder | Wave | Shake it | 북마크 | 최근 본 상상] (고른 폭) — 북마크에는 Observe Note 도 함께 (2026-11-17)
  * Thunder = 상상만, Wave · 북마크 = 상상 + 댓글, Shake it = 내가 섞어 만든 혼합 글(Sprint 5 전에는 빈 목록). 본인만 볼 수 있다.
  */
 export function LibraryPage() {
@@ -47,7 +50,13 @@ export function LibraryPage() {
   const [params, setParams] = useSearchParams();
   const raw = params.get("tab");
   const tab: LibraryTab = TABS.some((t) => t.value === raw) ? (raw as LibraryTab) : "thunders";
-  const list = usePaged(user ? `/api/me/library?tab=${tab}` : null, user ? `u${user.id}` : "guest", "서재를 불러오지 못했어요.");
+  // 북마크 탭: 북마크한 Observe Note 도 누른 순서대로 함께 (2026-11-17 사용자 결정 — 탭을 따로 두지 않음)
+  const list = usePaged<Imagination, Page<Imagination> & { notes?: FeedNote[] }, FeedNote>(
+    user ? `/api/me/library?tab=${tab}` : null,
+    user ? `u${user.id}` : "guest",
+    "서재를 불러오지 못했어요.",
+    (page) => page.notes ?? [],
+  );
 
   const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -91,9 +100,13 @@ export function LibraryPage() {
         />
       </div>
 
-      {list.items.map((item) => (
-        <ImaginationCard key={item.id} data={item} onDeleted={list.remove} />
-      ))}
+      {placeNotes(list.items, list.extra).map((r) =>
+        r.kind === "note" ? (
+          <NoteFeedCard key={`note-${r.note.id}`} note={r.note} />
+        ) : (
+          <ImaginationCard key={r.item.id} data={r.item} onDeleted={list.remove} />
+        ),
+      )}
 
       {list.error ? (
         <div className={styles.status}>
@@ -104,7 +117,7 @@ export function LibraryPage() {
         </div>
       ) : list.loading || user === undefined ? (
         <p className={styles.status}>불러오는 중…</p>
-      ) : list.done && list.items.length === 0 ? (
+      ) : list.done && list.items.length === 0 && list.extra.length === 0 ? (
         <section className={styles.empty}>
           <EmptyIcon className={styles.emptyIcon} aria-hidden="true" strokeWidth={1.6} />
           <h1 className={styles.emptyTitle}>{empty.title}</h1>

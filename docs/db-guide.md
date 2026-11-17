@@ -152,6 +152,16 @@
 - **분석: 2026-11-13 부터 쌓인다.** 그 전 날짜의 "들어왔나"는 글 · 반응 같은 활동으로만 알 수 있다
 - 쓰는 곳: 대시보드 신규 Dreamer 활성화(다시 들어옴 · 계속 활동 · 마지막 활동)
 
+## 테이블 추가 (Sprint 6-E, 마이그레이션 0014 · 0015, 2026-11-17)
+
+| 테이블 | 내용 |
+|---|---|
+| notes | Observe Note (운영자 글). number(처음 발행 때 #N, unique) · title · lead · body_md(Markdown) · cover_url · summary(AI 요약, 운영자 확정, 줄마다 한 항목) · sources(출처, 줄마다 하나) · status draft/published · published_at · view_count |
+| note_reactions | 노트 Thunder · Wave · 북마크. 기본 키 (user_id, note_id, kind) · via_user_id(Wave 확산 경로, 상상 waves 와 같은 뜻) |
+
+- 노트 반응은 상상 반응 테이블(thunders · waves · bookmarks · reaction_events)과 **따로** 쌓인다. "대중 상상" 지표에 섞이지 않는다
+- 조회수는 운영자가 아닌 사람이 상세를 열 때마다 1 (같은 사람도 다시 셈)
+
 ## 띄우기 · 끄기
 ```bash
 docker compose up -d postgres memgraph   # 띄우기

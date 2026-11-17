@@ -2,6 +2,8 @@
 
 from sqlalchemy import select, text
 
+from app.domains.analytics.engagement import shake as shake_stats
+from app.domains.analytics.period import make_period
 from app.domains.imaginations.models import Imagination
 from app.domains.shake import service as shake_service
 from app.domains.shake.models import ImaginationParent, ShakeAttempt
@@ -66,6 +68,21 @@ def test_shake_publishes_blend(client) -> None:
         assert (att.status, att.published_id, att.selection_ms) == ("published", blend["id"], 1500)
         assert set(att.ai_elements) == {"tech", "desire"}
         assert db.get(Imagination, blend["id"]).tagging_status == "done"  # 혼합 글도 태깅
+
+        # 대시보드 Shake it 탭 재료 상상 표 (2026-11-17): 분야 · 작성자 · 게시일 · 쓰임 · Thunder
+        stats = shake_stats(db, make_period("7d", None))
+        mats = {m.id: m for m in stats.materials}
+        assert mats[theirs["id"]].domain == "mobility" and mats[theirs["id"]].author == "alice"
+        assert mats[mine["id"]].author == "bob" and mats[mine["id"]].uses == 1
+        assert mats[mine["id"]].thunders == 0 and mats[mine["id"]].created_at
+        # 조합 시너지 (2026-11-17): 재료 둘 다 0, 혼합 글 0 → 차이 0, 재료보다 많이 받은 글 없음
+        assert (stats.synergy_diff, stats.synergy_beat, stats.synergy_n) == (0, 0, 1)
+
+    # 혼합 글이 Thunder 1개 받으면 → 재료(평균 0)보다 +1
+    client.post(f"/api/imaginations/{blend['id']}/thunder", headers=auth(a))
+    with get_sessionmaker()() as db:
+        stats = shake_stats(db, make_period("7d", None))
+        assert (stats.synergy_diff, stats.synergy_beat, stats.synergy_n) == (1, 1, 1)
 
 
 def test_shake_rules(client) -> None:

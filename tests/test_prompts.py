@@ -174,3 +174,19 @@ def test_public_prompt_list(client) -> None:
     assert [p["id"] for p in data["ended"]] == [old["id"]] and data["ended"][0]["open"] is False
     assert data["ended_total"] == 1
     assert client.get("/api/prompts/current").json()["id"] == data["open"][0]["id"]
+
+
+def test_scheduled_prompt_opens_after_start(client, monkeypatch) -> None:
+    """예정 질문은 시작 시각이 지나면 따로 켜지 않아도 저절로 "지금 질문"이 된다 (6-E 때 추가)."""
+    from app.domains.prompts import service as prompt_service
+
+    admin = signup(client, "boss")
+    make_admin(admin)
+    later = make_prompt(client, admin, "다음 질문", start=2, end=9)
+    assert later["status"] == "scheduled"
+    assert client.get("/api/prompts/current").json() is None
+
+    future = now_utc() + timedelta(days=3)
+    monkeypatch.setattr(prompt_service, "now_utc", lambda: future)
+    cur = client.get("/api/prompts/current").json()
+    assert cur is not None and cur["id"] == later["id"] and cur["open"] is True

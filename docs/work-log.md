@@ -2,6 +2,45 @@
 
 최신 작업이 위에 온다.
 
+## 2026-11-17 — 탈퇴 규칙 · Sprint 6-E Observe Note (확정된 것만)
+
+| 무엇을 (사용자) | 어떻게 |
+|---|---|
+| 탈퇴 기능은 규칙만 정하고 넘어감 | v12 7장: 설정에서 탈퇴 · 3개월 보관 뒤 삭제 · 원자료 엑셀 · 재가입 10일 뒤 · 운영자 강제 탈퇴. 지금 스프린트는 탈퇴 여부를 고려하지 않음, 노트는 탈퇴와 상관없이 그대로 |
+| Observe Note = 운영자가 쓴 인사이트 글을 보여 주는 화면, 만들기 · 고치기 · 지우기 | 새 도메인 `app/domains/notes/`(models · schemas · service · router), 마이그레이션 0014 `notes`. 번호 #N 은 처음 발행 때. 화면 `/notes` · `/notes/:id` · 운영자 `/admin/notes` · `/admin/notes/:id` |
+| 제목 · 소제목 · 단락 구분, 이미지 + 캡션이 잘 보이게 | `components/note/NoteBody`(react-markdown + remark-gfm 새로 씀, ## · ### 소제목 id, 이미지 → 그림 + 캡션, 원본 HTML 안 그림) |
+| X · h사 긴 글 검토 뒤: 목차 오른쪽 패널 · X 처럼 단순한 머리(분야 알약 없음) · 대표 이미지 · AI 요약 · 출처 칸 · 다른 노트 | `NoteToc`(오른쪽 패널 맨 위, 두 단계 · 지금 읽는 곳 · `hooks/useNoteToc` 로 RightRail 에 전달) · notes 에 cover_url · summary · sources · view_count · 새 LLM 기능 `note_summary`(`prompts/v1/note_summary.md`, POST /api/admin/notes/summary — 저장 안 함, 운영자가 고쳐 저장) |
+| 노트에도 Thunder · Wave · 북마크 | 마이그레이션 0015 `note_reactions`(+ via_user_id) · POST/DELETE /api/notes/{id}/{kind} · 응답에 counts · my · actions(로그인 전 login_required) · `components/note/NoteActions`(상상 액션 바와 같은 아이콘 · 색) |
+| 홈 추천 · 최신 탭 11 · 21 · 31 … 번째에 노트, 무작위 · 겹치지 않게 | `hooks/useFeedNotes`(최대 50개 한 번 섞어 자리마다 하나, 다 쓰면 멈춤) · `NoteFeedCard`(왼쪽 보라 띠) |
+| 서재: 노트 북마크는 북마크 탭에 함께, Thunder · Wave 도 각 탭에 | 서버가 페이지마다 노트 자리(after_id = 이 상상 바로 뒤)를 정해 보냄 — `notes.service.reacted_between` · `place_after`, 응답 `FeedNotesOut.notes` |
+| 노트 Wave → 팔로워 팔로잉 탭에 보이게 (확산 경로 포함) | 팔로잉 피드에 팔로우한 사람이 Wave 한 노트(가장 최근 한 번) + "○○님이 Wave함", 그 카드에서 Wave 하면 via 기록 |
+
+- 내가 정한 기본값: 임시 저장 글은 운영자만 · 조회수는 운영자가 아닌 사람이 열 때마다 1 · 노트 이미지 10MB · 분야를 고른 피드에는 노트 안 끼움 · 서재 Shake it · 최근 본 상상 탭엔 노트 없음 (자세히는 `summary_imagine/논의요약_1117.txt` 3장)
+- 검증: `uv run pytest` 88 passed (노트 만들기 · 발행 · 고치기 · 지우기 · 이미지 · AI 요약(fake) · 출처 정리 · 조회수 · 반응 · 서재 섞기 · 팔로잉 Wave · via, 예정 질문이 시작 뒤 저절로 보이는지) · ruff check · format 통과 · `npm run build` 통과. 화면은 사용자 브라우저 확인. note_summary 실제 호출은 아직 안 봄
+- 문제와 조치: ① 테스트 사이에 notes 를 비우지 않아 실패 → `tests/conftest.py` 정리 목록에 notes 추가 ② 0014 · 0015 를 오늘 고쳐 다시 만들면서 테스트 DB 가 옛 구조로 남음 → 테스트 DB 를 0013 · 0014 로 내렸다가 다시 올림 (개발 DB 의 note_reactions 도 한 번 비워짐) ③ 공용 피드 응답에 notes 를 넣어 기존 피드 테스트 실패 → 서재 · 피드 전용 `FeedNotesOut` 으로 분리, 팔로잉 테스트에 notes 칸 반영 ④ 빌드 경고: 파일 묶음 500KB 넘음 (Markdown 라이브러리) — 나중에 노트 화면만 따로 불러오기
+- 반영목록: v12 7장(탈퇴) · 8장(Observe Note)
+
+---
+
+## 2026-11-17 — Shake it · AI 사용량 탭 다듬기 + 기간 달력 (확정된 것만)
+
+| 무엇을 (사용자) | 어떻게 |
+|---|---|
+| 첫주 활동 Yes vs No 에 "상상 2개 이상" · "3일 이상 활동" 비교 추가 (작은 글씨 씀 · 안 씀은 그대로, 질문별 1인당 답 수 칸은 안 넣음) | `activation.py` 비교 항목 2개 — ① 단계표와 같은 기준(`flags`) |
+| 반응 쏠림 "AI가 분석했어요"를 실제 Claude 로 확인 | 첫 문장이 Thunder 분포를 거꾸로 읽음(오른쪽 꼬리 "적다") → 서버가 칸마다 "예상보다 많음 · 적음 · 비슷"을 계산해 넘기고 프롬프트에 그 표시만 따르게 (`reaction_summary.py` `_compare` · `prompts/v1/reaction_summary.md`). 프롬프트 고도화는 추후 (v12 6-7) |
+| Shake it · AI 사용량 탭이 한 파일에 있는 이유? → 다른 탭처럼 나누기 | `ShakeAiTabs.tsx` → `ShakeTab.tsx` · `AiTab.tsx` (코드 그대로 옮김, 줄 단위 비교로 확인) |
+| Shake it 탭 상자 묶기 | ① 혼합 흐름 · 시도 결과 / ② 많이 섞인 분야 쌍 / ③ 재료로 많이 쓰인 상상(표: # · 상상 · 분야 · 작성자 · 게시일 · 재료로 쓰임 · Thunder, 쓰임 순으로 N개 고른 뒤 다른 칸은 순서만). 분야 쌍 · 재료는 설정 따로(사용자). 서버 `MaterialRow`. 맨 위 안내 문구 바꿈 · "재료 고르는 시간" 카드 · 혼합 글 Thunder 평균의 "재료 글" 작은 글씨 뺌 |
+| 조합 시너지 = 혼합 글마다 재료와 비교한 평균으로 | `engagement._synergy`: 혼합 글마다 (혼합 글 − 재료 평균) Thunder, 둘 다 게시 후 같은 기간(최대 7일) → 평균 · 재료보다 많이 받은 글 수. 사용자 안(글마다 비율 → 평균)은 재료 0 나누기 · 비율 평균 치우침 때문에 "차이"로 (사용자 승인). 카드 툴팁에 계산 방식(`KpiTile title`) |
+| AI 사용량: 90일에서 날짜가 다 안 보임 · 좌우 스크롤 | 62일 넘으면 주 칸이라 생긴 일 → 서버 `daily_buckets · daily_series`(이 그래프만 하루 칸), `TimeChart minBand`(칸 최소 폭, 넘치면 좌우 스크롤 + 모든 날짜). 표 이름 · 설명 바꿈, 기능 · 제공자 칸 툴팁 |
+| 기간 고르기가 불편 → 달력 버튼 + 빠른 선택 (그래프 설정, 이어서 화면 맨 위도) | `settings.tsx` `PeriodPicker`(빠른 선택 7 · 10 · 20일 · 1 · 3 · 6개월 · 전체 + 한 달 달력 시작일 → 종료일 [적용], 맨 위는 떠서 펼침 · 바깥 클릭 · Esc 닫기). 서버 `period.py`: 새 빠른 키 · `YYYY-MM-DD~YYYY-MM-DD` · `PeriodError` → 422 `invalid_period`. 주소 `?period=` 에 그대로 남음 |
+
+- 내가 정한 기본값: 1개월 = 30일 · 3개월 = 90일 · 6개월 = 180일 · 직접 고른 기간도 앞 같은 길이와 비교 · 지난 기간을 골라도 신규 Dreamer 상태 · 조합 시너지는 오늘 기준 · ② 분야 쌍 상자는 넓게
+- 검증: `uv run pytest` 82 passed (재료 표 칸 · 조합 시너지 · 하루 칸 · 기간 빠른 선택/직접 범위/잘못된 기간 · API 422 테스트 추가) · ruff check · format 통과 · `npm run build` 통과 · 서버에서 7개 탭 API 를 10d · 180d · 직접 범위로 불러 200 확인. 화면은 사용자 브라우저 확인
+- 문제와 조치: 반응 쏠림 AI 결과 보관이 서버 메모리라 서버가 다시 켜지면 한 번 다시 부름(1번 약 $0.0003) → 배포 때 DB 보관 검토 (v12 6-7)
+- 반영목록: v12 6-7 (비교 항목 · AI 프롬프트 고도화 · 사용자 상세 AI 분석 내용 추후 논의) · 6-8
+
+---
+
 ## 2026-11-16 — 하루 마감 점검
 
 - 하루 요약: `summary_imagine/논의요약_1116.txt` (반응 · 질문 · 활동 탭 다듬기 · 다음 = Shake it · AI 사용량 탭 → 탈퇴 논의 → 6-E)

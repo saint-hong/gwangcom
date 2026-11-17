@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styles from "./Charts.module.css";
 import { Legend, TipRow, Tooltip, fmt, localPoint, niceTicks, shortDay, useWidth, type Tip } from "./core";
 
@@ -20,6 +20,7 @@ export function TimeChart({
   events = [],
   format = (n: number) => fmt(n),
   legend = true,
+  minBand,
 }: {
   buckets: string[];
   unit: "day" | "week";
@@ -29,11 +30,15 @@ export function TimeChart({
   events?: ChartEvent[];
   format?: (n: number) => string;
   legend?: boolean;
+  /** 칸 하나의 최소 너비(px). 주면 칸이 많을 때 그래프를 넓히고 좌우 스크롤 + 모든 날짜 표시 (2026-11-17 AI 사용량) */
+  minBand?: number;
 }) {
-  const [ref, width] = useWidth<HTMLDivElement>();
+  const [ref, boxWidth] = useWidth<HTMLDivElement>();
+  const plotRef = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [tip, setTip] = useState<Tip>(null);
   const n = buckets.length;
+  const width = minBand && boxWidth > 0 ? Math.max(boxWidth, M.left + M.right + n * minBand) : boxWidth;
   const w = Math.max(0, width - M.left - M.right);
   const h = height - M.top - M.bottom;
   const stacked = mode !== "line";
@@ -44,7 +49,7 @@ export function TimeChart({
   const band = n > 0 ? w / n : w;
   const x = (i: number) => M.left + band * i + band / 2;
   const y = (v: number) => M.top + h - (v / top) * h;
-  const labelEvery = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(w / 64))));
+  const labelEvery = minBand ? 1 : Math.max(1, Math.ceil(n / Math.max(2, Math.floor(w / 64))));
   const eventIdx = new Map<number, string[]>();
   for (const e of events) {
     const i = buckets.findIndex((b, k) => b <= e.date && (k === n - 1 || buckets[k + 1] > e.date));
@@ -61,7 +66,7 @@ export function TimeChart({
   });
 
   const onMove = (e: React.MouseEvent) => {
-    const p = localPoint(e, ref.current);
+    const p = localPoint(e, plotRef.current);
     const i = Math.min(n - 1, Math.max(0, Math.floor((p.x - M.left) / band)));
     if (p.x < M.left - 4 || p.x > M.left + w + 4 || n === 0) {
       setHover(null);
@@ -96,80 +101,82 @@ export function TimeChart({
   return (
     <div className={styles.chartBox}>
       {legend && series.length > 1 ? <Legend items={series.map((s) => ({ label: s.label, color: s.color, shape: mode === "line" ? "line" : "dot" }))} /> : null}
-      <div ref={ref} className={styles.plot} style={{ height }} onMouseMove={onMove} onMouseLeave={() => (setHover(null), setTip(null))}>
-        {width > 0 ? (
-          <svg width={width} height={height} role="img" aria-label={`${series.map((s) => s.label).join(" · ")} 시간 흐름`}>
-            {ticks.map((t) => (
-              <g key={t}>
-                <line x1={M.left} x2={M.left + w} y1={y(t)} y2={y(t)} className={styles.grid} />
-                <text x={M.left - 6} y={y(t)} className={styles.axisY}>
-                  {format(t)}
-                </text>
-              </g>
-            ))}
-            {buckets.map((b, i) =>
-              i % labelEvery === 0 ? (
-                <text key={b} x={x(i)} y={height - 8} className={styles.axisX}>
-                  {shortDay(b)}
-                </text>
-              ) : null,
-            )}
-            {[...eventIdx.keys()].map((i) => (
-              <g key={`ev${i}`}>
-                <line x1={x(i)} x2={x(i)} y1={M.top} y2={M.top + h} className={styles.eventLine} />
-                <text x={x(i)} y={M.top - 3} className={styles.eventMark}>
-                  ▼
-                </text>
-              </g>
-            ))}
-            {mode === "stack"
-              ? layers.map(({ s, lo, hi }) => (
-                  <path
-                    key={s.key}
-                    d={`M${hi.map((v, i) => `${x(i)},${y(v)}`).join("L")}L${lo
-                      .map((v, i) => `${x(i)},${y(v)}`)
-                      .reverse()
-                      .join("L")}Z`}
-                    fill={s.color}
-                    className={styles.area}
-                  />
-                ))
-              : null}
-            {mode === "bar"
-              ? layers.map(({ s, lo, hi }) =>
-                  hi.map((v, i) =>
-                    v > lo[i] ? (
-                      <rect
-                        key={`${s.key}${i}`}
-                        x={x(i) - Math.min(18, band * 0.7) / 2}
-                        width={Math.min(18, band * 0.7)}
-                        y={y(v) + 1}
-                        height={Math.max(1, y(lo[i]) - y(v) - 1)}
-                        fill={s.color}
-                        opacity={hover === null || hover === i ? 1 : 0.55}
-                      />
-                    ) : null,
-                  ),
-                )
-              : null}
-            {mode === "line"
-              ? series.map((s) => (
-                  <polyline key={s.key} points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} fill="none" stroke={s.color} className={styles.line} />
-                ))
-              : null}
-            {hover !== null ? (
-              <g>
-                <line x1={x(hover)} x2={x(hover)} y1={M.top} y2={M.top + h} className={styles.crosshair} />
-                {mode !== "bar"
-                  ? (mode === "stack" ? layers.map((l) => ({ s: l.s, v: l.hi[hover] })) : series.map((s) => ({ s, v: s.values[hover] ?? 0 }))).map(({ s, v }) => (
-                      <circle key={s.key} cx={x(hover)} cy={y(v)} r={4} fill={s.color} className={styles.dot} />
-                    ))
-                  : null}
-              </g>
-            ) : null}
-          </svg>
-        ) : null}
-        <Tooltip tip={tip} width={width} />
+      <div ref={ref} className={minBand ? styles.plotScroll : undefined} tabIndex={minBand ? 0 : undefined}>
+        <div ref={plotRef} className={styles.plot} style={{ height, width: minBand && width ? width : undefined }} onMouseMove={onMove} onMouseLeave={() => (setHover(null), setTip(null))}>
+          {width > 0 ? (
+            <svg width={width} height={height} role="img" aria-label={`${series.map((s) => s.label).join(" · ")} 시간 흐름`}>
+              {ticks.map((t) => (
+                <g key={t}>
+                  <line x1={M.left} x2={M.left + w} y1={y(t)} y2={y(t)} className={styles.grid} />
+                  <text x={M.left - 6} y={y(t)} className={styles.axisY}>
+                    {format(t)}
+                  </text>
+                </g>
+              ))}
+              {buckets.map((b, i) =>
+                i % labelEvery === 0 ? (
+                  <text key={b} x={x(i)} y={height - 8} className={styles.axisX}>
+                    {shortDay(b)}
+                  </text>
+                ) : null,
+              )}
+              {[...eventIdx.keys()].map((i) => (
+                <g key={`ev${i}`}>
+                  <line x1={x(i)} x2={x(i)} y1={M.top} y2={M.top + h} className={styles.eventLine} />
+                  <text x={x(i)} y={M.top - 3} className={styles.eventMark}>
+                    ▼
+                  </text>
+                </g>
+              ))}
+              {mode === "stack"
+                ? layers.map(({ s, lo, hi }) => (
+                    <path
+                      key={s.key}
+                      d={`M${hi.map((v, i) => `${x(i)},${y(v)}`).join("L")}L${lo
+                        .map((v, i) => `${x(i)},${y(v)}`)
+                        .reverse()
+                        .join("L")}Z`}
+                      fill={s.color}
+                      className={styles.area}
+                    />
+                  ))
+                : null}
+              {mode === "bar"
+                ? layers.map(({ s, lo, hi }) =>
+                    hi.map((v, i) =>
+                      v > lo[i] ? (
+                        <rect
+                          key={`${s.key}${i}`}
+                          x={x(i) - Math.min(18, band * 0.7) / 2}
+                          width={Math.min(18, band * 0.7)}
+                          y={y(v) + 1}
+                          height={Math.max(1, y(lo[i]) - y(v) - 1)}
+                          fill={s.color}
+                          opacity={hover === null || hover === i ? 1 : 0.55}
+                        />
+                      ) : null,
+                    ),
+                  )
+                : null}
+              {mode === "line"
+                ? series.map((s) => (
+                    <polyline key={s.key} points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} fill="none" stroke={s.color} className={styles.line} />
+                  ))
+                : null}
+              {hover !== null ? (
+                <g>
+                  <line x1={x(hover)} x2={x(hover)} y1={M.top} y2={M.top + h} className={styles.crosshair} />
+                  {mode !== "bar"
+                    ? (mode === "stack" ? layers.map((l) => ({ s: l.s, v: l.hi[hover] })) : series.map((s) => ({ s, v: s.values[hover] ?? 0 }))).map(({ s, v }) => (
+                        <circle key={s.key} cx={x(hover)} cy={y(v)} r={4} fill={s.color} className={styles.dot} />
+                      ))
+                    : null}
+                </g>
+              ) : null}
+            </svg>
+          ) : null}
+          <Tooltip tip={tip} width={width} />
+        </div>
       </div>
     </div>
   );

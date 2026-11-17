@@ -316,7 +316,8 @@ export type AdminPrompt = {
 export type AdminPrompts = { items: AdminPrompt[]; total: number; page: number; size: number };
 
 // ---------------------------------------------------------------- 6-D 분석 대시보드 (/api/admin/analytics/*)
-export type PeriodKey = "7d" | "30d" | "90d" | "all";
+/** 빠른 선택(7d · 10d · 20d · 30d · 90d · 180d · all) 또는 직접 고른 범위 "YYYY-MM-DD~YYYY-MM-DD" (2026-11-17) */
+export type PeriodKey = string;
 export type AnPeriod = { key: PeriodKey; start: string; end: string; unit: "day" | "week"; buckets: string[]; has_prev: boolean };
 export type AnEvent = { date: string; label: string; kind: "prompt" };
 export type Kpi = { key: string; label: string; value: number; prev: number | null; unit: string; series: number[] };
@@ -404,14 +405,19 @@ export type AnShake = {
   blend_thunder_avg: number;
   material_thunder_avg: number;
   domain_pairs: [string, string, number][];
-  materials: [number, string, number][];
+  materials: { id: number; title: string; domain: string; author: string; created_at: string; uses: number; thunders: number }[];
   depths: [number, number][];
   selection_ms_median: number | null;
+  synergy_diff: number | null;
+  synergy_beat: number;
+  synergy_n: number;
 };
 export type AnAi = {
   period: AnPeriod;
   features: { feature: string; provider: string; model: string; calls: number; failed: number; input_tokens: number; output_tokens: number; cost_usd: number; latency_ms_avg: number }[];
   series: Record<string, number[]>;
+  daily_buckets: string[];
+  daily_series: Record<string, number[]>;
   cost_series: number[];
   today_calls: number;
   daily_limit: number;
@@ -473,3 +479,35 @@ export type AnSummary = {
   withdrawn: number | null;
   today: Record<"imaginations" | "comments" | "quotes" | "thunders" | "waves" | "blends" | "users", number>;
 };
+
+// ---- Observe Note (Sprint 6-E, 2026-11-17) — 운영자가 쓰는 인사이트 글
+export type NoteStatus = "draft" | "published";
+export type NoteCard = {
+  id: number;
+  number: number | null; // 처음 발행할 때 #N
+  title: string;
+  lead: string | null;
+  status: NoteStatus;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  edited: boolean; // 발행 뒤 고침
+  cover_url: string | null; // 대표 이미지
+  view_count: number;
+  // 반응 (2026-11-17) — 버튼을 쓸 수 있는지는 서버가 정한다
+  counts: { thunders: number; waves: number; bookmarks: number };
+  my: { thunder: boolean; wave: boolean; bookmark: boolean };
+  actions: { thunder: NoteActionState; wave: NoteActionState; bookmark: NoteActionState } | null;
+};
+export type NoteActionState = { allowed: boolean; reason: "login_required" | null; remaining: number | null };
+export type NoteReaction = { my: NoteCard["my"]; counts: NoteCard["counts"] };
+export type Note = NoteCard & {
+  body_md: string;
+  summary: string | null; // AI 요약 (운영자가 확정, 줄마다 한 항목)
+  sources: string | null; // 출처 (줄마다 하나)
+  author: { id: number; nickname: string; avatar_url: string | null } | null;
+};
+export type NoteList = { items: NoteCard[]; next_cursor: string | null };
+export type AdminNotes = { items: NoteCard[]; total: number; page: number; size: number };
+/** 목록에 섞는 노트 — after_id 상상 바로 뒤 (null = 맨 앞). 서재 북마크 탭 · 팔로잉 탭(waved_by = Wave 한 사람) */
+export type FeedNote = { after_id: number | null; note: NoteCard; waved_by?: Author | null };

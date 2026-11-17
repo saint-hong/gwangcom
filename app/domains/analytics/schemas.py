@@ -190,6 +190,18 @@ class EngagementOut(BaseModel):
     events: list[EventMark]
 
 
+class MaterialRow(BaseModel):
+    """재료로 많이 쓰인 상상 (2026-11-17 표로 바꿈)."""
+
+    id: int
+    title: str
+    domain: str  # 분야 slug
+    author: str
+    created_at: date  # 게시일 (한국 날짜)
+    uses: int  # 이 기간 혼합 글에 재료로 쓰인 수
+    thunders: int  # 재료 상상이 지금까지 받은 Thunder
+
+
 class ShakeOut(BaseModel):
     period: PeriodOut
     attempts: dict[str, int]  # 상태별 시도 수
@@ -199,8 +211,12 @@ class ShakeOut(BaseModel):
     blend_thunder_avg: float
     material_thunder_avg: float  # 재료 글 Thunder 평균 (조합 시너지 비교)
     domain_pairs: list[tuple[str, str, int]]
-    materials: list[tuple[int, str, int]]  # (상상 id, 제목, 재료로 쓰인 수)
+    materials: list[MaterialRow]  # 재료로 많이 쓰인 순 상위 20
     depths: list[tuple[int, int]]  # (계보 깊이, 혼합 글 수)
+    # 조합 시너지 (2026-11-17): 혼합 글마다 자기 재료와 게시 후 같은 기간(최대 7일) Thunder 차이 → 평균
+    synergy_diff: float | None = None
+    synergy_beat: int = 0  # 재료보다 많이 받은 혼합 글 수
+    synergy_n: int = 0  # 비교한 혼합 글 수
     selection_ms_median: int | None
 
 
@@ -220,6 +236,8 @@ class AiOut(BaseModel):
     period: PeriodOut
     features: list[AiFeatureRow]
     series: dict[str, list[int]]  # 기능별 칸마다 호출 수
+    daily_buckets: list[date] = []  # 하루 칸 (기간이 길어도 하루, 2026-11-17)
+    daily_series: dict[str, list[int]] = {}  # 기능별 하루마다 호출 수
     cost_series: list[float]
     today_calls: int
     daily_limit: int

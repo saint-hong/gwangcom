@@ -7,6 +7,8 @@ import { FollowListRoute, ProfileRoute } from "./pages/common/ProfileRoute";
 import { AdminImaginationsPage } from "./pages/admin/AdminImaginationsPage";
 import { AdminDashboardPage } from "./pages/admin/dashboard/AdminDashboardPage";
 import { AdminLayout } from "./pages/admin/AdminLayout";
+import { AdminNoteEditPage } from "./pages/admin/AdminNoteEditPage";
+import { AdminNotesPage } from "./pages/admin/AdminNotesPage";
 import { AdminPolicyPage } from "./pages/admin/AdminPolicyPage";
 import { AdminPromptsPage } from "./pages/admin/AdminPromptsPage";
 import { AdminUserDetailPage } from "./pages/admin/AdminUserDetailPage";
@@ -18,6 +20,8 @@ import { TopicsPage } from "./pages/topics/TopicsPage";
 import { HomePage } from "./pages/home/HomePage";
 import { ImaginationPage } from "./pages/imagination/ImaginationPage";
 import { LibraryPage } from "./pages/library/LibraryPage";
+import { NoteListPage } from "./pages/notes/NoteListPage";
+import { NotePage } from "./pages/notes/NotePage";
 import { NotificationsPage } from "./pages/notifications/NotificationsPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 import { TrendingPage } from "./pages/trending/TrendingPage";
@@ -49,8 +53,8 @@ export function App() {
         <Route path="tags/:name" element={<TagPage />} />
         <Route path="prompts" element={<PromptListPage />} />
         <Route path="prompts/:id" element={<PromptPage />} />
-        <Route path="notes" element={<PlaceholderPage title="Observe Note" sprint="Sprint 6" />} />
-        <Route path="notes/:id" element={<PlaceholderPage title="Observe Note" sprint="Sprint 6" />} />
+        <Route path="notes" element={<NoteListPage />} />
+        <Route path="notes/:id" element={<NotePage />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
         <Route path="me/activity" element={<PlaceholderPage title="내 활동" sprint="Sprint 8" />} />
@@ -58,7 +62,8 @@ export function App() {
         <Route path="feedback" element={<PlaceholderPage title="피드백 및 문의하기" sprint="Sprint 9" />} />
         <Route path="admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboardPage />} />
-          <Route path="notes/*" element={<PlaceholderPage title="Observe Note 작성" sprint="Sprint 6-E" />} />
+          <Route path="notes" element={<AdminNotesPage />} />
+          <Route path="notes/:id" element={<AdminNoteEditPage />} />
           <Route path="prompts" element={<AdminPromptsPage />} />
           <Route path="imaginations" element={<AdminImaginationsPage />} />
           <Route path="users" element={<AdminUsersPage />} />

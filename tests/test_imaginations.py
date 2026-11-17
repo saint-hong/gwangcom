@@ -139,6 +139,7 @@ def test_feed_cursor_and_domain_filter(client) -> None:
     assert client.get("/api/feed", params={"tab": "following"}).json() == {
         "items": [],
         "next_cursor": None,
+        "notes": [],  # 팔로우한 사람이 Wave 한 Observe Note (2026-11-17)
     }
     assert client.get("/api/feed", params={"cursor": "broken"}).status_code == 400
 
