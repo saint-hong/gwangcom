@@ -27,13 +27,10 @@ def text_of(item: Imagination) -> str:
     return "\n".join(p for p in parts if p).strip()
 
 
-def embed_items(db: Session, items: list[Imagination]) -> int:
-    """items 를 임베딩해 저장(있으면 갈아 끼움). 호출 한 번을 llm_calls(feature=embedding)에 남긴다."""
-    if not items:
-        return 0
+def embed_texts(db: Session, texts: list[str]) -> list[list[float]]:
+    """글 여러 개 → 벡터. 호출 한 번을 llm_calls(feature=embedding)에 남긴다 (상상 임베딩 · 검색어 임베딩 공용)."""
     s = get_settings()
     embedder = get_embedder()
-    texts = [text_of(i) for i in items]
     started = time.perf_counter()
     row = LlmCall(feature="embedding", provider=embedder.name, model=embedder.model)
     try:
@@ -54,6 +51,15 @@ def embed_items(db: Session, items: list[Imagination]) -> int:
     )
     row.latency_ms = int((time.perf_counter() - started) * 1000)
     db.add(row)
+    return vectors
+
+
+def embed_items(db: Session, items: list[Imagination]) -> int:
+    """items 를 임베딩해 저장(있으면 갈아 끼움)."""
+    if not items:
+        return 0
+    embedder = get_embedder()
+    vectors = embed_texts(db, [text_of(i) for i in items])
     for item, vec in zip(items, vectors, strict=True):
         stmt = insert(ImaginationEmbedding).values(
             imagination_id=item.id, model=embedder.model, embedding=vec

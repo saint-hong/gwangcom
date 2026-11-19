@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.domains.admin import policy_admin, service, user_summary
@@ -20,6 +20,7 @@ from app.domains.admin.schemas import (
     UserSummaryOut,
 )
 from app.domains.auth.deps import admin_user
+from app.domains.graph.build import sync_imagination
 from app.domains.imaginations.schemas import ImaginationOut
 from app.domains.users.models import User
 from app.infrastructure.core.database import get_db
@@ -59,9 +60,13 @@ def list_imaginations(
 
 
 @router.patch("/imaginations/{imagination_id}", response_model=AdminItemOut)
-def moderate_imagination(imagination_id: int, data: ModerateIn, db: DB, admin: Admin):
+def moderate_imagination(
+    imagination_id: int, data: ModerateIn, db: DB, admin: Admin, tasks: BackgroundTasks
+):
     """숨기기 · 다시 보이기 (F19). 이력은 moderation_logs 에 남는다."""
-    return service.moderate(db, admin, imagination_id, data.status, data.reason)
+    out = service.moderate(db, admin, imagination_id, data.status, data.reason)
+    tasks.add_task(sync_imagination, imagination_id)  # 탐색기 그래프 반영 (Sprint 7)
+    return out
 
 
 @router.get("/imaginations/{imagination_id}", response_model=ImaginationOut)

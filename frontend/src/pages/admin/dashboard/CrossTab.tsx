@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Bars, Delta, Heatmap } from "../../../components/charts/basic";
 import { DOMAIN_COLORS, TipRow, fmt } from "../../../components/charts/core";
 import { Network, Sankey, clusterColor, type SankeyNode } from "../../../components/charts/relations";
@@ -6,7 +7,7 @@ import { SortHeader, type Sort, type SortOption } from "../SortHeader";
 import adminStyles from "../Admin.module.css";
 import type { AnCross, AnTech, PeriodKey } from "../../../types/api";
 import styles from "./Dashboard.module.css";
-import { Loading, Panel, downloadCsv, useAnalytics, ScrollBox } from "./parts";
+import { Loading, Panel, downloadCsv, explorePath, useAnalytics, ScrollBox } from "./parts";
 import { ChoiceSetting, PeriodSetting, periodOf, useSettings, type PanelPeriod } from "./settings";
 import { GroupPicker, PickSetting, TechPickSetting, type PickGroup, type PickItem } from "./TechPicker";
 
@@ -459,8 +460,10 @@ function DesiresPanel({ page }: { page: PeriodKey }) {
           <tbody>
             {desires.map((d) => (
               <tr key={d.label}>
-                <td className={styles.left} title={d.label}>
-                  {d.label}
+                <td className={styles.left} title={`${d.label} — 탐색기에서 파고들기`}>
+                  <Link className={styles.exploreLink} to={explorePath("desire", d.label, periodOf(page, st.v.period))}>
+                    {d.label}
+                  </Link>
                 </td>
                 <td className={styles.num}>{d.count}</td>
                 <td className={styles.num}>{d.prev === null ? <span className={styles.muted}>—</span> : <Delta cur={d.count} prev={d.prev} />}</td>

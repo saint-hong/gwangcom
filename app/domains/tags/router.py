@@ -1,11 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.domains.auth.deps import current_user, optional_user
+from app.domains.graph.build import sync_imagination
 from app.domains.imaginations.schemas import ImaginationOut, TagsIn
 from app.domains.tags import browse
 from app.domains.tags.models import Domain
@@ -34,10 +35,16 @@ DB = Annotated[Session, Depends(get_db)]
 
 @router.put("/imaginations/{imagination_id}/tags", response_model=ImaginationOut)
 def put_tags(
-    imagination_id: int, data: TagsIn, db: DB, user: Annotated[User, Depends(current_user)]
+    imagination_id: int,
+    data: TagsIn,
+    db: DB,
+    tasks: BackgroundTasks,
+    user: Annotated[User, Depends(current_user)],
 ):
     """작성자 기술 태그 편집 (목록 전체를 보낸다). 지운 태그는 기록으로 남는다 (5-D)."""
-    return browse.set_tech_tags(db, user, imagination_id, data.tech)
+    out = browse.set_tech_tags(db, user, imagination_id, data.tech)
+    tasks.add_task(sync_imagination, imagination_id)  # 탐색기 그래프 반영 (Sprint 7)
+    return out
 
 
 @router.get("/topics", response_model=browse.TopicsOut)

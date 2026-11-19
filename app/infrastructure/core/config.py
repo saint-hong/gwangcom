@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     # ── Memgraph (Sprint 7) ──
     graph_enabled: bool = True
     graph_uri: str = "bolt://localhost:7687"
+    graph_user: str = ""
+    graph_password: SecretStr | None = None
+    graph_timeout_seconds: float = 3  # 연결 · 질의 대기 (꺼져 있을 때 오래 기다리지 않게)
 
     # ── LLM (Sprint 4, 기획안 9-1장) — 서비스 코드는 기능 이름(tagging · shake · note_draft)만 넘긴다 ──
     llm_provider: Literal["anthropic", "fake"] = "fake"
@@ -82,6 +85,15 @@ class Settings(BaseSettings):
     similar_threshold: float = 0.85  # 참고값: 리랭킹(5-C) 뒤로는 화면 필터로 쓰지 않는다
     similar_candidates: int = 20  # 리랭킹 1단계: 벡터로 가져올 후보 수
     similar_show: int = 5  # 상세 화면에 보여 줄 수
+
+    # ── 검색 (Sprint 7 — 홈 검색: 글자 일치 + 뜻 검색) ──
+    search_meaning: bool = True  # False 면 글자 일치만 (임베딩을 부르지 않음)
+    search_meaning_candidates: int = 30  # 뜻 검색으로 가져올 후보 수
+    # 2026-11-19 실측(gemini-embedding-001, 상상 579개): 관련 있는 검색어는 1위 0.81~0.89, 관련 없는 말은 1위 0.77 이하
+    search_min_score: float = 0.8  # 이 점수(코사인 유사도) 이상만 "뜻이 비슷한 상상"으로 보여 준다
+    search_score_margin: float = (
+        0.03  # 그리고 1위 점수에서 이만큼 안쪽인 것만 (점수가 천천히 떨어져서)
+    )
 
     @model_validator(mode="after")
     def _check_keys(self) -> "Settings":

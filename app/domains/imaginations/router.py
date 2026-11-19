@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Query, Uplo
 from sqlalchemy.orm import Session
 
 from app.domains.auth.deps import current_user, optional_user
+from app.domains.graph.build import sync_imagination
 from app.domains.imaginations import ai_jobs, service
 from app.domains.imaginations.schemas import FeedNotesOut, FeedOut, ImaginationOut, QuoteIn
 from app.domains.shake.lineage import LineageOut, lineage
@@ -96,9 +97,15 @@ def get_imagination(
 
 
 @router.delete("/imaginations/{imagination_id}", status_code=204)
-def delete_imagination(imagination_id: int, db: DB, user: Annotated[User, Depends(current_user)]):
+def delete_imagination(
+    imagination_id: int,
+    db: DB,
+    tasks: BackgroundTasks,
+    user: Annotated[User, Depends(current_user)],
+):
     """내 상상 삭제 (수정은 할 수 없고 삭제만 가능 — 기획안 F2)."""
     service.delete(db, user, imagination_id)
+    tasks.add_task(sync_imagination, imagination_id)  # 탐색기 그래프에서도 뺀다 (Sprint 7)
 
 
 @router.get("/imaginations/{imagination_id}/similar", response_model=SimilarOut)

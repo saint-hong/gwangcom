@@ -1,4 +1,4 @@
-import { Moon, SquarePen, Sun } from "lucide-react";
+import { Moon, Search, SquarePen, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { SERVICE_NAME } from "../../brand";
 import { IconButton } from "../../design-system";
@@ -9,7 +9,7 @@ import styles from "./MobileTopBar.module.css";
 
 type Props = { theme: Theme; onToggleTheme: () => void };
 
-/** 모바일(700px 미만) 상단 바 — 로고 · 다크 모드 · (로그인 후) 상상하기 / (로그인 전) 가입하기 */
+/** 모바일(700px 미만) 상단 바 — 로고 · 검색 · 다크 모드 · (로그인 후) 상상하기 / (로그인 전) 가입하기 */
 export function MobileTopBar({ theme, onToggleTheme }: Props) {
   const navigate = useNavigate();
   const { user, openAuth } = useAuth();
@@ -19,6 +19,7 @@ export function MobileTopBar({ theme, onToggleTheme }: Props) {
         <ImagineLogo />
       </Link>
       <div className={styles.actions}>
+        <IconButton icon={Search} label="검색" onClick={() => navigate("/search")} />
         <IconButton
           icon={theme === "dark" ? Sun : Moon}
           label={theme === "dark" ? "라이트 모드" : "다크 모드"}

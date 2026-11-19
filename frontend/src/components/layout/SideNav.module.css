@@ -76,12 +76,6 @@
   box-sizing: border-box;
 }
 
-.moreIcon {
-  border: 1.8px solid currentColor;
-  border-radius: 50%;
-  padding: 2px;
-}
-
 .auth {
   display: flex;
   flex-direction: column;

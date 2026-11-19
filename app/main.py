@@ -14,12 +14,14 @@ from app.domains.admin.router import router as admin_router
 from app.domains.analytics.router import router as analytics_router
 from app.domains.auth.router import router as auth_router
 from app.domains.comments.router import router as comments_router
+from app.domains.graph.router import router as graph_router
 from app.domains.imaginations.router import router as imaginations_router
 from app.domains.notes.router import router as notes_router
 from app.domains.notifications.router import router as notifications_router
 from app.domains.policy.router import router as policy_router
 from app.domains.prompts.router import router as prompts_router
 from app.domains.reactions.router import router as reactions_router
+from app.domains.search.router import router as search_router
 from app.domains.shake.router import router as shake_router
 from app.domains.tags.router import router as domains_router
 from app.domains.users.router import router as users_router
@@ -76,6 +78,8 @@ def create_app() -> FastAPI:
         prompts_router,
         notes_router,
         analytics_router,
+        search_router,
+        graph_router,
     ):
         app.include_router(router)
     # 업로드 이미지 (로컬 디스크). 개발 중에는 프론트(Vite)가 /uploads 를 백엔드로 넘긴다.

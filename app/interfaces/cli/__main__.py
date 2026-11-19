@@ -205,6 +205,25 @@ def similar_all_cmd(args: argparse.Namespace) -> int:
         print(
             "벡터만 저장된 글은 AI 호출이 실패했거나 하루 한도에 걸린 글이에요. 나중에 다시 실행하세요."
         )
+    print("탐색기에 반영하려면 graph-build 를 실행하세요 (또는 탐색기 [그래프 다시 만들기]).")
+    return 0
+
+
+def graph_build_cmd(args: argparse.Namespace) -> int:
+    from app.domains.graph.build import full_build
+    from app.infrastructure.graph import GraphUnavailable
+
+    with get_sessionmaker()() as db:
+        try:
+            snap = full_build(db)
+        except GraphUnavailable as e:
+            print(f"그래프를 만들지 못했어요: {e}", file=sys.stderr)
+            print("docker compose up -d memgraph 를 확인하세요.", file=sys.stderr)
+            return 1
+    print(
+        f"Memgraph 다시 만들기: 상상 {len(snap.items)} · Dreamer {len(snap.users)} · 태그 {len(snap.tags)} · "
+        f"태그 연결 {len(snap.has_tag)} · 비슷한 상상 연결 {len(snap.similar)} · Shake it 재료 {len(snap.blended)} · 인용 {len(snap.quotes)}"
+    )
     return 0
 
 
@@ -257,6 +276,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--force", action="store_true")
     p.set_defaults(func=similar_all_cmd)
+
+    p = sub.add_parser(
+        "graph-build",
+        help="Memgraph 그래프 전체 다시 만들기 (PostgreSQL 에서, 여러 번 실행해도 같은 결과)",
+    )
+    p.set_defaults(func=graph_build_cmd)
 
     p = sub.add_parser(
         "ai-eval", help="모델 실측 (태깅 · Shake · 유사도) — 실제 API 를 호출해 비용이 든다"

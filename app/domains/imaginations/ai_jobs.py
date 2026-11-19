@@ -5,6 +5,7 @@
   - 태깅: 원본 · 인용 · 혼합 → 실패하면 CLI tag-all 로 다시
   - 임베딩: 원본 · 인용 (비슷한 상상 대상) → 실패하면 CLI embed-all 로 다시
   - 비슷한 상상(리랭킹, 5-C): 임베딩 다음에 이 글의 목록을 계산 → 실패하면 CLI similar-all 로 다시
+  - 탐색기 그래프(Memgraph, Sprint 7): 마지막에 이 글을 반영 → 실패하면 CLI graph-build 로 다시
     (다른 글의 목록은 새 글을 모른다 → similar-all 을 주기적으로 돌린다)
 """
 
@@ -32,16 +33,22 @@ def after_post(item_id: int) -> None:
                 db.rollback()
                 log.exception("태깅 실패: imagination %s", item_id)
         if item.kind in EMBED_KINDS:
+            embedded = True
             try:
                 embed_items(db, [item])
             except Exception:  # noqa: BLE001
                 db.rollback()
                 log.exception("임베딩 실패: imagination %s", item_id)
-                return
-            try:
-                from app.domains.similar.rerank import compute_similar
+                embedded = False
+            if embedded:
+                try:
+                    from app.domains.similar.rerank import compute_similar
 
-                compute_similar(db, item)
-            except Exception:  # noqa: BLE001
-                db.rollback()
-                log.exception("비슷한 상상 계산 실패: imagination %s", item_id)
+                    compute_similar(db, item)
+                except Exception:  # noqa: BLE001
+                    db.rollback()
+                    log.exception("비슷한 상상 계산 실패: imagination %s", item_id)
+    # 탐색기 그래프(Memgraph)에 반영 — 태그 · 비슷한 상상까지 끝난 뒤 (Sprint 7). 실패해도 글은 그대로
+    from app.domains.graph.build import sync_imagination
+
+    sync_imagination(item_id)

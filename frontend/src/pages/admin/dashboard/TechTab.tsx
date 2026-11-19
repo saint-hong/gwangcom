@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Heatmap, Sparkline } from "../../../components/charts/basic";
 import { Legend, TipRow, fmt, shortDay } from "../../../components/charts/core";
 import { TimeChart } from "../../../components/charts/TimeChart";
@@ -7,7 +8,7 @@ import { SortHeader, type Sort, type SortOption } from "../SortHeader";
 import adminStyles from "../Admin.module.css";
 import type { AnTech, PeriodKey, TechSignal } from "../../../types/api";
 import styles from "./Dashboard.module.css";
-import { DOMAIN_NAME, Loading, Panel, SIGNAL, SIGNAL_COLOR, SignalBadge, downloadCsv, pct, useAnalytics, ScrollBox } from "./parts";
+import { DOMAIN_NAME, Loading, Panel, SIGNAL, SIGNAL_COLOR, SignalBadge, downloadCsv, explorePath, pct, useAnalytics, ScrollBox } from "./parts";
 import { ChoiceSetting, PeriodSetting, periodOf, useSettings, type PanelPeriod } from "./settings";
 import { TechPickSetting } from "./TechPicker";
 
@@ -395,8 +396,10 @@ function TechTable({ page }: { page: PeriodKey }) {
           <tbody>
             {rows.map((t) => (
               <tr key={t.tag_id}>
-                <td className={styles.left} title={`#${t.label}`}>
-                  #{t.label}
+                <td className={styles.left} title={`#${t.label} — 탐색기에서 파고들기`}>
+                  <Link className={styles.exploreLink} to={explorePath("tech", t.label, periodOf(page, st.v.period))}>
+                    #{t.label}
+                  </Link>
                 </td>
                 {/* 분야 = 이 기간에 이 기술이 가장 많이 나온 분야 (2026-11-14 색 점 대신) */}
                 <td title={`가장 많이 나온 분야: ${DOMAIN_NAME[t.domain]}`}>{DOMAIN_NAME[t.domain] ?? t.domain}</td>

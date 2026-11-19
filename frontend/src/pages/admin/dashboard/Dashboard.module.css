@@ -1025,3 +1025,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* 표의 기술 · 욕망 이름 → 탐색기 파고들기 (Sprint 7-B). 평소에는 글자 그대로, 마우스를 올리면 밑줄 */
+.exploreLink {
+  color: inherit;
+}
+
+.exploreLink:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}

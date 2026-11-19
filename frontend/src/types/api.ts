@@ -155,6 +155,17 @@ export type Notification = {
 /** 팔로워 · 팔로잉 목록 한 줄 (버튼은 보는 사람 기준) */
 export type FollowUser = { author: Author; bio: string | null; following: boolean; follows_me: boolean };
 
+/** 검색 (Sprint 7 홈 검색, GET /api/search/*) — 상상은 글자가 맞는 것이 먼저, 그 뒤 뜻이 비슷한 것(meaning_ids) */
+export type SearchImaginations = Page<Imagination> & { query: string; total: number; meaning_ids: number[] };
+/** items = 이름이 검색어와 겹치는 주제 · related = 상상 검색 결과에 많이 쓰인 주제 (이름은 안 맞아도 가까운 주제) */
+export type SearchTopics = {
+  query: string;
+  total: number;
+  items: (TagRef & { count: number })[];
+  related: (TagRef & { count: number })[];
+};
+export type SearchDreamers = Page<FollowUser & { id: number }> & { query: string; total: number };
+
 /** 비슷한 상상 (GET /api/imaginations/{id}/similar, F23) — rerank = AI 가 고름 · vector = 글 모양 순서 · tags = 같은 분야 · 태그 · none = 대상 아님 */
 export type SimilarResult = {
   items: { item: Imagination; score: number | null; reason: string | null }[];
@@ -511,3 +522,44 @@ export type NoteList = { items: NoteCard[]; next_cursor: string | null };
 export type AdminNotes = { items: NoteCard[]; total: number; page: number; size: number };
 /** 목록에 섞는 노트 — after_id 상상 바로 뒤 (null = 맨 앞). 서재 북마크 탭 · 팔로잉 탭(waved_by = Wave 한 사람) */
 export type FeedNote = { after_id: number | null; note: NoteCard; waved_by?: Author | null };
+
+/** 상상 네트워크 탐색기 (Sprint 7-B, /api/admin/graph/*) — 점 id: "i:12" 상상 · "u:5" Dreamer · "t:tech:드론" 주제 · "t:desire:…" 욕망 */
+export type GNodeKind = "imagination" | "dreamer" | "tech" | "desire";
+export type GNode = { id: string; kind: GNodeKind; label: string; sub: string | null; size: number; domain: string | null; blend: boolean };
+export type GEdge = { source: string; target: string; kind: "wrote" | "has_tag" | "similar" | "blended" | "quotes" | "with" | "uses"; weight: number; reason: string | null };
+export type GraphExpand = { center: GNode; nodes: GNode[]; edges: GEdge[]; more: Record<string, number> };
+export type BundleTag = { name: string; label: string; count: number };
+/** 경향 다발 (2026-11-19) — 서로 다른 Dreamer 의 비슷한 상상 묶음 + 특징 · 흐름 · 신호. 이름 = 핵심 주제 × 핵심 욕망 (계산) */
+export type Bundle = {
+  key: string;
+  name: string;
+  size: number;
+  dreamers: number;
+  first_at: string;
+  last_at: string;
+  recent: number;
+  earlier: number;
+  share_growth: number | null;
+  trend: number;
+  signal: TechSignal["signal"];
+  series: number[];
+  techs: BundleTag[];
+  desires: BundleTag[];
+  domains: BundleTag[];
+  reasons: string[];
+  members: { id: number; title: string; excerpt: string; author: string; author_id: number; domain: string | null; created_at: string; thunders: number }[];
+};
+export type GraphBundles = { bundles: Bundle[]; linked: number; buckets: string[]; unit: "day" | "week" };
+export type GraphHit = { id: string; kind: GNodeKind; label: string; sub: string | null };
+export type GraphBuild = { at: string; status: string; nodes: number | null; edges: number | null; error: string | null };
+export type GraphStatus = {
+  enabled: boolean;
+  connected: boolean;
+  nodes: number | null;
+  edges: number | null;
+  last_build: GraphBuild | null;
+  last_error: GraphBuild | null;
+  similar_rerank: number;
+  similar_vector: number;
+  similar_target: number;
+};

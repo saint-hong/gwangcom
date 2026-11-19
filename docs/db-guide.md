@@ -152,6 +152,26 @@
 - **분석: 2026-11-13 부터 쌓인다.** 그 전 날짜의 "들어왔나"는 글 · 반응 같은 활동으로만 알 수 있다
 - 쓰는 곳: 대시보드 신규 Dreamer 활성화(다시 들어옴 · 계속 활동 · 마지막 활동)
 
+## 테이블 추가 (Sprint 7 탐색기, 마이그레이션 0017, 2026-11-19)
+
+| 테이블 | 내용 |
+|---|---|
+| graph_sync_logs | Memgraph 반영 기록. kind(full_build · event) · target_id(event: 상상 id) · status(success · failed) · nodes · edges · error. 전체 다시 만들기는 모두, 글 하나 반영은 실패만 남긴다 |
+
+- **Memgraph 는 PostgreSQL 의 복사본**이다. 언제든 `uv run python -m app.interfaces.cli graph-build`(또는 탐색기 [그래프 다시 만들기])로 지우고 다시 만든다. Memgraph 에서 데이터를 고치지 않는다
+- `seed-demo` · `similar-all` 뒤에는 `graph-build` 를 돌려야 탐색기에 보인다 (새 글 · 태그 편집 · 삭제 · 숨김은 저절로 반영)
+- 테스트는 Memgraph 를 쓰지 않는다 (`GRAPH_ENABLED=false`) — Memgraph 는 DB 가 하나라 테스트가 개발 그래프를 지울 수 있어서
+
+## 테이블 추가 (Sprint 7 홈 검색, 마이그레이션 0016, 2026-11-19)
+
+| 테이블 | 내용 |
+|---|---|
+| search_logs | 검색 기록. user_id(로그인하지 않은 방문자는 null, 사용자를 지워도 기록은 남음) · query(입력 그대로) · norm(띄어쓰기 없앰 · 영문 소문자 — 묶어 셀 때) · tab(imaginations · topics · dreamers) · result_count · meaning_count(뜻으로만 찾은 상상 수) · created_at |
+
+- 검색 결과 첫 페이지를 볼 때마다 한 줄 쌓인다 (다음 페이지는 남기지 않음). 개발 화면은 React StrictMode 때문에 같은 검색이 두 줄씩 남을 수 있다
+- `result_count = 0` 인 줄 = 사람들이 찾았지만 없던 것
+- 뜻 검색은 `imagination_embeddings` 가 있어야 한다. `seed-demo` 는 임베딩을 만들지 않으므로 샘플 데이터에서 뜻 검색을 보려면 `embed-all` 을 돌린다 (유료 API)
+
 ## 테이블 추가 (Sprint 6-E, 마이그레이션 0014 · 0015, 2026-11-17)
 
 | 테이블 | 내용 |

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import { useAuth, type AuthMode } from "./hooks/useAuth";
@@ -23,10 +23,14 @@ import { LibraryPage } from "./pages/library/LibraryPage";
 import { NoteListPage } from "./pages/notes/NoteListPage";
 import { NotePage } from "./pages/notes/NotePage";
 import { NotificationsPage } from "./pages/notifications/NotificationsPage";
+import { SearchPage } from "./pages/search/SearchPage";
 import { SettingsPage } from "./pages/settings/SettingsPage";
 import { TrendingPage } from "./pages/trending/TrendingPage";
 import { LineagePage } from "./pages/lineage/LineagePage";
 import { WritePage } from "./pages/write/WritePage";
+
+// 탐색기는 그래프 라이브러리(sigma)가 커서 이 화면을 열 때만 불러온다 (Sprint 7-B)
+const AdminGraphPage = lazy(() => import("./pages/admin/graph/AdminGraphPage").then((m) => ({ default: m.AdminGraphPage })));
 
 /** /login · /signup — 홈 위에 로그인·가입 모달을 띄운다 (기획안 v9 S2) */
 function AuthRoute({ mode }: { mode: AuthMode }) {
@@ -53,6 +57,7 @@ export function App() {
         <Route path="tags/:name" element={<TagPage />} />
         <Route path="prompts" element={<PromptListPage />} />
         <Route path="prompts/:id" element={<PromptPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="notes" element={<NoteListPage />} />
         <Route path="notes/:id" element={<NotePage />} />
         <Route path="library" element={<LibraryPage />} />
@@ -69,7 +74,14 @@ export function App() {
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="users/:id" element={<AdminUserDetailPage />} />
           <Route path="policy" element={<AdminPolicyPage />} />
-          <Route path="graph" element={<PlaceholderPage title="상상 네트워크 탐색기" sprint="Sprint 7" />} />
+          <Route
+            path="graph"
+            element={
+              <Suspense fallback={<p style={{ padding: 24 }}>불러오는 중…</p>}>
+                <AdminGraphPage />
+              </Suspense>
+            }
+          />
           <Route path="*" element={<PlaceholderPage title="운영자 화면" sprint="Sprint 6" description="없는 운영자 화면이에요." />} />
         </Route>
         <Route path=":handle" element={<ProfileRoute />} />

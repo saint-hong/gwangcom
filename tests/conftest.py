@@ -23,6 +23,8 @@ os.environ["LLM_PROVIDER"] = "fake"
 for _f in ("TAGGING", "SHAKE", "NOTE", "SIMILAR"):
     os.environ[f"LLM_{_f}_PROVIDER"] = ""
 os.environ["EMBEDDING_PROVIDER"] = "fake"
+# 테스트는 개발용 Memgraph 를 건드리지 않는다 (Memgraph 는 DB 가 하나라 지우면 개발 그래프가 사라진다)
+os.environ["GRAPH_ENABLED"] = "false"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -52,6 +54,10 @@ def db_clean(database_ready: bool):
         conn.execute(text("DELETE FROM llm_calls"))
         conn.execute(text("DELETE FROM imaginations"))
         conn.execute(text("DELETE FROM prompts"))
+        conn.execute(text("DELETE FROM search_logs"))
+        conn.execute(
+            text("DELETE FROM graph_sync_logs")
+        )  # 사용자는 SET NULL 이라 따로 지움 (Sprint 7)
         conn.execute(text("DELETE FROM notes"))  # 작성자는 SET NULL 이라 따로 지움 (6-E)
         conn.execute(text("DELETE FROM tags"))
         conn.execute(text("DELETE FROM policy_settings WHERE scope <> 'global'"))

@@ -16,7 +16,7 @@
 
 **문서**
 
-- 기획안: [`../business_archy/플랫폼_기획안_v11.txt`](../business_archy/플랫폼_기획안_v11.txt)
+- 기획안: [`../business_archy/플랫폼_기획안_v12.txt`](../business_archy/플랫폼_기획안_v12.txt)
 - 현재 스프린트: [`docs/sprint.md`](docs/sprint.md) · 작업 기록: [`docs/work-log.md`](docs/work-log.md)
 - DB 접속·마이그레이션 규칙: [`docs/db-guide.md`](docs/db-guide.md) · 코드 구조: [`docs/app-structure.md`](docs/app-structure.md) · 디자인: [`docs/design-system.md`](docs/design-system.md)
 - 최근 변경: [맨 아래](#최근-변경)
@@ -136,6 +136,13 @@ Imagine-v1/
 
 ## 최근 변경
 
+- **2026-11-19 — Sprint 7-B 상상 네트워크 탐색기** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - `/admin/graph` [경향 다발 | 파고들기] — 서로 다른 Dreamer 의 비슷한 상상을 다발로 묶어 경향 지도 · 다발 표로 비교하고(이름 = 핵심 주제 × 핵심 욕망 · 신호 · 흐름), 주제 · 욕망 · Dreamer · 상상을 따라 들어간다. 대시보드 기술 · 욕망 표에서 바로 이어짐. 인사이트 면에서 더 다듬을 예정
+  - Memgraph 복사: `uv run python -m app.interfaces.cli graph-build` (새 글 등은 저절로 반영). 마이그레이션 0017
+- **2026-11-19 — Sprint 7-A 홈 검색** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - 오른쪽 위 검색창 → `/search` (탭 상상 · 주제 · Dreamer). 상상은 글자 일치 + 뜻 검색(임베딩), 검색어는 `search_logs` 에 기록(마이그레이션 0016)
+  - 샘플 데이터에서 뜻 검색을 보려면 `embed-all` 이 필요하다 (`seed-demo` 는 임베딩을 만들지 않음)
+- **2026-11-19 — 기획안 v12**: Sprint 6 결정(운영자 화면 틀 · 정책 · 이번 주 질문 목록/상세 · 대시보드 탭 6개 · Observe Note)과 탈퇴 규칙(구현은 추후)을 한 번에 반영. 미룬 일(인용 카드 · 노트 댓글 · 운영자 AI 비서)은 추후 과제로. LLM 노트 초안은 만들지 않음(노트는 운영자가 직접 씀) · 탐색기의 기능과 범위는 Sprint 7 시작 전에 논의해서 정함
 - **2026-11-17 — 대시보드 마무리 · Sprint 6-E Observe Note** ([상세](docs/work-log.md))
   - 대시보드: Shake it 탭 상자 · 조합 시너지 = 혼합 글마다 재료와 게시 후 7일 Thunder 차이 평균, AI 사용량 하루 칸, 기간 = 달력 버튼(빠른 선택 + 직접 범위). 탈퇴는 규칙만(v12 7장)
   - Observe Note: 운영자 만들기 · 고치기 · 지우기(Markdown · 대표 이미지 · AI 요약 · 출처), 읽는 화면(목차는 오른쪽 패널), Thunder · Wave · 북마크, 홈 11 · 21 … 번째 노트, 서재 · 팔로잉에 함께. 마이그레이션 0014 · 0015

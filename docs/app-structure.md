@@ -1,6 +1,6 @@
 # 코드 구조
 
-> 갱신: 2026-11-17 (Sprint 6) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
+> 갱신: 2026-11-19 (Sprint 7 홈 검색 · 탐색기) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
 
 ## 백엔드 `app/`
 
@@ -21,10 +21,11 @@ app/
 │   ├── prompts/                # 이번 주 질문 ✅ models(Prompt) · schemas · service(지금 질문 · 상태 · 답할 수 있는지 · 운영자 목록/만들기/고치기/지우기) · router(/api/prompts/* · /api/admin/prompts) · feed(질문 상세 답한 상상, 순환 import 피해 분리) — 6-C, 답한 사용자 · insight 2026-11-13
 │   ├── analytics/              # 분석 대시보드 ✅ (6-D, 2026-11-13) period(기간 · 시간 칸, 한국 시간) · frame(기간 안 대중 상상 + 태그 한 번에 읽기) · insights(개요 · 기술 흐름 · 교차: 생키 · 네트워크 · 욕망×기술 · 기술 조합 2~N개 · 욕망 순위) · clusters(태그 네트워크 군집 찾기 Louvain 직접 구현, 이름 A · B · C, 2026-11-15) · engagement(반응 순위 · Thunder 분포 + 예상 정규분포 · 질문형 비율 · 요일×시간 · Shake it · AI 사용량) · reaction_summary(반응 쏠림 "AI가 분석했어요", 2026-11-16) · activation(신규 Dreamer 활성화, 첫 7일 13단계) · summary(전체 현황, 기간 무관) · schemas · router(/api/admin/analytics/* : overview · tech · cross · engagement(+ /summary AI) · activation · shake · ai · summary + export.csv)
 │   ├── notes/                  # Observe Note ✅ (6-E, 2026-11-17) models(Note · NoteReaction) · schemas · service(공개 목록 · 상세 + 조회수 · 운영자 만들기/고치기/지우기 · 이미지 · AI 요약 초안 note_summary · 반응 · 서재/팔로잉에 섞을 노트 reacted_between · waved_between · place_after) · router(/api/notes/* · /api/admin/notes/*)
+│   ├── search/                 # 홈 검색 ✅ (Sprint 7, 2026-11-19) models(SearchLog) · schemas · service(상상 = 글자 일치 + 뜻 검색 · 주제 · Dreamer · 검색 기록) · router(/api/search/*)
 │   ├── notifications/          # 알림 ✅ models · service(notify · 목록 · 안 읽은 수 · 읽음) · router(/api/notifications)
 │   ├── policy/                 # 이용 한도 ✅ models(등급·설정) · service(최종 한도 계산) · router(/api/me/limits) — 관리 화면 Sprint 6
 │   ├── activity/               # 내 활동                        (Sprint 8)
-│   ├── graph/                  # Memgraph 동기화·탐색기           (Sprint 7)
+│   ├── graph/                  # 상상 네트워크 탐색기 ✅ (7-B, 2026-11-19) models(GraphSyncLog) · build(PostgreSQL → Memgraph: collect · full_build · sync_imagination) · explore(경향 다발 · 파고들기 · 시작점 찾기 · 상태) · schemas · router(/api/admin/graph/*)
 │   ├── similar/                # 임베딩·비슷한 상상 ✅ models(ImaginationEmbedding · SimilarSet · SimilarLink) · service(embed_all · find_similar = 1단계 벡터) · rerank(2단계 LLM 리랭킹 · 저장 · 화면용 similar_for) · schemas
 │   └── admin/                  # 운영자 ✅ models(ModerationLog) · schemas · service(게시물 목록 · 숨김/되돌림) · policy_admin(6-B 기본 정책 · 등급 · 사용자 목록/상세 · 개인 예외 · 변경 기록 · 기록 페이지) · user_summary(사용자 상세 AI 요약, 2026-11-13) · router(/api/admin/*, admin_user). 통계는 6-D
 │
@@ -34,7 +35,7 @@ app/
 │   ├── llm/                    # ✅ router(기능 → 제공자·모델, 기록, 하루 한도) · prompts(prompts/v1 로더) · models(LlmCall)
 │   │   └── providers/          #    base · anthropic(Claude, 구조화 출력) · fake
 │   └── embeddings/             # ✅ get_embedder() · gemini(batchEmbedContents 768) · fake
-│       (Sprint 7: graph/)
+│   └── graph/                  # ✅ (7-B) Memgraph 연결: run · run_many · is_ready, 꺼져 있으면 GraphUnavailable (neo4j 드라이버)
 │
 ├── shared/                     # errors(오류 형식) · cursor(next_cursor) · time(한국 시간 자정)
 └── interfaces/cli/             # create-admin · seed-demo(16주 샘플: seed_demo.py 만드는 순서 · seed_topics.py 주제 · 질문 · seed_data.py 댓글 · 인용 문장) · embed-all · tag-all · similar · ai-eval(모델 실측, ai_eval.py)
@@ -91,6 +92,7 @@ src/
 │   ├── card/ItemMenu           # ⋯ 메뉴 — 링크 복사 · (내 글·댓글) 삭제 (뱃지 보기는 2026-11-12 제거)
 │   ├── card/SourceChips        # 혼합 글 카드 재료 줄 알약 (한 줄 고정, 넘치면 …)
 │   ├── note/                   # Observe Note (6-E) NoteBody(Markdown → 소제목 · 그림 + 캡션 · 목차 noteToc) · NoteToc(오른쪽 패널 목차, 지금 읽는 곳) · NoteActions(Thunder · Wave · 북마크 · 공유) · NoteFeedCard(홈 · 서재 · 팔로잉 노트 카드)
+│   ├── search/SearchBox        # 검색창 (오른쪽 컬럼 맨 위 · 검색 화면 맨 위 공용, Enter → /search?q=)
 │   ├── similar/SimilarBlock    # 상세 오른쪽 컬럼 "비슷한 상상" (이유 한 줄, 5-C)
 │   ├── prompt/                 # usePromptList(/api/prompts) · leftLabel · PromptBanner(좁은 화면 홈 배너) · Prompt.module.css (오른쪽 블록 · 글쓰기 카드 · 상세 한 줄 공통)
 │   ├── common/                 # Pagination(페이지 번호 + 개수) · SelectMenu(작은 메뉴 선택) · DropMenu.module.css
@@ -113,11 +115,13 @@ src/
     ├── topics/                 # S8 TopicsPage(분야별 주제) · S9 TagPage(태그별 상상)
     ├── prompt/                 # PromptListPage(질문 목록 /prompts: 진행 중 · 끝난 질문) · PromptPage(질문 상세 /prompts/:id: 질문 머리 · 반응 그래프 · 답한 상상) — 2026-11-13
     ├── library/LibraryPage     # S12 서재 [Thunder | Wave | Shake it | 북마크 | 최근 본 상상] — Thunder · Wave · 북마크에 Observe Note 도 함께 (2026-11-17)
+    ├── search/SearchPage       # 검색 /search (탭 [상상 | 주제 | Dreamer], 상상 = 글자 일치 → 뜻 검색 한 목록, 주제 = 이름이 맞는 주제 → 관련 주제 한 목록)
     ├── notes/                  # S10 NoteListPage(/notes) · NotePage(/notes/:id) · noteFormat
     ├── trending/TrendingPage   # S7 인기 상상 (순위 + 액션 바, 오른쪽 컬럼 있음)
     ├── profile/                # S11 ProfilePage(X, [상상|댓글|인용]) · EditProfileModal(커버·이미지·이름·소개) · FollowListPage(S17 팔로워·팔로잉)
     ├── notifications/          # S13 알림 [전체 | 댓글] (X)
     ├── settings/SettingsPage   # S14 비밀번호 변경
+    ├── admin/graph/            # A7 탐색기 (React lazy): AdminGraphPage(보기 · 기간 · 분야 · 혼합 글 · 상태 줄) · BundlesView(경향 다발: 경향 지도 · 다발 표 · 펼침) · ExploreView(시작점 찾기 · 지나온 길 · 상세 패널) · GraphCanvas(SVG — 대시보드 산점도와 같은 모양, 자리는 graphology + ForceAtlas2) · Graph.module.css
     ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminNotesPage · AdminNoteEditPage(A2, 6-E) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab(기술 × 분야 · 사분면 · 기술 빈도 시계열 · 기술 활동 테이블) · TechPicker(공용 고르기 `GroupPicker` 묶음 → 항목 · 설정 줄 `PickSetting`, 기술 고르기 `TechPickSetting` = 신호 그룹 → 기술, 2026-11-15 군집 고르기에도 씀) · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeTab · AiTab(2026-11-17 한 파일 ShakeAiTabs 에서 탭마다 한 파일로 나눔), parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · 신호 색 `SIGNAL_COLOR` · CSV · 통계 캐시) · settings(그래프 설정: 기간 = `PeriodPicker` 달력 버튼(맨 위 기간도 같이 씀, 2026-11-17) · 개수 · 항목 · 모양), Dashboard.module.css)
     └── common/                 # PlaceholderPage(미구현 화면) · ProfileRoute(/@닉네임)
 ```

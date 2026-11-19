@@ -1,4 +1,4 @@
-import { ChevronRight, MessageCircle, Search, Zap } from "lucide-react";
+import { ChevronRight, MessageCircle, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { api } from "../../api/client";
@@ -12,6 +12,7 @@ import { ShakeIcon } from "../actions/ShakeIcon";
 import { WaveIcon } from "../actions/WaveIcon";
 import { leftLabel, usePromptList } from "../prompt/useCurrentPrompt";
 import prompts from "../prompt/Prompt.module.css";
+import { SearchBox } from "../search/SearchBox";
 import { SimilarBlock } from "../similar/SimilarBlock";
 import { tagPath } from "../tags/TagList";
 import { FollowButton } from "../social/FollowButton";
@@ -20,7 +21,8 @@ import { SiteFooter } from "./SiteFooter";
 
 /**
  * 오른쪽 컬럼 (로그인 전·후 같음, 기획안 v9 4장)
- *   검색창 → (Observe Note 상세) 목차 → (상세 화면) 이 상상의 Dreamer → 비슷한 상상(F23) → 이번 주 질문 → 인기 상상 1~5 → 추천 Dreamer 3명 → 추천 주제 → 푸터
+ *   (2026-11-19 사용자) 홈에서만 모든 블록. 다른 화면은 검색창 · 그 화면의 블록(목차 · 이 상상의 Dreamer · 비슷한 상상) + 인기 상상 · 추천 Dreamer 만
+ *   검색창(Sprint 7: 상상 · 주제 · Dreamer 검색 → /search) → (Observe Note 상세) 목차 → (상세 화면) 이 상상의 Dreamer → 비슷한 상상(F23) → 이번 주 질문 → 인기 상상 1~5 → 추천 Dreamer 3명 → 추천 주제 → 푸터
  * 이번 주 질문은 /api/prompts 진행 중 첫 번째 (제목 옆 "(N개)" = 진행 중 수, 2026-11-13). 좁은 화면은 홈 피드 위 배너(PromptBanner)가 대신한다.
  */
 export function RightRail() {
@@ -42,6 +44,8 @@ export function RightRail() {
     api<Topics>("/api/topics").then((d) => setTopics(d.popular), () => setTopics([]));
   }, [user, pathname]);
 
+  // 홈(/login · /signup 도 홈 위 모달)에서만 이번 주 질문 · 추천 주제를 보여 준다 (2026-11-19 사용자)
+  const isHome = pathname === "/" || pathname === "/login" || pathname === "/signup";
   const showCard = pathname.startsWith("/i/") && dreamer.card;
   const detailId = /^\/i\/(\d+)$/.exec(pathname)?.[1];
   const toc = useNoteToc();
@@ -49,11 +53,8 @@ export function RightRail() {
   return (
     <div className={styles.rail}>
       <div className={styles.searchWrap}>
-        <label className={styles.search}>
-          <Search className={styles.searchIcon} aria-hidden="true" strokeWidth={2} />
-          <span className="visually-hidden">검색</span>
-          <input type="search" placeholder="검색 (준비 중)" disabled className={styles.searchInput} />
-        </label>
+        {/* 검색 화면에서는 본문 맨 위 검색창을 쓴다 (같은 창이 둘 보이지 않게 자리만 남긴다) */}
+        {pathname === "/search" ? <div className={styles.searchGap} /> : <SearchBox />}
       </div>
 
       <div className={styles.scroll}>
@@ -67,48 +68,52 @@ export function RightRail() {
         ) : null}
         {detailId ? <SimilarBlock id={Number(detailId)} /> : null}
 
-        {/* 이번 주 질문 (6-C): 질문이 있으면 질문 · 설명 · 남은 기간 · 답한 상상 수 → [상상하기] = 질문에 답하는 글쓰기 */}
-        <section className={styles.card}>
-          <Link to="/prompts" className={styles.titleLink} title="이번 주 질문 모두 보기">
-            <h2 className={styles.title}>
-              이번 주 질문
-              {promptList && promptList.open.length > 0 ? <span className={styles.titleCount}> ({promptList.open.length}개)</span> : null}
-            </h2>
-            <ChevronRight aria-hidden="true" />
-          </Link>
-          {prompt ? (
-            <>
-              <strong className={prompts.question}>{prompt.title}</strong>
-              {prompt.body ? <p className={prompts.body}>{prompt.body}</p> : null}
-              <span className={prompts.meta}>
-                {[leftLabel(prompt.ends_at), `답한 상상 ${prompt.answer_count}개`, `${prompt.answerer_count}명 참여`].filter(Boolean).join(" · ")}
-              </span>
-            </>
-          ) : (
-            <p className={styles.desc}>
-              {prompt === undefined ? "불러오는 중…" : "운영자가 질문을 올리면 여기에 보여요. 질문에 답하듯 상상을 올려 보세요."}
-            </p>
-          )}
-          {/* 2026-11-13: [자세히 보기](왼쪽, 인기 상상 "더 보기"와 같은 글자 버튼) · [상상하기](오른쪽 끝) */}
-          <div className={styles.cardFoot}>
-            {prompt ? (
-              <Link to={`/prompts/${prompt.id}`} className={styles.more}>
-                자세히 보기
+        {isHome ? (
+          <>
+            {/* 이번 주 질문 (6-C): 질문이 있으면 질문 · 설명 · 남은 기간 · 답한 상상 수 → [상상하기] = 질문에 답하는 글쓰기 */}
+            <section className={styles.card}>
+              <Link to="/prompts" className={styles.titleLink} title="이번 주 질문 모두 보기">
+                <h2 className={styles.title}>
+                  이번 주 질문
+                  {promptList && promptList.open.length > 0 ? <span className={styles.titleCount}> ({promptList.open.length}개)</span> : null}
+                </h2>
+                <ChevronRight aria-hidden="true" />
               </Link>
-            ) : (
-              <span />
-            )}
-            {user ? (
-              <ButtonLink to={prompt ? `/write?prompt=${prompt.id}` : "/write"} size="sm">
-                상상하기
-              </ButtonLink>
-            ) : (
-              <Button size="sm" onClick={() => openAuth("login")}>
-                상상하기
-              </Button>
-            )}
-          </div>
-        </section>
+              {prompt ? (
+                <>
+                  <strong className={prompts.question}>{prompt.title}</strong>
+                  {prompt.body ? <p className={prompts.body}>{prompt.body}</p> : null}
+                  <span className={prompts.meta}>
+                    {[leftLabel(prompt.ends_at), `답한 상상 ${prompt.answer_count}개`, `${prompt.answerer_count}명 참여`].filter(Boolean).join(" · ")}
+                  </span>
+                </>
+              ) : (
+                <p className={styles.desc}>
+                  {prompt === undefined ? "불러오는 중…" : "운영자가 질문을 올리면 여기에 보여요. 질문에 답하듯 상상을 올려 보세요."}
+                </p>
+              )}
+              {/* 2026-11-13: [자세히 보기](왼쪽, 인기 상상 "더 보기"와 같은 글자 버튼) · [상상하기](오른쪽 끝) */}
+              <div className={styles.cardFoot}>
+                {prompt ? (
+                  <Link to={`/prompts/${prompt.id}`} className={styles.more}>
+                    자세히 보기
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                {user ? (
+                  <ButtonLink to={prompt ? `/write?prompt=${prompt.id}` : "/write"} size="sm">
+                    상상하기
+                  </ButtonLink>
+                ) : (
+                  <Button size="sm" onClick={() => openAuth("login")}>
+                    상상하기
+                  </Button>
+                )}
+              </div>
+            </section>
+          </>
+        ) : null}
 
         <section className={styles.card}>
           <h2 className={styles.title}>인기 상상</h2>
@@ -164,24 +169,26 @@ export function RightRail() {
           )}
         </section>
 
-        <section className={styles.card}>
-          <h2 className={styles.title}>추천 주제</h2>
-          {/* 주제 = 기술 태그 (2026-11-12 사용자 결정). 분야로 가는 길은 홈 분야 탭에 있다. + (관심 주제 추가)는 고도화 때 */}
-          {topics && topics.length > 0 ? (
-            <div className={styles.topics}>
-              {topics.map((t) => (
-                <Link key={t.name} to={tagPath(t)} className={styles.topic}>
-                  #{t.label}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className={styles.empty}>{topics ? "아직 주제가 없어요." : "불러오는 중…"}</p>
-          )}
-          <Link to="/topics" className={styles.more}>
-            더 많은 주제 보기
-          </Link>
-        </section>
+        {isHome ? (
+          <section className={styles.card}>
+            <h2 className={styles.title}>추천 주제</h2>
+            {/* 주제 = 기술 태그 (2026-11-12 사용자 결정). 분야로 가는 길은 홈 분야 탭에 있다. + (관심 주제 추가)는 고도화 때 */}
+            {topics && topics.length > 0 ? (
+              <div className={styles.topics}>
+                {topics.map((t) => (
+                  <Link key={t.name} to={tagPath(t)} className={styles.topic}>
+                    #{t.label}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.empty}>{topics ? "아직 주제가 없어요." : "불러오는 중…"}</p>
+            )}
+            <Link to="/topics" className={styles.more}>
+              더 많은 주제 보기
+            </Link>
+          </section>
+        ) : null}
 
         <div className={styles.footer}>
           <SiteFooter />

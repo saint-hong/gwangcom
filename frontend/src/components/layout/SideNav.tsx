@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { LogIn, Moon, MoreHorizontal, SquarePen, Sun, UserPlus } from "lucide-react";
+import { CircleEllipsis, LogIn, Moon, SquarePen, Sun, UserPlus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { SERVICE_NAME } from "../../brand";
@@ -14,6 +14,10 @@ import { sideNav } from "./navItems";
 import styles from "./SideNav.module.css";
 
 type Props = { theme: Theme; onToggleTheme: () => void };
+
+/** 메뉴 아이콘 선 굵기 — 모든 메뉴(더 보기 포함)가 같은 값을 쓴다. 켜진 메뉴는 아이콘 · 글자 모두 굵게 (2026-11-19 확인) */
+const STROKE = 1.8;
+const STROKE_ACTIVE = 2.4;
 
 /**
  * 왼쪽 사이드바 (h사 구조, 기획안 v9 4장)
@@ -37,7 +41,7 @@ export function SideNav({ theme, onToggleTheme }: Props) {
             {({ isActive }) => (
               <>
                 <span className={styles.iconWrap}>
-                  <Icon className={styles.icon} aria-hidden="true" strokeWidth={isActive ? 2.4 : 1.8} />
+                  <Icon className={styles.icon} aria-hidden="true" strokeWidth={isActive ? STROKE_ACTIVE : STROKE} />
                   {to === "/notifications" && unread > 0 ? (
                     <span className={styles.badge} aria-label={`안 읽은 알림 ${unread}개`}>
                       {unread > 99 ? "99+" : unread}
@@ -92,7 +96,7 @@ export function SideNav({ theme, onToggleTheme }: Props) {
   );
 }
 
-/** 더 보기 — 다크 모드 */
+/** 더 보기 — 다크 모드. 메뉴가 열려 있는 동안은 켜진 메뉴처럼 굵게 */
 function MoreMenu({ theme, onToggleTheme }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -102,12 +106,13 @@ function MoreMenu({ theme, onToggleTheme }: Props) {
     <div className={styles.more} ref={ref}>
       <button
         type="button"
-        className={styles.item}
+        className={clsx(styles.item, open && styles.active)}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <MoreHorizontal className={clsx(styles.icon, styles.moreIcon)} aria-hidden="true" strokeWidth={1.8} />
+        {/* 원 안의 점 세 개를 lucide 아이콘 하나로 그린다 → 선 굵기가 다른 메뉴 아이콘과 같고, 메뉴가 열리면 함께 굵어진다 */}
+        <CircleEllipsis className={styles.icon} aria-hidden="true" strokeWidth={open ? STROKE_ACTIVE : STROKE} />
         <span className={styles.label}>더 보기</span>
       </button>
       {open ? (

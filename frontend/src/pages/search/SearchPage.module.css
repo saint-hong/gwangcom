@@ -1,0 +1,31 @@
+/* 검색 화면 맨 위 검색창 (오른쪽 컬럼이 숨는 좁은 화면에서도 여기서 다시 찾는다) */
+.box {
+  padding: var(--space-3) var(--space-4);
+}
+
+.tabs {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.count {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: var(--space-4);
+  list-style: none;
+}
+
+.topicCount {
+  margin-left: 4px;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}

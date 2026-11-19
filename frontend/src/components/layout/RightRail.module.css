@@ -30,34 +30,9 @@
   background: var(--color-bg);
 }
 
-.search {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+/* 검색 화면에서는 검색창 대신 같은 높이의 빈 자리 */
+.searchGap {
   height: 44px;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-pill);
-  background: var(--color-surface-muted);
-  color: var(--color-text-secondary);
-}
-
-.searchIcon {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-}
-
-.searchInput {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  font-size: var(--font-size-md);
-  outline: none;
-}
-
-.searchInput::placeholder {
-  color: var(--color-text-secondary);
 }
 
 /* 캡처: 흰 바탕 + 연한 테두리 + 16px 둥근 모서리 카드 */

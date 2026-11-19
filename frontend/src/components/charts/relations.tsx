@@ -39,7 +39,10 @@ export function Scatter({
   quadrants,
   height = 320,
   labelTop = 10,
+  onPick,
 }: {
+  /** 점을 누르면 (탐색기 경향 지도 → 다발 표 줄 펼치기, 2026-11-19) */
+  onPick?: (id: string) => void;
   points: Point[];
   xLabel: string;
   yLabel: string;
@@ -201,6 +204,8 @@ export function Scatter({
                   r={p.r}
                   fill={p.color}
                   className={styles.point}
+                  style={onPick ? { cursor: "pointer" } : undefined}
+                  onClick={onPick ? () => onPick(p.id) : undefined}
                   opacity={hover && hover !== p.id ? 0.3 : 0.78}
                   onMouseMove={(e) => {
                     setHover(p.id);
