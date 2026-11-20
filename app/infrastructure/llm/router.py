@@ -1,6 +1,6 @@
 """LLM 호출의 유일한 입구 (기획안 v10 9-1장).
 
-서비스 코드는 기능 이름(tagging · shake · note_draft)만 넘긴다. 어떤 제공자 · 모델을 쓸지는 .env 가 정한다.
+서비스 코드는 기능 이름(tagging · shake · note_summary …)만 넘긴다. 어떤 제공자 · 모델을 쓸지는 .env 가 정한다.
 모든 호출은 llm_calls 에 남기고, 서비스 전체 하루 호출 한도를 넘으면 LlmLimited 를 던진다.
 """
 
@@ -26,7 +26,6 @@ from app.shared.time import kst_day_start
 Feature = Literal[
     "tagging",
     "shake",
-    "note_draft",
     "note_summary",
     "similar_rerank",
     "user_summary",
@@ -42,7 +41,6 @@ def route(feature: Feature, settings: Settings | None = None) -> tuple[str, str]
     key = {
         "tagging": "tagging",
         "shake": "shake",
-        "note_draft": "note",
         "note_summary": "note",  # Observe Note AI 요약 초안 (2026-11-17)
         "similar_rerank": "similar",
         "user_summary": "summary",

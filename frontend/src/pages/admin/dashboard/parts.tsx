@@ -7,12 +7,12 @@ import type { PeriodKey, TechSignal } from "../../../types/api";
 import styles from "./Dashboard.module.css";
 
 /**
- * 대시보드 → 탐색기 (Sprint 7-B): 표의 기술 · 욕망 이름을 누르면 탐색기 파고들기가 그 점에서 시작한다 (같은 기간)
- *   점 id 의 이름은 서버 비교용 이름과 같게 만든다 (띄어쓰기 없앰 · 영문 소문자)
+ * 대시보드 → 탐색기 (Sprint 7-B, 2026-11-20 다시 짬): 표의 기술 · 욕망 이름을 누르면 탐색기 "융합과 충돌"이 그 점과 이웃을 펼쳐 시작한다 (같은 기간)
+ *   이름은 서버 비교용 이름과 같게 만든다 (띄어쓰기 없앰 · 영문 소문자). 욕망은 그 태그가 들어 있는 욕망 묶음으로
  */
 export function explorePath(type: "tech" | "desire", label: string, period: PeriodKey): string {
   const name = label.normalize("NFC").replace(/\s+/g, "").toLowerCase();
-  return `/admin/graph?view=explore&node=${encodeURIComponent(`t:${type}:${name}`)}&period=${encodeURIComponent(period)}`;
+  return `/admin/graph?view=fusion&focus=${encodeURIComponent(`${type}:${name}`)}&period=${encodeURIComponent(period)}`;
 }
 
 /** 분야 slug → 화면 이름 (고정 8개) */

@@ -636,6 +636,7 @@ def seed(db: Session, demo_domain: str, pw_hash: str) -> dict[str, int]:
             if first < now:
                 db.add(UserVisit(user_id=s.user.id, day=day, first_at=first))
     db.flush()
+    counts["wave_via"] = assign_wave_via(db, commit=False)
     return {
         "users": len(sims),
         "posts": sum(1 for x in items),
@@ -643,3 +644,45 @@ def seed(db: Session, demo_domain: str, pw_hash: str) -> dict[str, int]:
         "blends": len(blends),
         **counts,
     }
+
+
+WAVE_VIA_RANDOM = (
+    0.5  # 팔로우한 앞선 Wave 가 없을 때 다른 앞선 Wave 를 거친 것으로 볼 확률 (샘플만)
+)
+
+
+def assign_wave_via(db: Session, *, commit: bool = True) -> int:
+    """샘플 Wave 에 확산 경로(via)를 채운다 (2026-11-20, 탐색기 전파와 공명). via 가 비어 있는 Wave 만.
+
+    실제 서비스에서는 화면이 "누구의 Wave 를 보고 Wave 했는지"를 보낸다. 샘플은 그 흐름을 흉내 낸다:
+      같은 상상에 먼저 Wave 한 사람 중 내가 팔로우하는 사람이 있으면 → 그 사람 (가장 최근)
+      없으면 WAVE_VIA_RANDOM 확률로 → 먼저 Wave 한 사람 중 한 명 (피드에서 봤다고 가정)
+      그 밖은 비워 둔다 (작성자 글을 직접 보고 Wave)
+    같은 재료면 같은 결과 (고정 난수).
+    """
+    rng = random.Random(20261120)
+    follows = set(db.execute(select(Follow.follower_id, Follow.followee_id)).all())
+    by_item: dict[int, list[Wave]] = {}
+    for w in db.scalars(select(Wave).order_by(Wave.imagination_id, Wave.created_at, Wave.user_id)):
+        by_item.setdefault(w.imagination_id, []).append(w)
+    filled = 0
+    for waves in by_item.values():
+        for k, w in enumerate(waves):
+            if w.via_user_id is not None or k == 0:
+                continue
+            earlier = [e.user_id for e in waves[:k] if e.user_id != w.user_id]
+            if not earlier:
+                continue
+            followed = [u for u in earlier if (w.user_id, u) in follows]
+            if followed:
+                w.via_user_id = followed[-1]
+            elif rng.random() < WAVE_VIA_RANDOM:
+                w.via_user_id = rng.choice(earlier)
+            else:
+                continue
+            filled += 1
+    if commit:
+        db.commit()
+    else:
+        db.flush()
+    return filled

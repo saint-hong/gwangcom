@@ -136,6 +136,8 @@ Imagine-v1/
 
 ## 최근 변경
 
+- **2026-11-20 — 탐색기 다시 짜기 (설계안 4보기 + Observe Note 근거함)** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
+  - `/admin/graph` [융합과 충돌 | 집단 압력 지도 | 변이와 진화 | 전파와 공명] — 기술 충돌 · 의미 지도(t-SNE · UMAP) 압력장 · Shake it 계보 시너지 · Wave 확산 나무. 오른쪽 상세에서 수치 + 원문을 보고 근거함에 담아 노트 쓰기에서 꺼내 씀. 새 CLI `embed-tags` · `seed-wave-via`, 마이그레이션 0018
 - **2026-11-19 — Sprint 7-B 상상 네트워크 탐색기** ([상세](docs/work-log.md) · [스프린트](docs/sprint.md))
   - `/admin/graph` [경향 다발 | 파고들기] — 서로 다른 Dreamer 의 비슷한 상상을 다발로 묶어 경향 지도 · 다발 표로 비교하고(이름 = 핵심 주제 × 핵심 욕망 · 신호 · 흐름), 주제 · 욕망 · Dreamer · 상상을 따라 들어간다. 대시보드 기술 · 욕망 표에서 바로 이어짐. 인사이트 면에서 더 다듬을 예정
   - Memgraph 복사: `uv run python -m app.interfaces.cli graph-build` (새 글 등은 저절로 반영). 마이그레이션 0017

@@ -262,23 +262,22 @@ def engagement(db: Session, p: Period) -> EngagementOut:
 SYNERGY_DAYS = 7  # 조합 시너지: 게시 후 같은 기간(최대 7일) 동안 받은 Thunder 로 비교
 
 
-def _synergy(
-    db: Session, blends: list, parents: dict, mat_info: dict
-) -> tuple[float | None, int, int]:
-    """조합 시너지 (2026-11-17 사용자 결정) — 혼합 글마다 자기 재료와 비교한 Thunder 차이의 평균.
+def blend_synergies(
+    db: Session, pairs: list[tuple[int, datetime, list[tuple[int, datetime]]]]
+) -> dict[int, float]:
+    """혼합 글마다 조합 시너지 (Thunder 차이) — [(혼합 글 id, 올린 때, [(재료 id, 재료 올린 때)…])] → {혼합 글 id: 차이}.
 
     - 차이 = 혼합 글이 받은 Thunder − 재료 글(평균)이 받은 Thunder
     - 둘 다 "게시 후 같은 기간" 동안 받은 수: 기간 = min(7일, 혼합 글이 올라온 뒤 지난 시간).
       재료가 먼저 올라와 Thunder 를 받을 시간이 더 길었던 치우침을 없앤다
     - 비율이 아니라 차이: 재료 Thunder 0 으로 나누는 문제가 없고, 늘고 준 것이 공평하게 상쇄된다
-    - 돌려줌: (평균 차이, 재료보다 많이 받은 혼합 글 수, 비교한 혼합 글 수)
+    대시보드 Shake it 탭(평균)과 탐색기 계보(글마다)가 같은 규칙을 쓴다.
     """
-    now = now_utc()
-    pairs = [(b, [m for m in parents.get(b.id, []) if m in mat_info]) for b in blends]
-    pairs = [(b, mats) for b, mats in pairs if mats]
+    pairs = [(b, at, mats) for b, at, mats in pairs if mats]
     if not pairs:
-        return None, 0, 0
-    ids = {b.id for b, _ in pairs} | {m for _, mats in pairs for m in mats}
+        return {}
+    now = now_utc()
+    ids = {b for b, _, _ in pairs} | {m for _, _, mats in pairs for m, _ in mats}
     got: dict[int, list[datetime]] = defaultdict(list)
     for iid, at in db.execute(
         select(Thunder.imagination_id, Thunder.created_at).where(Thunder.imagination_id.in_(ids))
@@ -288,12 +287,37 @@ def _synergy(
     def within(iid: int, start: datetime, span: timedelta) -> int:
         return sum(1 for t in got[iid] if start <= t < start + span)
 
-    diffs = []
-    for b, mats in pairs:
-        span = min(timedelta(days=SYNERGY_DAYS), now - b.created_at)
-        mine = within(b.id, b.created_at, span)
-        base = sum(within(m, mat_info[m][7], span) for m in mats) / len(mats)
-        diffs.append(mine - base)
+    out: dict[int, float] = {}
+    for b, at, mats in pairs:
+        span = min(timedelta(days=SYNERGY_DAYS), now - at)
+        mine = within(b, at, span)
+        base = sum(within(m, m_at, span) for m, m_at in mats) / len(mats)
+        out[b] = mine - base
+    return out
+
+
+def _synergy(
+    db: Session, blends: list, parents: dict, mat_info: dict
+) -> tuple[float | None, int, int]:
+    """조합 시너지 (2026-11-17 사용자 결정) — 혼합 글마다 자기 재료와 비교한 Thunder 차이(blend_synergies)의 평균.
+
+    돌려줌: (평균 차이, 재료보다 많이 받은 혼합 글 수, 비교한 혼합 글 수)
+    """
+    diffs = list(
+        blend_synergies(
+            db,
+            [
+                (
+                    b.id,
+                    b.created_at,
+                    [(m, mat_info[m][7]) for m in parents.get(b.id, []) if m in mat_info],
+                )
+                for b in blends
+            ],
+        ).values()
+    )
+    if not diffs:
+        return None, 0, 0
     return round(sum(diffs) / len(diffs), 2), sum(1 for d in diffs if d > 0), len(diffs)
 
 
@@ -418,7 +442,6 @@ FEATURES = [
     "user_summary",
     "reaction_summary",
     "note_summary",
-    "note_draft",
     "embedding",
 ]
 
@@ -466,10 +489,8 @@ def ai(db: Session, p: Period) -> AiOut:
         i = p.index_of(at)
         if i is not None:
             cost[i] += float(c)
-    # 서비스 기능은 호출이 없어도 지금 설정을 보여 준다 (note_draft 는 6-E 부터). 그 밖(eval_*)은 호출이 있을 때만
-    names = [f for f in FEATURES if f in agg or f != "note_draft"] + sorted(
-        f for f in agg if f not in FEATURES
-    )
+    # 서비스 기능은 호출이 없어도 지금 설정을 보여 준다. 그 밖(eval_* 등)은 호출이 있을 때만
+    names = list(FEATURES) + sorted(f for f in agg if f not in FEATURES)
     features = []
     for f in names:
         a = agg.get(f)
@@ -478,7 +499,6 @@ def ai(db: Session, p: Period) -> AiOut:
         elif f in (
             "tagging",
             "shake",
-            "note_draft",
             "similar_rerank",
             "user_summary",
             "reaction_summary",

@@ -158,7 +158,17 @@
 |---|---|
 | graph_sync_logs | Memgraph 반영 기록. kind(full_build · event) · target_id(event: 상상 id) · status(success · failed) · nodes · edges · error. 전체 다시 만들기는 모두, 글 하나 반영은 실패만 남긴다 |
 
-- **Memgraph 는 PostgreSQL 의 복사본**이다. 언제든 `uv run python -m app.interfaces.cli graph-build`(또는 탐색기 [그래프 다시 만들기])로 지우고 다시 만든다. Memgraph 에서 데이터를 고치지 않는다
+## 테이블 추가 (탐색기 다시 짜기, 마이그레이션 0018, 2026-11-20)
+
+| 테이블 | 설명 |
+|---|---|
+| explorer_pins | Observe Note 근거함. admin_id(운영자마다 따로) · kind(quote · fusion · collision · desire · tech · zone · lineage · cascade) · title · summary · stat · ref(JSONB, 다시 찾아갈 값) |
+| tag_embeddings | 태그 이름 임베딩 (768, 욕망 태그를 뜻이 가까운 묶음으로). CLI `embed-tags` 로 만든다 (Gemini, 아주 적은 비용). 2026-11-20 욕망 22개 저장, 묶기 기준 0.88 |
+
+- Memgraph 에 Wave · Thunder 연결과 의미 지도 좌표(t-SNE · UMAP) · 혼합 글 시너지 · 욕망 묶음이 더해졌다 — 모두 `graph-build` 때 계산 (약 40초, UMAP 첫 실행이 느림)
+- 샘플 Wave 의 확산 경로(via)는 `seed-wave-via` 로 채운다 (비어 있는 것만, seed-demo 는 끝에 저절로)
+
+- **Memgraph 는 PostgreSQL 의 복사본**이다. 언제든 `uv run python -m app.interfaces.cli graph-build`(또는 탐색기 [그래프 재생성])로 지우고 다시 만든다. Memgraph 에서 데이터를 고치지 않는다
 - `seed-demo` · `similar-all` 뒤에는 `graph-build` 를 돌려야 탐색기에 보인다 (새 글 · 태그 편집 · 삭제 · 숨김은 저절로 반영)
 - 테스트는 Memgraph 를 쓰지 않는다 (`GRAPH_ENABLED=false`) — Memgraph 는 DB 가 하나라 테스트가 개발 그래프를 지울 수 있어서
 

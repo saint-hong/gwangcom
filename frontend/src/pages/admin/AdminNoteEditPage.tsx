@@ -6,7 +6,8 @@ import { api, ApiError } from "../../api/client";
 import { useToast } from "../../components/feedback/Toast";
 import { NoteBody, noteToc } from "../../components/note/NoteBody";
 import { Button } from "../../design-system";
-import type { Note } from "../../types/api";
+import type { Note, Pin } from "../../types/api";
+import { PIN_KIND, pinMarkdown } from "./graph/explorer";
 import styles from "./AdminNotes.module.css";
 import adminStyles from "./Admin.module.css";
 
@@ -288,6 +289,9 @@ export function AdminNoteEditPage() {
           </div>
         )}
 
+        {/* 탐색기 근거함 (2026-11-20) — 탐색기에서 담아 둔 신호 · 원문을 본문 커서 자리에 넣는다. AI 는 노트를 쓰지 않는다 (원칙 4) */}
+        <EvidenceBlock onInsert={(md) => (setTab("write"), insert(md))} />
+
         {/* AI 요약 (2026-11-17 사용자 결정): AI 초안 → 운영자가 고쳐서 저장 → 읽는 사람은 "AI 요약" 상자에서 봄 */}
         <section className={styles.block}>
           <div className={styles.blockHead}>
@@ -326,5 +330,49 @@ export function AdminNoteEditPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+/** 탐색기 근거함 — 접어 두었다가 펼쳐서 [본문에 넣기] (커서 자리) */
+function EvidenceBlock({ onInsert }: { onInsert: (md: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [pins, setPins] = useState<Pin[] | null>(null);
+  useEffect(() => {
+    if (open && pins === null) api<Pin[]>("/api/admin/graph/pins").then(setPins, () => setPins([]));
+  }, [open, pins]);
+  return (
+    <section className={styles.block}>
+      <div className={styles.blockHead}>
+        <b>탐색기 근거함</b>
+        <span className={styles.hint}>탐색기에서 담아 둔 신호 · 원문을 본문 커서 자리에 넣어요</span>
+        <button type="button" className={styles.imageBtn} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          {open ? "접기" : `펼치기${pins ? ` (${pins.length})` : ""}`}
+        </button>
+      </div>
+      {open ? (
+        pins === null ? (
+          <p className={styles.hint}>불러오는 중…</p>
+        ) : pins.length === 0 ? (
+          <p className={styles.hint}>
+            근거함이 비어 있어요. <Link to="/admin/graph">탐색기</Link>에서 상세의 [근거함에 담기]를 눌러 모아 보세요.
+          </p>
+        ) : (
+          <ul className={styles.evidence}>
+            {pins.map((p) => (
+              <li key={p.id}>
+                <div>
+                  <span className={styles.evidenceKind}>{PIN_KIND[p.kind]}</span>
+                  <b>{p.title}</b>
+                  <p>{p.stat}</p>
+                </div>
+                <button type="button" className={styles.imageBtn} onClick={() => onInsert(`\n${pinMarkdown(p)}\n`)}>
+                  본문에 넣기
+                </button>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
+    </section>
   );
 }

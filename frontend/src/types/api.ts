@@ -523,34 +523,100 @@ export type AdminNotes = { items: NoteCard[]; total: number; page: number; size:
 /** 목록에 섞는 노트 — after_id 상상 바로 뒤 (null = 맨 앞). 서재 북마크 탭 · 팔로잉 탭(waved_by = Wave 한 사람) */
 export type FeedNote = { after_id: number | null; note: NoteCard; waved_by?: Author | null };
 
-/** 상상 네트워크 탐색기 (Sprint 7-B, /api/admin/graph/*) — 점 id: "i:12" 상상 · "u:5" Dreamer · "t:tech:드론" 주제 · "t:desire:…" 욕망 */
-export type GNodeKind = "imagination" | "dreamer" | "tech" | "desire";
-export type GNode = { id: string; kind: GNodeKind; label: string; sub: string | null; size: number; domain: string | null; blend: boolean };
-export type GEdge = { source: string; target: string; kind: "wrote" | "has_tag" | "similar" | "blended" | "quotes" | "with" | "uses"; weight: number; reason: string | null };
-export type GraphExpand = { center: GNode; nodes: GNode[]; edges: GEdge[]; more: Record<string, number> };
-export type BundleTag = { name: string; label: string; count: number };
-/** 경향 다발 (2026-11-19) — 서로 다른 Dreamer 의 비슷한 상상 묶음 + 특징 · 흐름 · 신호. 이름 = 핵심 주제 × 핵심 욕망 (계산) */
-export type Bundle = {
+/**
+ * 상상 네트워크 탐색기 (Sprint 7-B, 2026-11-20 다시 짬 — /api/admin/graph/*)
+ *   ① 융합과 충돌 /fusion  ② 집단 압력 지도 /map  ③ 변이와 진화 /lineage  ④ 전파와 공명 /cascades · /cascade/:id  ⑤ 근거함 /pins
+ *   점 id: "t:드론" 기술 · "d:dc:시간절약" 욕망 묶음
+ */
+export type XSignal = "new" | "rising" | "steady" | "cooling";
+export type XTrend = { signal: XSignal; growth: number | null; recent: number; earlier: number };
+export type TagCount = { name: string; label: string; count: number };
+export type XItem = {
+  id: number;
+  kind: string;
+  title: string;
+  excerpt: string;
+  desire: string | null;
+  author: string;
+  author_id: number;
+  domain: string | null;
+  domain2: string | null;
+  created_at: string;
+  thunders: number;
+  waves: number;
+  techs: string[];
+};
+export type FusionNode = { id: string; kind: "tech" | "desire"; label: string; domain: string | null; count: number; thunder_avg: number; trend: XTrend; members: TagCount[]; extra: boolean };
+export type FusionEdge = { id: string; source: string; target: string; kind: "desire" | "collision" | "combo"; weight: number; trend: XTrend; rank_pct: number; extra: boolean };
+export type FusionOut = { nodes: FusionNode[]; edges: FusionEdge[]; total: number; clustered: boolean; focus?: string | null };
+export type XInspect = {
+  title: string;
+  kind: string;
+  count: number;
+  thunder_avg: number;
+  wave_avg: number;
+  dreamers: number;
+  domains: TagCount[];
+  trend: XTrend;
+  rank_pct: number | null;
+  first_at: string | null;
+  last_at: string | null;
+  members: TagCount[];
+  items: XItem[];
+};
+export type MapPoint = { id: number; x: number; y: number; kind: string; title: string; author: string; domain: string | null; thunders: number; recency: number; tech: string | null; zone: string | null };
+export type MapZone = {
   key: string;
   name: string;
   size: number;
   dreamers: number;
-  first_at: string;
-  last_at: string;
-  recent: number;
-  earlier: number;
-  share_growth: number | null;
-  trend: number;
-  signal: TechSignal["signal"];
-  series: number[];
-  techs: BundleTag[];
-  desires: BundleTag[];
-  domains: BundleTag[];
-  reasons: string[];
-  members: { id: number; title: string; excerpt: string; author: string; author_id: number; domain: string | null; created_at: string; thunders: number }[];
+  cohesion: number;
+  diversity: number;
+  unnamed: boolean;
+  trend: XTrend;
+  techs: TagCount[];
+  desires: TagCount[];
+  domains: TagCount[];
+  item_ids: number[];
 };
-export type GraphBundles = { bundles: Bundle[]; linked: number; buckets: string[]; unit: "day" | "week" };
-export type GraphHit = { id: string; kind: GNodeKind; label: string; sub: string | null };
+export type MapOut = { method: "tsne" | "umap"; available: string[]; points: MapPoint[]; zones: MapZone[]; unplaced: number };
+export type XLineageNode = {
+  id: number;
+  kind: string;
+  title: string;
+  author: string;
+  domain: string | null;
+  domain2: string | null;
+  thunders: number;
+  synergy: number | null;
+  depth: number;
+  cross: boolean;
+  tree: string;
+  created_at: string;
+  match: boolean;
+};
+export type LineageTree = { key: string; size: number; blends: number; depth: number; best_synergy: number | null; cross_blends: number; thunders: number };
+export type LineageOut = { nodes: XLineageNode[]; edges: [number, number][]; trees: LineageTree[]; blends_total: number };
+export type CascadeSummary = { id: number; title: string; author: string; domain: string | null; waves: number; via_waves: number; depth: number; thunders: number; created_at: string };
+export type CascadeNode = {
+  id: string;
+  user_id: number;
+  nickname: string;
+  role: "origin" | "hub" | "spreader" | "leaf";
+  depth: number;
+  parent: string | null;
+  at: string | null;
+  downstream: number;
+  share: number;
+  reached_thunders: number;
+  thundered: boolean;
+  shaker: boolean;
+};
+export type CascadeOut = { item: XItem; nodes: CascadeNode[]; total_waves: number; via_waves: number; depth: number; hubs: number };
+export type PinKind = "quote" | "fusion" | "collision" | "desire" | "tech" | "zone" | "lineage" | "cascade";
+export type PinIn = { kind: PinKind; title: string; summary: string; stat: string; ref: Record<string, unknown> };
+export type Pin = PinIn & { id: number; created_at: string };
+export type GraphHit = { id: string; kind: "tech" | "desire" | "imagination"; label: string; sub: string | null };
 export type GraphBuild = { at: string; status: string; nodes: number | null; edges: number | null; error: string | null };
 export type GraphStatus = {
   enabled: boolean;
@@ -562,4 +628,6 @@ export type GraphStatus = {
   similar_rerank: number;
   similar_vector: number;
   similar_target: number;
+  tag_embedded: number;
+  desire_tags: number;
 };

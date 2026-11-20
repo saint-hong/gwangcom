@@ -1,6 +1,6 @@
 # 코드 구조
 
-> 갱신: 2026-11-19 (Sprint 7 홈 검색 · 탐색기) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
+> 갱신: 2026-11-20 (Sprint 7 탐색기 다시 짜기) · 기준: Insurance-Helper-v4 의 4계층 구조, 기획안 v10 11장 (실제 구조는 이 문서가 기준)
 
 ## 백엔드 `app/`
 
@@ -25,7 +25,7 @@ app/
 │   ├── notifications/          # 알림 ✅ models · service(notify · 목록 · 안 읽은 수 · 읽음) · router(/api/notifications)
 │   ├── policy/                 # 이용 한도 ✅ models(등급·설정) · service(최종 한도 계산) · router(/api/me/limits) — 관리 화면 Sprint 6
 │   ├── activity/               # 내 활동                        (Sprint 8)
-│   ├── graph/                  # 상상 네트워크 탐색기 ✅ (7-B, 2026-11-19) models(GraphSyncLog) · build(PostgreSQL → Memgraph: collect · full_build · sync_imagination) · explore(경향 다발 · 파고들기 · 시작점 찾기 · 상태) · schemas · router(/api/admin/graph/*)
+│   ├── graph/                  # 상상 네트워크 탐색기 ✅ (7-B, 2026-11-20 다시 짬) models(GraphSyncLog · ExplorerPin · TagEmbedding) · build(PostgreSQL → Memgraph: collect · full_build · sync_imagination · embed_desire_tags, Wave · Thunder · 지도 좌표 · 시너지 · 욕망 묶음) · semantic(t-SNE · UMAP · 욕망 묶기) · explore(융합과 충돌(욕망 묶기 기준 desire_cluster_map) · 압력 지도 · 계보 · 확산 · 찾기 find_ids · 상태) · pins(근거함) · schemas · router(/api/admin/graph/*)
 │   ├── similar/                # 임베딩·비슷한 상상 ✅ models(ImaginationEmbedding · SimilarSet · SimilarLink) · service(embed_all · find_similar = 1단계 벡터) · rerank(2단계 LLM 리랭킹 · 저장 · 화면용 similar_for) · schemas
 │   └── admin/                  # 운영자 ✅ models(ModerationLog) · schemas · service(게시물 목록 · 숨김/되돌림) · policy_admin(6-B 기본 정책 · 등급 · 사용자 목록/상세 · 개인 예외 · 변경 기록 · 기록 페이지) · user_summary(사용자 상세 AI 요약, 2026-11-13) · router(/api/admin/*, admin_user). 통계는 6-D
 │
@@ -121,7 +121,7 @@ src/
     ├── profile/                # S11 ProfilePage(X, [상상|댓글|인용]) · EditProfileModal(커버·이미지·이름·소개) · FollowListPage(S17 팔로워·팔로잉)
     ├── notifications/          # S13 알림 [전체 | 댓글] (X)
     ├── settings/SettingsPage   # S14 비밀번호 변경
-    ├── admin/graph/            # A7 탐색기 (React lazy): AdminGraphPage(보기 · 기간 · 분야 · 혼합 글 · 상태 줄) · BundlesView(경향 다발: 경향 지도 · 다발 표 · 펼침) · ExploreView(시작점 찾기 · 지나온 길 · 상세 패널) · GraphCanvas(SVG — 대시보드 산점도와 같은 모양, 자리는 graphology + ForceAtlas2) · Graph.module.css
+    ├── admin/graph/            # A7 탐색기 (React lazy, 2026-11-20 다시 짬): AdminGraphPage(보기 4개 · 기간 · [그래프 재생성] · 근거함 버튼 · 찾기 창 + 결과 안내) · FusionView · MapView(군집 간격 좁히기 tighten · 압력장 색 zonePalette) · LineageView · CascadeView · Side(DetailPanel 상세 · PinboardButton 근거함 · usePins) · Scope(그래프별 기간 · 분야 · Shake it 글 설정) · Status(상태 줄 · useGraphStatus) · XCanvas(SVG 그림 칸 — 점 · 선 · 영역 · 확대 · 찾은 점으로 확대 · 빈 곳 누르면 풀기) · explorer.ts(주소 · 근거 글 · Markdown) · Graph.module.css
     ├── admin/                  # AdminLayout(/admin 틀 · 메뉴 탭 · 운영자만) · AdminNotesPage · AdminNoteEditPage(A2, 6-E) · AdminImaginationsPage(A4) · AdminPromptsPage(A3) · AdminPolicyPage(A6 + LogTable) · AdminUsersPage · AdminUserDetailPage(A5 + AI 요약) · ChangeLogSection(변경 기록 새로고침 · 페이지) · SortHeader · PolicyInput(값 칸) · adminFormat · Admin.module.css · dashboard/(A1 대시보드: AdminDashboardPage 탭 · 기간 · 원자료 CSV, OverviewTab · TechTab(기술 × 분야 · 사분면 · 기술 빈도 시계열 · 기술 활동 테이블) · TechPicker(공용 고르기 `GroupPicker` 묶음 → 항목 · 설정 줄 `PickSetting`, 기술 고르기 `TechPickSetting` = 신호 그룹 → 기술, 2026-11-15 군집 고르기에도 씀) · CrossTab · EngagementTab(+ ActivationPanels 신규 Dreamer 활성화) · ShakeTab · AiTab(2026-11-17 한 파일 ShakeAiTabs 에서 탭마다 한 파일로 나눔), parts(Panel + [설정 ▾] · KpiTile · 신호 알약 · 신호 색 `SIGNAL_COLOR` · CSV · 통계 캐시) · settings(그래프 설정: 기간 = `PeriodPicker` 달력 버튼(맨 위 기간도 같이 씀, 2026-11-17) · 개수 · 항목 · 모양), Dashboard.module.css)
     └── common/                 # PlaceholderPage(미구현 화면) · ProfileRoute(/@닉네임)
 ```

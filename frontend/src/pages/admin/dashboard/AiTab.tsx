@@ -13,7 +13,6 @@ const FEATURE: Record<string, string> = {
   user_summary: "사용자 요약 (AI 비서)",
   reaction_summary: "반응 쏠림 요약 (AI 비서)",
   note_summary: "Observe Note 요약 (AI 비서)",
-  note_draft: "Observe Note 초안",
   embedding: "임베딩",
 };
 const FEATURE_COLOR = ["var(--viz-1)", "var(--viz-2)", "var(--viz-3)", "var(--viz-4)", "var(--viz-5)", "var(--viz-6)", "var(--viz-7)", "var(--viz-8)"];

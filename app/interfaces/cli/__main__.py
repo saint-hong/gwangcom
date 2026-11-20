@@ -222,7 +222,33 @@ def graph_build_cmd(args: argparse.Namespace) -> int:
             return 1
     print(
         f"Memgraph 다시 만들기: 상상 {len(snap.items)} · Dreamer {len(snap.users)} · 태그 {len(snap.tags)} · "
-        f"태그 연결 {len(snap.has_tag)} · 비슷한 상상 연결 {len(snap.similar)} · Shake it 재료 {len(snap.blended)} · 인용 {len(snap.quotes)}"
+        f"태그 연결 {len(snap.has_tag)} · 비슷한 상상 연결 {len(snap.similar)} · Shake it 재료 {len(snap.blended)} · 인용 {len(snap.quotes)} · "
+        f"Wave {len(snap.waves)} · Thunder {len(snap.thunders)}"
+    )
+    mapped = sum(1 for i in snap.items if i["tsne_x"] is not None)
+    print(f"의미 지도 좌표 {mapped}개 (t-SNE · UMAP)")
+    return 0
+
+
+def embed_tags_cmd(args: argparse.Namespace) -> int:
+    from app.domains.graph.build import embed_desire_tags
+    from app.infrastructure.embeddings import get_embedder
+
+    e = get_embedder()
+    with get_sessionmaker()() as db:
+        n = embed_desire_tags(db, force=args.force)
+    print(f"욕망 태그 임베딩 {n}개 저장 (제공자 {e.name} · 모델 {e.model})")
+    print("탐색기 욕망 묶음에 반영하려면 graph-build 를 실행하세요.")
+    return 0
+
+
+def seed_wave_via_cmd(args: argparse.Namespace) -> int:
+    from app.interfaces.cli.seed_demo import assign_wave_via
+
+    with get_sessionmaker()() as db:
+        n = assign_wave_via(db)
+    print(
+        f"샘플 Wave 확산 경로(via) {n}개를 채웠어요. 탐색기에 반영하려면 graph-build 를 실행하세요."
     )
     return 0
 
@@ -282,6 +308,19 @@ def main(argv: list[str] | None = None) -> int:
         help="Memgraph 그래프 전체 다시 만들기 (PostgreSQL 에서, 여러 번 실행해도 같은 결과)",
     )
     p.set_defaults(func=graph_build_cmd)
+
+    p = sub.add_parser(
+        "embed-tags",
+        help="욕망 태그 이름 임베딩 (탐색기 욕망 묶음, 없는 것만 · --force 면 전부) — 실제 API 면 비용(아주 적음)",
+    )
+    p.add_argument("--force", action="store_true")
+    p.set_defaults(func=embed_tags_cmd)
+
+    p = sub.add_parser(
+        "seed-wave-via",
+        help="샘플 데이터 Wave 에 확산 경로(via)를 채움 (비어 있는 것만, 탐색기 전파와 공명용)",
+    )
+    p.set_defaults(func=seed_wave_via_cmd)
 
     p = sub.add_parser(
         "ai-eval", help="모델 실측 (태깅 · Shake · 유사도) — 실제 API 를 호출해 비용이 든다"

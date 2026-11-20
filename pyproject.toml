@@ -24,6 +24,8 @@ dependencies = [
     "anthropic>=2.7.0",
     "pgvector>=0.5.1",
     "neo4j>=5.28,<6",
+    "scikit-learn>=1.9.1",
+    "umap-learn>=0.6.0",
 ]
 
 [dependency-groups]

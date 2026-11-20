@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     graph_password: SecretStr | None = None
     graph_timeout_seconds: float = 3  # 연결 · 질의 대기 (꺼져 있을 때 오래 기다리지 않게)
 
-    # ── LLM (Sprint 4, 기획안 9-1장) — 서비스 코드는 기능 이름(tagging · shake · note_draft)만 넘긴다 ──
+    # ── LLM (Sprint 4, 기획안 9-1장) — 서비스 코드는 기능 이름(tagging · shake · note_summary …)만 넘긴다 ──
     llm_provider: Literal["anthropic", "fake"] = "fake"
     llm_model: str = "claude-haiku-5-5"
     llm_effort: Literal["low", "medium", "high"] = "low"  # Claude 추론 깊이 (낮을수록 빠르고 저렴)

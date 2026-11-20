@@ -32,7 +32,7 @@ class LlmCall(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     feature: Mapped[str] = mapped_column(
         String(20)
-    )  # tagging | shake | note_draft | embedding | eval
+    )  # tagging | shake | note_summary | … | embedding | eval
     provider: Mapped[str] = mapped_column(String(20))
     model: Mapped[str] = mapped_column(String(80))
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

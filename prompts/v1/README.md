@@ -9,7 +9,7 @@ LLM 프롬프트는 코드와 분리해 이 폴더에 둔다 (Sprint 4~).
 | similar_rerank.md | 비슷한 상상 리랭킹 — 벡터 후보 중 실제로 비슷한 것만 골라 순서 + 이유 (Sprint 5-C) |
 | user_summary.md | 운영자 사용자 상세 "AI가 분석했어요" (2026-11-13) |
 | reaction_summary.md | 대시보드 반응 탭 "AI가 분석했어요" — 반응이 어떤 상상에 쏠렸는지 (2026-11-16) |
-| note_draft.md | Observe Note 초안 (Sprint 6) |
+| note_summary.md | Observe Note AI 요약 초안 (2026-11-17) |
 
 형식: `## system` 절 + `## user` 절. user 의 `{이름}` 자리에 값이 들어간다 (`app/infrastructure/llm/prompts.py`).
 프롬프트를 크게 바꾸면 `v2/` 폴더를 새로 만들고 `prompts.py` 의 VERSION 을 바꾼다 (실측 결과를 비교할 수 있게).
