@@ -563,6 +563,17 @@ export type XInspect = {
   last_at: string | null;
   members: TagCount[];
   items: XItem[];
+  /** 융합과 충돌의 점일 때만 — 종류별 연결 수 · 지금 그림에 없는 이웃 수 */
+  links?: {
+    collision: number;
+    desire: number;
+    combo: number;
+    hidden: number;
+    collision_with: string[];
+    desire_with: string[];
+    combo_with: string[];
+    hidden_with: string[];
+  } | null;
 };
 export type MapPoint = { id: number; x: number; y: number; kind: string; title: string; author: string; domain: string | null; thunders: number; recency: number; tech: string | null; zone: string | null };
 export type MapZone = {

@@ -21,6 +21,8 @@ const SYNERGY = [
   { value: "10", label: "시너지 +10 이상" },
 ];
 const signed = (v: number | null) => (v === null ? "—" : `${v > 0 ? "+" : ""}${fmt(v, 1)}`);
+// 상세 카드 · 근거함용 — 시너지 = Thunder 차이라 단위 "개" (2026-11-24 사용자: 모든 수치에 단위)
+const signedUnit = (v: number | null) => (v === null ? "—" : `${signed(v)}개`);
 const COL = 120;
 const ROW = 110;
 const GAP = 70;
@@ -115,7 +117,7 @@ export function LineageView({
     heading: n.title,
     rows: [
       ["계보", n.tree],
-      ...(n.kind === "blend" ? ([["조합 시너지", signed(n.synergy)], ["분야를 넘는 혼합", n.cross ? "예" : "아니요"]] as [string, string][]) : []),
+      ...(n.kind === "blend" ? ([["조합 시너지", signedUnit(n.synergy)], ["분야를 넘는 혼합", n.cross ? "예" : "아니요"]] as [string, string][]) : []),
     ],
     url: `/api/admin/graph/items/inspect?${queryString(query, { ids: n.id, kind: "quote", title: n.title })}`,
     ref: { view: "lineage", id: n.id, tree: n.tree },
@@ -129,9 +131,9 @@ export function LineageView({
       heading: `계보 ${t.key} — 혼합 ${t.blends}개 · ${t.depth}단계`,
       note: "재료 → 혼합 → 다시 혼합으로 이어진 상상 묶음이에요. 시너지는 혼합 글이 재료보다 더 받은 Thunder 예요.",
       rows: [
-        ["최고 시너지", signed(t.best_synergy)],
+        ["최고 시너지", signedUnit(t.best_synergy)],
         ["분야를 넘는 혼합", `${t.cross_blends}개`],
-        ["Thunder 합", `${t.thunders}`],
+        ["Thunder 합", `${t.thunders}개`],
       ],
       url: `/api/admin/graph/items/inspect?${queryString(query, { ids: ids.join(","), kind: "lineage", title: `계보 ${t.key}` })}`,
       ref: { view: "lineage", tree: t.key, cross, synergy },

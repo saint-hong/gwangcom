@@ -135,15 +135,17 @@ def get_fusion_inspect(
     _: Admin,
     a: NodeQ,
     b: Annotated[str | None, Query(max_length=120)] = None,
+    shown: Annotated[str, Query(max_length=8000, description="지금 보이는 점 id, 쉼표로")] = "",
     period: PeriodQ = "all",
     domain: DomainQ = None,
     blend: bool = False,
     desire_min: DesireMinQ = None,
 ):
-    """점(a) 또는 선(a, b)의 수치 + 원문 상상."""
+    """점(a) 또는 선(a, b)의 수치 + 원문 상상. 점이면 연결 수 · 숨은 이웃 수(shown 기준)도."""
+    have = [s for s in shown.split(",") if s]
     clusters = _clusters(db, desire_min)
     return _graph(
-        lambda: explore.fusion_inspect(db, _filter(db, period, domain, blend), a, b, clusters)
+        lambda: explore.fusion_inspect(db, _filter(db, period, domain, blend), a, b, clusters, have)
     )
 
 

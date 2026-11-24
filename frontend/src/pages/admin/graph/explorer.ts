@@ -1,5 +1,6 @@
 import type { PeriodKey, Pin, PinIn, PinKind, XInspect, XItem, XTrend } from "../../../types/api";
 import { DOMAIN_NAME, SIGNAL, pct } from "../dashboard/parts";
+import { fmt } from "../../../components/charts/core";
 
 export type GraphQuery = { period: PeriodKey; domain: string; blend: boolean };
 
@@ -23,7 +24,8 @@ export type Selection = {
   note?: string;
   url?: string;
   /** 불러온 수치 외에 더 보여 줄 줄 */
-  rows?: [string, string][];
+  /** [제목, 값, 근거함 요약용 짧은 값(없으면 값)] */
+  rows?: [string, string, string?][];
   /** 묶음 목록 카드 (찾기 결과가 든 압력장 등) — 줄을 누르면 그 묶음으로 */
   groups?: { title: string; items: { label: string; detail: string; onPick?: () => void }[] };
   /** 불러오지 않고 바로 보여 줄 원문 */
@@ -46,43 +48,77 @@ export const PIN_KIND: Record<PinKind, string> = {
 
 export const domainName = (d: string | null | undefined) => (d ? (DOMAIN_NAME[d] ?? d) : "—");
 
-/** 흐름 한 줄 — "앞 절반 4개 → 뒤 절반 9개 · 떠오름 +120%" */
-export function trendText(t: XTrend): string {
-  const g = t.growth === null ? "" : ` ${pct(t.growth)}`;
-  return `앞 절반 ${t.earlier}개 → 뒤 절반 ${t.recent}개 · ${SIGNAL[t.signal].label}${g}`;
+/** 기간 한 줄 — "전반 4개 → 후반 9개" (2026-11-24 사용자: 앞 절반 → 뒤 절반에서 이름 바꿈) */
+export function periodText(t: XTrend): string {
+  return `전반 ${t.earlier}개 → 후반 ${t.recent}개`;
 }
 
-/** 근거함에 담을 글 — 수치를 문장으로 옮길 뿐, 해석은 붙이지 않는다 (원칙 4) */
+/** 흐름 한 줄 — "떠오름 (+120%)" */
+export function signalText(t: XTrend): string {
+  return `${SIGNAL[t.signal].label}${t.growth === null ? "" : ` (${pct(t.growth)})`}`;
+}
+
+/** "기술 충돌 2개 (#A, #B)" — 0 이면 없음 */
+const linkText = (k: string, n: number, names: string[]) => (n ? `${k} ${n}개${names.length ? ` (${names.join(", ")})` : ""}` : null);
+
+/**
+ * 근거함에 담을 글 — 상세 카드를 그대로 문장으로 옮길 뿐, 해석은 붙이지 않는다 (원칙 4).
+ * 2026-11-24 사용자: 요약 = 모든 카드 한 줄, Markdown = 관측 · 지표 · 관계 세 항목 (ref.sections 에 따로 둠)
+ */
 export function pinFromInspect(sel: Selection, d: XInspect): PinIn {
-  const doms = d.domains
-    .slice(0, 3)
-    .map((x) => domainName(x.name))
-    .join(" · ");
-  const lead: Record<PinKind, string> = {
-    collision: `대표 분야가 다른 두 기술이 상상 ${d.count}개에 함께 나왔어요 (${doms}).`,
-    fusion: `기술과 욕망이 상상 ${d.count}개에서 함께 나왔어요 (${doms}).`,
-    tech: `상상 ${d.count}개에 쓰인 기술이에요 (${doms}).`,
-    desire: `상상 ${d.count}개에 나온 욕망 묶음이에요${d.members.length ? ` — ${d.members.slice(0, 4).map((m) => m.label).join(" · ")}` : ""}.`,
-    zone: `서로 다른 Dreamer ${d.dreamers}명이 쓴, 뜻이 비슷한 상상 ${d.count}개가 모였어요 (${doms}).`,
-    lineage: `Shake it 계보 — 상상 ${d.count}개가 재료와 혼합으로 이어졌어요 (${doms}).`,
-    quote: "",
-    cascade: "",
-  };
-  const extra = (sel.rows ?? []).map(([k, v]) => `${k} ${v}`).join(" · ");
+  const L = d.links;
+  const obs = [
+    `상상 ${d.count}개에 사용`,
+    `Dreamer ${d.dreamers}명이 사용`,
+    `기간 ${periodText(d.trend)}`,
+    d.domains.length ? `분야 ${d.domains.map((x) => `${domainName(x.name)} (${x.count}개)`).join(" / ")}` : null,
+    d.members.length > 1 ? `묶음 안의 욕망 ${d.members.slice(0, 12).map((m) => `${m.label} (${m.count}개)`).join(" / ")}` : null,
+  ];
+  const metrics = [
+    `평균 Thunder ${fmt(d.thunder_avg, 1)}개`,
+    `평균 Wave ${fmt(d.wave_avg, 1)}개`,
+    `흐름 신호 ${signalText(d.trend)}`,
+    d.rank_pct !== null ? `같은 종류 연결 중 상위 ${Math.max(1, Math.round(d.rank_pct * 100))}%` : null,
+    ...(sel.rows ?? []).map(([k, v]) => `${k} ${v}`),
+  ];
+  const relations = L
+    ? [
+        linkText("기술 충돌", L.collision, L.collision_with),
+        linkText("기술x욕망", L.desire, L.desire_with),
+        linkText("기술 조합", L.combo, L.combo_with),
+        linkText("숨은 이웃", L.hidden, L.hidden_with),
+      ]
+    : [];
+  const join = (xs: (string | null)[]) => xs.filter(Boolean).join(", ");
+  // 근거함 카드의 요약은 "제목 (값)" 으로만 — 이름 목록은 Markdown 에만 (2026-11-24 사용자: 정보가 너무 많아 보기 힘듦)
+  // 순서는 사용자가 정한 카드 순서: 상상 · Dreamer · Thunder · Wave · 흐름 · 관계 · 기간 · 분야
+  const summary = join([
+    `상상 (${d.count}개)`,
+    `Dreamer (${d.dreamers}명)`,
+    `평균 Thunder (${fmt(d.thunder_avg, 1)}개)`,
+    `평균 Wave (${fmt(d.wave_avg, 1)}개)`,
+    `흐름 신호 (${SIGNAL[d.trend.signal].label}${d.trend.growth === null ? "" : ` ${pct(d.trend.growth)}`})`,
+    d.rank_pct !== null ? `같은 종류 연결 중 (상위 ${Math.max(1, Math.round(d.rank_pct * 100))}%)` : null,
+    ...(sel.rows ?? []).map(([k, v, short]) => `${k} (${short ?? v})`),
+    L?.collision ? `기술 충돌 (${L.collision}개)` : null,
+    L?.desire ? `기술x욕망 (${L.desire}개)` : null,
+    L?.combo ? `기술 조합 (${L.combo}개)` : null,
+    L?.hidden ? `숨은 이웃 (${L.hidden}개)` : null,
+    `기간 (${periodText(d.trend)})`,
+    d.domains.length ? `분야 (${d.domains.length}개)` : null,
+    d.members.length > 1 ? `묶음 안의 욕망 (${d.members.length}개)` : null,
+  ]);
   return {
     kind: sel.kind,
     title: sel.heading,
-    summary: `${lead[sel.kind]} ${trendText(d.trend)}.${extra ? ` ${extra}.` : ""}`.trim(),
-    stat: [
-      `상상 ${d.count}`,
-      `Dreamer ${d.dreamers}`,
-      `평균 Thunder ${d.thunder_avg}`,
-      `평균 Wave ${d.wave_avg}`,
-      d.rank_pct !== null ? `같은 종류 상위 ${Math.max(1, Math.round(d.rank_pct * 100))}%` : null,
-    ]
-      .filter(Boolean)
-      .join(" · "),
-    ref: { ...sel.ref, count: d.count, ids: d.items.slice(0, 10).map((i) => i.id) },
+    summary,
+    stat: "",
+    ref: {
+      ...sel.ref,
+      count: d.count,
+      ids: d.items.slice(0, 10).map((i) => i.id),
+      sections: { obs: join(obs), metrics: join(metrics), relations: join(relations) },
+    },
   };
 }
 
@@ -107,6 +143,10 @@ export function pinMarkdown(p: Pin | PinIn, n?: number): string {
       .join("\n");
     return `${head}\n${quote}\n- 수치: ${p.stat}${id ? `\n- 원문: [상상 보기](/i/${id})` : ""}`;
   }
+  // 2026-11-24 이후 담은 것: 관측 · 지표 · 관계 세 항목 (관계는 있을 때만)
+  const sec = p.ref.sections as { obs?: string; metrics?: string; relations?: string } | undefined;
+  if (sec)
+    return [head, `- 관측: ${sec.obs ?? ""}`, `- 지표: ${sec.metrics ?? ""}`, sec.relations ? `- 관계: ${sec.relations}` : null].filter(Boolean).join("\n");
   return `${head}\n- 관측: ${p.summary}\n- 수치: ${p.stat}`;
 }
 

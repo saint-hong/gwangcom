@@ -16,6 +16,7 @@
 """
 
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -45,6 +46,7 @@ from app.domains.graph.schemas import (
     MapOut,
     MapPoint,
     MapZone,
+    NodeLinks,
     SearchHit,
     TagCount,
     Trend,
@@ -385,6 +387,14 @@ def _rank_pct(pairs: dict[tuple[str, str], set[int]], key: tuple[str, str]) -> f
     return round((above + 1) / len(sizes), 3)
 
 
+def _fusion_label(S: _Fusion, node_id: str) -> str:
+    """화면에 쓰는 이름 — 기술은 "#이름", 욕망 묶음은 이름 그대로."""
+    key = node_id[2:]
+    if node_id.startswith("t:"):
+        return f"#{S.tech_label.get(key, key)}"
+    return S.desire_label.get(key, key)
+
+
 def _fusion_node(S: _Fusion, L: Loaded, node_id: str, extra: bool = False) -> FusionNode:
     kind, key = ("tech", node_id[2:]) if node_id.startswith("t:") else ("desire", node_id[2:])
     ids = S.tech[key] if kind == "tech" else S.desire[key]
@@ -527,10 +537,50 @@ def fusion_expand(
     return FusionOut(nodes=new, edges=edges, total=len(L.items), clustered=S.clustered)
 
 
+def _node_links(
+    pairs: dict[str, dict[tuple[str, str], set[int]]],
+    node_id: str,
+    shown: list[str],
+    label: Callable[[str], str] = lambda x: x,
+) -> NodeLinks:
+    """점 하나에 닿는 연결 수(종류별)와 지금 그림에 없는 이웃 수 + 이름(함께 나온 상상이 많은 순)."""
+    other: dict[str, list[tuple[str, int]]] = {k: [] for k in pairs}
+    near: dict[str, int] = {}
+    for kind, group in pairs.items():
+        for (a, b), ids in group.items():
+            if node_id in (a, b):
+                o = b if a == node_id else a
+                other[kind].append((o, len(ids)))
+                near[o] = max(near.get(o, 0), len(ids))
+
+    def names(xs: list[tuple[str, int]]) -> list[str]:
+        return [label(o) for o, _ in sorted(xs, key=lambda x: (-x[1], x[0]))]
+
+    hidden = [(o, n) for o, n in near.items() if o not in set(shown)]
+    return NodeLinks(
+        collision=len(other["collision"]),
+        desire=len(other["desire"]),
+        combo=len(other["combo"]),
+        hidden=len(hidden),
+        collision_with=names(other["collision"]),
+        desire_with=names(other["desire"]),
+        combo_with=names(other["combo"]),
+        hidden_with=names(hidden),
+    )
+
+
 def fusion_inspect(
-    db: Session, f: Filter, a: str, b: str | None, clusters: Clusters | None = None
+    db: Session,
+    f: Filter,
+    a: str,
+    b: str | None,
+    clusters: Clusters | None = None,
+    shown: list[str] | None = None,
 ) -> Inspect:
-    """점 하나(그 태그의 상상) 또는 선 하나(두 점이 함께 쓰인 상상)의 수치 + 원문."""
+    """점 하나(그 태그의 상상) 또는 선 하나(두 점이 함께 쓰인 상상)의 수치 + 원문.
+
+    점이면 연결 수(links)도 붙인다 — 숨은 이웃은 shown(지금 그림의 점)에 없는 이웃.
+    """
     L = load(f)
     S = _fusion_sets(L, clusters)
     ia = _ids_of(S, a)
@@ -538,7 +588,9 @@ def fusion_inspect(
         raise not_found("이 기간 · 분야에는 그 점이 없어요.")
     na = _fusion_node(S, L, a)
     if b is None:
-        return _inspect(db, L, ia, na.label, na.kind, na.members)
+        out = _inspect(db, L, ia, na.label, na.kind, na.members)
+        out.links = _node_links(_pairs(S, L), a, shown or [], lambda x: _fusion_label(S, x))
+        return out
     ib = _ids_of(S, b)
     both = ia & ib
     if not both:

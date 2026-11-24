@@ -368,3 +368,25 @@ def test_start_search_per_tab(monkeypatch) -> None:
     # first: 거르기(시너지 2 이상)에 안 맞아도 그 상상의 계보를 맨 앞에
     first = explore.lineage(f, min_synergy=2, first=4)
     assert [n.tree for n in first.nodes if n.id == 4] == ["A"] and len(first.trees) == 2
+
+
+def test_node_links_counts_hidden_neighbors() -> None:
+    """융합과 충돌 점 상세의 연결 수 — 종류별 선 수 + 그림에 없는 이웃 수 (2026-11-24)."""
+    from app.domains.graph.explore import _node_links
+
+    pairs = {
+        "desire": {("t:a", "d:x"): {1, 2}, ("t:b", "d:x"): {3, 4}},
+        "collision": {("t:a", "t:b"): {1, 3}, ("t:c", "t:a"): {2, 5}},
+        "combo": {},
+    }
+    got = _node_links(pairs, "t:a", ["t:a", "d:x"])
+    assert (got.collision, got.desire, got.combo, got.hidden) == (
+        2,
+        1,
+        0,
+        2,
+    )  # 숨은 이웃 = t:b · t:c
+    assert _node_links(pairs, "d:x", ["t:a", "t:b", "d:x"]).hidden == 0
+    # 이름은 함께 나온 상상이 많은 순 (같으면 id 순)
+    assert got.collision_with == ["t:b", "t:c"] and got.hidden_with == ["t:b", "t:c"]
+    assert got.desire_with == ["d:x"] and got.combo_with == []

@@ -199,8 +199,8 @@ export function MapView({
     rows: [
       ["결집도", fmt(z.cohesion, 3)],
       ["주제 다양성", fmt(z.diversity, 2)],
-      ["핵심 주제", z.techs.slice(0, 3).map((t) => `#${t.label} ${t.count}`).join(" · ") || "—"],
-      ["핵심 욕망", z.desires.map((t) => `${t.label} ${t.count}`).join(" · ") || "—"],
+      ["핵심 주제", z.techs.slice(0, 3).map((t) => `#${t.label} (${t.count}개)`).join(" · ") || "—", `${z.techs.slice(0, 3).length}개`],
+      ["핵심 욕망", z.desires.map((t) => `${t.label} (${t.count}개)`).join(" · ") || "—", `${z.desires.length}개`],
     ],
     url: `/api/admin/graph/items/inspect?${queryString(query, { ids: z.item_ids.join(","), kind: "zone", title: z.name })}`,
     ref: { view: "map", zone: z.key, method: set.method, ...query },

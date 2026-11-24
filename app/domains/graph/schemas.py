@@ -85,6 +85,20 @@ class FusionOut(BaseModel):
     clustered: bool  # 욕망 태그 임베딩으로 묶었는가 (embed-tags 전이면 태그 하나가 한 묶음)
 
 
+class NodeLinks(BaseModel):
+    """융합과 충돌 점 하나의 연결 수 (2026-11-24 사용자) — 화면에 안 보이는 연결까지 모두 센다."""
+
+    collision: int  # 기술 충돌 선
+    desire: int  # 기술 × 욕망 선
+    combo: int  # 기술 조합 선
+    hidden: int  # 이웃 가운데 지금 그림에 없는 점 (숨은 이웃)
+    # 근거함에 담을 이름 (함께 나온 상상이 많은 순, 기술은 "#이름") — 2026-11-24 사용자
+    collision_with: list[str] = []
+    desire_with: list[str] = []
+    combo_with: list[str] = []
+    hidden_with: list[str] = []
+
+
 class Inspect(BaseModel):
     """점 · 선 하나의 상세 — 수치(신뢰 레이어) + 원문."""
 
@@ -101,6 +115,7 @@ class Inspect(BaseModel):
     last_at: datetime | None
     members: list[TagCount] = []
     items: list[ItemCard]
+    links: NodeLinks | None = None  # 융합과 충돌의 점(기술 · 욕망 묶음)일 때만
 
 
 # ---------------------------------------------------------------- ② 집단 압력 지도

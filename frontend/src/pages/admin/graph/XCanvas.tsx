@@ -48,6 +48,10 @@ type Props = {
   selected?: string | null;
   onNode?: (id: string) => void;
   onNodeDouble?: (id: string) => void;
+  /** 점에 마우스를 올리면 뜨는 작은 선택 상자 (2026-11-24 사용자: 두 번 누르기를 찾기 어려움) */
+  nodeMenu?: { label: string; onPick: (id: string) => void }[];
+  /** [처음 상태로] 버튼을 누를 때 — 확대 · 고른 점과 함께 보기마다 되돌릴 것 (예: 펼친 이웃) */
+  onReset?: () => void;
   onEdge?: (id: string) => void;
   onArea?: (id: string) => void;
   /** 빈 곳을 누름 → 고른 것 풀기 (2026-11-20 사용자) */
@@ -73,13 +77,22 @@ const short = (s: string) => (s.length > SHORT ? `${s.slice(0, SHORT)}…` : s);
  *   점을 누르면 오른쪽 상세, 두 번 누르면 펼치기(보기마다), 선을 누르면 그 선의 상세, 영역을 누르면 영역 상세
  *   마우스를 올린 점 · 고른 점과 이어진 선만 진하게
  */
-export function XCanvas({ nodes, edges, areas = [], height, selected, onNode, onNodeDouble, onEdge, onArea, onBackground, zoomTo, zoomLabels = true, ariaLabel, pad = 36, keepRatio }: Props) {
+export function XCanvas({ nodes, edges, areas = [], height, selected, onNode, onNodeDouble, nodeMenu, onReset, onEdge, onArea, onBackground, zoomTo, zoomLabels = true, ariaLabel, pad = 36, keepRatio }: Props) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [t, setT] = useState<Tip>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [view, setView] = useState({ k: 1, tx: 0, ty: 0 });
   const drag = useRef<{ px: number; py: number; tx: number; ty: number; moved: boolean } | null>(null);
   const dragged = useRef(false); // 끌어서 옮긴 직후의 클릭은 빈 곳 누름으로 치지 않는다
+  // 점 선택 상자: 점 → 상자로 마우스를 옮기는 동안 닫히지 않게 조금 기다렸다 닫는다
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number; r: number } | null>(null);
+  const menuTimer = useRef<number | undefined>(undefined);
+  const keepMenu = () => window.clearTimeout(menuTimer.current);
+  const dropMenu = () => {
+    keepMenu();
+    menuTimer.current = window.setTimeout(() => setMenu(null), 250);
+  };
+  useEffect(() => () => window.clearTimeout(menuTimer.current), []);
 
   const xs = [...nodes.map((n) => n.x), ...areas.flatMap((a) => a.points.map((p) => p[0]))];
   const ys = [...nodes.map((n) => n.y), ...areas.flatMap((a) => a.points.map((p) => p[1]))];
@@ -122,15 +135,18 @@ export function XCanvas({ nodes, edges, areas = [], height, selected, onNode, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoomTo, width, nodes]);
 
-  const zoom = (f: number) =>
+  const zoom = (f: number) => (
+    setMenu(null),
     setView((v) => {
       const k = Math.min(ZOOM_MAX, Math.max(1, v.k * f));
       return k === 1 ? { k, tx: 0, ty: 0 } : { k, tx: (v.tx * k) / v.k, ty: (v.ty * k) / v.k };
-    });
+    })
+  );
   const onDown = (e: RPointerEvent<SVGSVGElement>) => {
     const tag = (e.target as Element).tagName;
     if (!zoomed || tag === "circle" || tag === "path" || tag === "line") return;
     e.preventDefault();
+    setMenu(null);
     drag.current = { px: e.clientX, py: e.clientY, tx: view.tx, ty: view.ty, moved: false };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -169,13 +185,24 @@ export function XCanvas({ nodes, edges, areas = [], height, selected, onNode, on
           <button type="button" onClick={() => zoom(1 / ZOOM_STEP)} disabled={!zoomed} aria-label="축소" title="축소">
             <Minus />
           </button>
-          <button type="button" onClick={() => setView({ k: 1, tx: 0, ty: 0 })} disabled={!zoomed} aria-label="처음 크기로" title="처음 크기로">
+          {/* 2026-11-24 사용자: 늘 켜 두고, 누르면 처음 상태로 (확대 · 고른 점 · 펼친 이웃 모두) */}
+          <button
+            type="button"
+            onClick={() => {
+              setView({ k: 1, tx: 0, ty: 0 });
+              setMenu(null);
+              onBackground?.();
+              onReset?.();
+            }}
+            aria-label="처음 상태로"
+            title="처음 상태로"
+          >
             <RotateCcw />
           </button>
         </div>
         {zoomed ? <span className={chart.zoomHint}>빈 곳을 끌어서 옮겨요 · {fmt(view.k, 1)}배</span> : null}
       </div>
-      <div ref={ref} className={chart.plot} style={{ height, overflow: "hidden" }} onMouseLeave={() => (setT(null), setHover(null))}>
+      <div ref={ref} className={chart.plot} style={{ height, overflow: "hidden" }} onMouseLeave={() => (setT(null), setHover(null), setMenu(null))}>
         {width > 0 ? (
           <svg
             width={width}
@@ -289,8 +316,14 @@ export function XCanvas({ nodes, edges, areas = [], height, selected, onNode, on
                       opacity={dim ? 0.2 : (n.opacity ?? 0.85)}
                       onClick={() => onNode?.(n.id)}
                       onDoubleClick={() => onNodeDouble?.(n.id)}
-                      onMouseMove={(e) => (setHover(n.id), tip(e, n.tip))}
-                      onMouseLeave={() => (setHover(null), setT(null))}
+                      onMouseEnter={() => {
+                        if (!nodeMenu?.length) return;
+                        keepMenu();
+                        setT(null);
+                        setMenu({ id: n.id, x: s.x, y: s.y, r });
+                      }}
+                      onMouseMove={(e) => (setHover(n.id), nodeMenu?.length ? undefined : tip(e, n.tip))}
+                      onMouseLeave={() => (setHover(null), setT(null), nodeMenu?.length ? dropMenu() : undefined)}
                     />
                     {n.badge ? (
                       <text x={s.x + r + 2} y={s.y - r + 2} className={styles.badgeText} pointerEvents="none">
@@ -321,6 +354,37 @@ export function XCanvas({ nodes, edges, areas = [], height, selected, onNode, on
           </svg>
         ) : null}
         <Tooltip tip={t} width={width} />
+        {/* 2026-11-24 사용자: 선택 상자가 툴팁과 겹쳐서, 툴팁을 점 옆에 고정하고 그 아래에 관계 버튼을 가로로 */}
+        {menu && nodeMenu?.length && byId.get(menu.id) ? (
+          <div
+            className={chart.tip}
+            style={{
+              pointerEvents: "auto", // 툴팁은 원래 마우스를 받지 않음 — 버튼을 누를 수 있게
+              ...(menu.x > width - 280 ? { right: width - menu.x + menu.r + 6 } : { left: menu.x + menu.r + 6 }),
+              top: Math.max(0, Math.min(menu.y - 12, height - 190)),
+            }}
+            role="dialog"
+            onMouseEnter={keepMenu}
+            onMouseLeave={dropMenu}
+          >
+            {byId.get(menu.id)!.tip}
+            <div className={styles.nodeTipActions}>
+              {nodeMenu.map((m) => (
+                <button
+                  key={m.label}
+                  type="button"
+                  onClick={() => {
+                    const id = menu.id;
+                    setMenu(null);
+                    m.onPick(id);
+                  }}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

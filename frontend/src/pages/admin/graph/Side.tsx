@@ -9,20 +9,20 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { api, ApiError } from "../../../api/client";
 import { useToast } from "../../../components/feedback/Toast";
 import { fmt } from "../../../components/charts/core";
 import type { Pin, PinIn, XInspect, XItem } from "../../../types/api";
 import { shortDate } from "../adminFormat";
-import { SignalBadge } from "../dashboard/parts";
+import { SignalBadge, pct } from "../dashboard/parts";
 import {
   PIN_KIND,
   boardMarkdown,
+  periodText,
   domainName,
   pinFromInspect,
   pinFromItem,
-  trendText,
   type Selection,
 } from "./explorer";
 import styles from "./Graph.module.css";
@@ -68,15 +68,8 @@ export type Pins = ReturnType<typeof usePins>;
 
 /** 그림 아래 "상세" 칸 (2026-11-20 사용자: 오른쪽 → 아래, 근거함은 탭 줄 버튼으로 옮기고 여기는 제목 "상세") */
 export function DetailPanel({ sel, pins }: { sel: Selection | null; pins: Pins }) {
-  const box = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (!sel) return;
-    // 그림 아래에 있으므로, 화면 밖이면 윗부분이 보이도록 조금만 내린다 (그림은 계속 보이게)
-    const top = box.current?.getBoundingClientRect().top;
-    if (top !== undefined && top > window.innerHeight - 160) window.scrollBy({ top: top - window.innerHeight + 280, behavior: "smooth" });
-  }, [sel]);
   return (
-    <section ref={box} className={styles.side} aria-labelledby="xDetailTitle">
+    <section className={styles.side} aria-labelledby="xDetailTitle">
       <h2 id="xDetailTitle" className={styles.sideHead}>
         상세
       </h2>
@@ -85,7 +78,7 @@ export function DetailPanel({ sel, pins }: { sel: Selection | null; pins: Pins }
   );
 }
 
-function Fact({ k, v }: { k: string; v: string }) {
+function Fact({ k, v }: { k: string; v: ReactNode }) {
   return (
     <div>
       <dt>{k}</dt>
@@ -201,8 +194,23 @@ function Inspector({ sel, pins }: { sel: Selection | null; pins: Pins }) {
               <>
                 <Fact k="상상" v={`${data.count}개`} />
                 <Fact k="Dreamer" v={`${data.dreamers}명`} />
-                <Fact k="평균 Thunder" v={fmt(data.thunder_avg, 1)} />
-                <Fact k="평균 Wave" v={fmt(data.wave_avg, 1)} />
+                <Fact k="평균 Thunder" v={`${fmt(data.thunder_avg, 1)}개`} />
+                <Fact k="평균 Wave" v={`${fmt(data.wave_avg, 1)}개`} />
+                {/* 흐름 카드: 신호 태그 + 증감률 (2026-11-24 사용자) */}
+                <Fact
+                  k="흐름"
+                  v={
+                    <span className={styles.trendRow}>
+                      <SignalBadge signal={data.trend.signal} colored />
+                      {data.trend.growth !== null ? <b className={styles.trendPct}>{pct(data.trend.growth)}</b> : null}
+                    </span>
+                  }
+                />
+                {/* 융합과 충돌의 점: 연결 수 카드 — 0 이면 카드를 그리지 않음 (2026-11-24 사용자) */}
+                {data.links?.collision ? <Fact k="기술 충돌" v={`${data.links.collision}개`} /> : null}
+                {data.links?.desire ? <Fact k="기술 × 욕망" v={`${data.links.desire}개`} /> : null}
+                {data.links?.combo ? <Fact k="기술 조합" v={`${data.links.combo}개`} /> : null}
+                {data.links?.hidden ? <Fact k="숨은 이웃" v={`${data.links.hidden}개`} /> : null}
                 {data.rank_pct !== null ? <Fact k="같은 종류 연결 중" v={`상위 ${Math.max(1, Math.round(data.rank_pct * 100))}%`} /> : null}
               </>
             ) : null}
@@ -236,10 +244,11 @@ function Inspector({ sel, pins }: { sel: Selection | null; pins: Pins }) {
         {data ? (
           <div className={styles.cards}>
             <div className={styles.card}>
-              <span className={styles.cardLabel}>흐름 (기간 앞 절반 → 뒤 절반)</span>
+              {/* 신호 · 증감률은 위 "흐름" 카드로 옮기고 여기는 개수 · 날짜만 (2026-11-24) */}
+              {/* 2026-11-24 사용자: 제목은 "기간"만, 앞 절반 → 뒤 절반은 "전반 → 후반" */}
+              <span className={styles.cardLabel}>기간</span>
               <div className={styles.trendRow}>
-                <SignalBadge signal={data.trend.signal} colored />
-                <span>{trendText(data.trend)}</span>
+                <span>{periodText(data.trend)}</span>
               </div>
               <span className={styles.cardSub}>
                 {data.first_at && data.last_at ? `${shortDate(data.first_at).slice(0, 10)} ~ ${shortDate(data.last_at).slice(0, 10)}` : "—"}

@@ -47,7 +47,7 @@ export function FusionView({ page, focus, onSelect, selected }: { page: PeriodKe
         setLoading(false);
         if (d.focus) {
           const n = d.nodes.find((x) => x.id === d.focus);
-          if (n) onSelect(nodeSelection(n, qs, query));
+          if (n) onSelect(nodeSelection(n, qs, query, d.nodes.map((m) => m.id)));
         }
       },
       (e) => alive && (setError(e instanceof ApiError ? e.message : "불러오지 못했어요."), setLoading(false)),
@@ -78,6 +78,9 @@ export function FusionView({ page, focus, onSelect, selected }: { page: PeriodKe
       const more = await api<FusionOut>(`/api/admin/graph/fusion/expand?${qs}&${new URLSearchParams({ node: id, shown: nodes.map((n) => n.id).join(",") })}`);
       if (!more.nodes.length) return;
       setExtra((prev) => ({ ...prev, nodes: [...prev.nodes, ...more.nodes], edges: [...prev.edges, ...more.edges] }));
+      // 펼친 뒤 상세를 다시 읽어 숨은 이웃 수를 맞춘다
+      const n = byId.get(id);
+      if (n) onSelect(nodeSelection(n, qs, query, [...nodes.map((m) => m.id), ...more.nodes.map((m) => m.id)]));
     } catch {
       /* 펼칠 이웃이 없으면 그대로 */
     }
@@ -105,7 +108,6 @@ export function FusionView({ page, focus, onSelect, selected }: { page: PeriodKe
           {n.domain ? <TipRow label="대표 분야" value={domainName(n.domain)} /> : null}
           <TipRow label="흐름" value={`${SIGNAL[n.trend.signal].label} ${n.trend.growth !== null ? pct(n.trend.growth) : ""}`} />
           {n.members.length > 1 ? <TipRow label="묶인 욕망" value={n.members.slice(0, 3).map((m) => m.label).join(" · ")} /> : null}
-          <TipRow label="" value="누르면 상세 · 두 번 누르면 펼치기" />
         </>
       ),
     };
@@ -136,6 +138,12 @@ export function FusionView({ page, focus, onSelect, selected }: { page: PeriodKe
     };
   });
 
+  // 점 한 번 누르기 = 주요 관계 보기 (그 점의 선만 켜지고 상세가 열림)
+  const pick = (id: string) => {
+    const n = byId.get(id);
+    if (n) onSelect(nodeSelection(n, qs, query, nodes.map((m) => m.id)));
+  };
+
   const selectEdge = (id: string) => {
     const e = edges.find((x) => x.id === id);
     if (!e) return;
@@ -163,9 +171,8 @@ export function FusionView({ page, focus, onSelect, selected }: { page: PeriodKe
       title="융합과 충돌 — 기술 × 욕망"
       hint={
         <>
-          서로 다른 분야의 기술이 어떤 욕망을 매개로 만나는지 봐요. 가운데 = 욕망 묶음, 양옆 = 기술, 선 굵기 = 함께 나온 상상 수.{" "}
-          <b>노란 선 = 기술 충돌</b>(대표 분야가 다른 두 기술이 상상 2개 이상에 함께). 점을 두 번 누르면 숨은 이웃을 펼쳐요.
-          {" "}욕망 묶음 = 이름의 뜻이 가까운(임베딩 유사도 {set.desireMin >= 1 ? "— 묶지 않음" : `${set.desireMin} 이상`}) 욕망 태그를 하나로, 이름은 가장 많이 쓰인 태그. 기준은 [설정]에서 바꿔요.
+          욕망 클러스터를 매개로 서로 다른 기술간의 융합과 충돌 경향을 시각화한 그래프 (보라색 노드 : 기술, 오렌지색 노드 : 의미가 비슷한 욕망 묶음(
+          {set.desireMin >= 1 ? "묶지 않음" : `유사도 ${set.desireMin}이상`}), 선 굵기 : 상상의 수, 주황색 선 : 기술 충돌 선), 노드 클릭시 요약 정보 상자에서 주요 관계 / 숨은 이웃 관계 선택 가능
           <StatusNote />
         </>
       }
@@ -227,11 +234,13 @@ export function FusionView({ page, focus, onSelect, selected }: { page: PeriodKe
             height={Math.max(640, layout.rows * 74 + 80)}
             onBackground={() => onSelect(null)}
             selected={selected}
-            onNode={(id) => {
-              const n = byId.get(id);
-              if (n) onSelect(nodeSelection(n, qs, query));
-            }}
+            onNode={pick}
             onNodeDouble={(id) => void expand(id)}
+            nodeMenu={[
+              { label: "주요 관계", onPick: pick },
+              { label: "숨은 이웃 관계", onPick: (id) => (pick(id), void expand(id)) },
+            ]}
+            onReset={() => setExtra({ nodes: [], edges: [], total: 0, clustered: false })}
             onEdge={selectEdge}
             ariaLabel="기술과 욕망 묶음 연결 그래프"
             pad={[110, 30]}
@@ -248,14 +257,15 @@ export function FusionView({ page, focus, onSelect, selected }: { page: PeriodKe
 
 const label = (n: FusionNode | undefined) => (n ? (n.kind === "tech" ? `#${n.label}` : n.label) : "?");
 
-function nodeSelection(n: FusionNode, qs: string, query?: GraphQuery): Selection {
+function nodeSelection(n: FusionNode, qs: string, query?: GraphQuery, shown: string[] = []): Selection {
   return {
     id: n.id,
     kind: n.kind === "tech" ? "tech" : "desire",
     badge: n.kind === "tech" ? "기술" : "욕망 묶음",
     heading: label(n),
     note: n.kind === "desire" && n.members.length > 1 ? `뜻이 가까운 욕망 태그 ${n.members.length}개를 묶었어요 (이름 = 가장 많이 쓰인 태그).` : undefined,
-    url: `/api/admin/graph/fusion/inspect?${qs}&a=${encodeURIComponent(n.id)}`,
+    // shown = 지금 그림의 점 → 상세의 "숨은 이웃" 수
+    url: `/api/admin/graph/fusion/inspect?${qs}&${new URLSearchParams({ a: n.id, shown: shown.join(",") })}`,
     ref: { view: "fusion", a: n.id, ...(query ?? {}) },
   };
 }
